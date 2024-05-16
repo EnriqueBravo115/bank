@@ -15,13 +15,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import dev.enrique.bank.commons.enums.RoleName;
 import dev.enrique.bank.config.JwtProvider;
-import dev.enrique.bank.domain.Role;
-import dev.enrique.bank.domain.User;
-import dev.enrique.bank.dto.BearerToken;
-import dev.enrique.bank.dto.LoginDto;
-import dev.enrique.bank.dto.RegisterDto;
-import dev.enrique.bank.repository.RoleRepository;
-import dev.enrique.bank.repository.UserRepository;
+import dev.enrique.bank.pojo.entity.Role;
+import dev.enrique.bank.pojo.entity.User;
+import dev.enrique.bank.pojo.dto.BearerToken;
+import dev.enrique.bank.pojo.dto.LoginDto;
+import dev.enrique.bank.pojo.dto.RegisterDto;
+import dev.enrique.bank.dao.RoleRepository;
+import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 

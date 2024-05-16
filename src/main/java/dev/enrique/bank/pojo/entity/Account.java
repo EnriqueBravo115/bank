@@ -1,4 +1,4 @@
-package dev.enrique.bank.domain;
+package dev.enrique.bank.pojo.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

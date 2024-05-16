@@ -13,8 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import dev.enrique.bank.domain.User;
-import dev.enrique.bank.repository.UserRepository;
+import dev.enrique.bank.pojo.entity.User;
+import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.service.impl.UserServiceImpl;
 
 @SpringBootTest

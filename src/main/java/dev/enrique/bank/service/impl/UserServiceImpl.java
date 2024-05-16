@@ -5,12 +5,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.domain.Role;
-import dev.enrique.bank.domain.User;
+import dev.enrique.bank.pojo.entity.Role;
+import dev.enrique.bank.pojo.entity.User;
 import dev.enrique.bank.commons.exception.*;
-import dev.enrique.bank.repository.RoleRepository;
-import dev.enrique.bank.repository.UserRepository;
-import dev.enrique.bank.repository.projection.UserProjection;
+import dev.enrique.bank.dao.RoleRepository;
+import dev.enrique.bank.dao.UserRepository;
+import dev.enrique.bank.dao.projection.UserProjection;
 import dev.enrique.bank.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

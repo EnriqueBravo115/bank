@@ -5,8 +5,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
-import dev.enrique.bank.domain.User;
-import dev.enrique.bank.repository.UserRepository;
+import dev.enrique.bank.pojo.entity.User;
+import dev.enrique.bank.dao.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 @Component

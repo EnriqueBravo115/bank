@@ -1,4 +1,4 @@
-package dev.enrique.bank.domain;
+package dev.enrique.bank.pojo.entity;
 
 import java.util.Date;
 

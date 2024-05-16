@@ -1,4 +1,4 @@
-package dev.enrique.bank.domain;
+package dev.enrique.bank.pojo.entity;
 
 import dev.enrique.bank.commons.enums.RoleName;
 import jakarta.persistence.Entity;

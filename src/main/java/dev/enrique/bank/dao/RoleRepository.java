@@ -1,8 +1,8 @@
-package dev.enrique.bank.repository;
+package dev.enrique.bank.dao;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import dev.enrique.bank.domain.Role;
+import dev.enrique.bank.pojo.entity.Role;
 import dev.enrique.bank.commons.enums.RoleName;
 
 public interface RoleRepository extends JpaRepository<Role, Integer> {

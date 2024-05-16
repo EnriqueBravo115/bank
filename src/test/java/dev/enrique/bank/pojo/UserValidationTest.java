@@ -1,5 +1,6 @@
-package dev.enrique.bank.domain;
+package dev.enrique.bank.pojo;
 
+import dev.enrique.bank.pojo.entity.User;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

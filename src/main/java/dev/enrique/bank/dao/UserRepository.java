@@ -1,4 +1,4 @@
-package dev.enrique.bank.repository;
+package dev.enrique.bank.dao;
 
 import java.util.Optional;
 
@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import dev.enrique.bank.domain.User;
-import dev.enrique.bank.repository.projection.UserProjection;
+import dev.enrique.bank.pojo.entity.User;
+import dev.enrique.bank.dao.projection.UserProjection;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
