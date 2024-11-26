@@ -71,7 +71,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             Role role = roleRepository.findByRoleName(RoleName.valueOf(myrole));
 
-            user.setUserRole(registerDto.getUserRole());
+            //user.setUserRole(registerDto.getUserRole());
 
             user.setRoles(Collections.singletonList(role));
             userRepository.save(user);

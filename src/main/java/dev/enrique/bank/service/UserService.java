@@ -15,5 +15,4 @@ public interface UserService {
     Role saveRole(Role role);
 
     User saveUser(User user);
-
 }
