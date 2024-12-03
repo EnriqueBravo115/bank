@@ -6,11 +6,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-server:
-  ssl:
-    key-store-type: PKCS12
-    key-store: classpath:certificate.p12
-    key-store-password: password
+      #server:
+      #  ssl:
+      #    key-store-type: PKCS12
+      #    key-store: classpath:certificate.p12
+      #    key-store-password: password
 jwt:
   secret: 2b44b0b00fd822d8ce753e54dac3dc4e06c2725f7db930f3b9924468b53194dbccdbe23d7baa5ef5fbc414ca4b2e64700bad60c5a7c45eaba56880985582fba4
   expiration_time: 36000000

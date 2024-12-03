@@ -45,7 +45,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         List<String> rolesNames = new ArrayList<>();
 
-        user.getRoles().forEach(r -> rolesNames.add(r.getRoleName()));
+        user.getRoles().forEach(r -> rolesNames.add(r.getRoleName().toString()));
+
         String token = jwtUtilities.generateToken(user.getUsername(), rolesNames);
         return "User login successful! Token: " + token;
     }
@@ -71,13 +72,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             Role role = roleRepository.findByRoleName(RoleName.valueOf(myrole));
 
-            //user.setUserRole(registerDto.getUserRole());
+            // user.setUserRole(registerDto.getUserRole());
 
             user.setRoles(Collections.singletonList(role));
             userRepository.save(user);
 
             String token = jwtUtilities.generateToken(registerDto.getEmail(),
-                    Collections.singletonList(role.getRoleName()));
+                    Collections.singletonList(role.getRoleName().toString()));
             return new ResponseEntity<>(new BearerToken(token, "Bearer"), HttpStatus.OK);
         }
     }
