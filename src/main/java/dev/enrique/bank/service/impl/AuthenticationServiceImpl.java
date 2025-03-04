@@ -1,54 +1,48 @@
 package dev.enrique.bank.service.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.commons.enums.RoleName;
-import dev.enrique.bank.config.JwtProvider;
-import dev.enrique.bank.pojo.entity.Role;
-import dev.enrique.bank.pojo.entity.User;
-import dev.enrique.bank.pojo.dto.BearerToken;
-import dev.enrique.bank.pojo.dto.LoginDto;
-import dev.enrique.bank.pojo.dto.RegisterDto;
-import dev.enrique.bank.dao.RoleRepository;
+import dev.enrique.bank.config.JwtUtil;
+import dev.enrique.bank.model.User;
+import dev.enrique.bank.model.dto.LoginDto;
+import dev.enrique.bank.model.dto.RegisterDto;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 
+@Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
-    private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
-    private final JwtProvider jwtUtilities;
+    private final JwtUtil jwtUtilities;
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final ModelMapper modelMapper;
 
     @Override
-    public String authenticate(LoginDto loginDto) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginDto.getUsername(),
-                        loginDto.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        User user = userRepository.findByUsername(authentication.getName())
+    public ResponseEntity<?> authenticate(LoginDto loginDto) {
+        User user = userRepository.findByUsername(loginDto.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        List<String> rolesNames = new ArrayList<>();
 
-        user.getRoles().forEach(r -> rolesNames.add(r.getRoleName().toString()));
+        Set<String> roles = user.getRoles().stream()
+                .map(r -> r.getRoleName().toString())
+                .collect(Collectors.toSet());
 
-        String token = jwtUtilities.generateToken(user.getUsername(), rolesNames);
-        return "User login successful! Token: " + token;
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", roles);
+
+        String token = jwtUtilities.generateToken(claims, user.getUsername());
+
+        return new ResponseEntity<>(token, HttpStatus.OK);
     }
 
     @Override
@@ -56,30 +50,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (userRepository.existsByEmail(registerDto.getEmail())) {
             return new ResponseEntity<>("email is already taken !", HttpStatus.SEE_OTHER);
         } else {
-            User user = new User();
-            user.setEmail(registerDto.getEmail());
+            User user = modelMapper.map(registerDto, User.class);
             user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
 
-            String myrole = "user";
-
-            if (registerDto.getUserRole().equals("") || registerDto.getUserRole().equals("user")) {
-                myrole = "USER";
-            }
-
-            if (registerDto.getUserRole().equals("admin")) {
-                myrole = "ADMIN";
-            }
-
-            Role role = roleRepository.findByRoleName(RoleName.valueOf(myrole));
-
-            // user.setUserRole(registerDto.getUserRole());
-
-            user.setRoles(Collections.singletonList(role));
             userRepository.save(user);
 
-            String token = jwtUtilities.generateToken(registerDto.getEmail(),
-                    Collections.singletonList(role.getRoleName().toString()));
-            return new ResponseEntity<>(new BearerToken(token, "Bearer"), HttpStatus.OK);
+            return new ResponseEntity<>("ok", HttpStatus.OK);
         }
     }
 }

@@ -4,10 +4,13 @@ import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
-import io.jsonwebtoken.security.SignatureException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -16,18 +19,14 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-public class JwtProvider {
-    @Value("${jwt.expiration_time}")
+public class JwtUtil {
+    @Value("${jwt.expiration}")
     private Long expiration;
 
     @Value("${jwt.issuer}")
@@ -35,6 +34,11 @@ public class JwtProvider {
 
     @Value("${jwt.secret}")
     private String secret;
+
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
@@ -57,10 +61,10 @@ public class JwtProvider {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public String generateToken(String username, List<String> roles) {
+    public String generateToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-                .claim("role", roles)
-                .setSubject(username)
+                .setClaims(claims)
+                .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(Date.from(Instant.now().plus(expiration, ChronoUnit.MILLIS)))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
@@ -98,10 +102,5 @@ public class JwtProvider {
             log.trace("JWT token compact of handler are invalid trace: {}", e);
         }
         return false;
-    }
-
-    private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

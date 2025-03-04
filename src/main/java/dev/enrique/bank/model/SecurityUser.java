@@ -1,4 +1,4 @@
-package dev.enrique.bank.pojo.entity;
+package dev.enrique.bank.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +18,7 @@ public class SecurityUser implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
-        user.roles.forEach(role -> authorities
+        user.getRoles().forEach(role -> authorities
                 .add(new SimpleGrantedAuthority(role.getRoleName().toString())));
         return authorities;
     }

@@ -20,20 +20,23 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
     private final UserDetailsServiceCustom uServiceCustom;
-    private final JwtProvider jwtProvider;
+    private final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String token = jwtProvider.getToken(request);
 
-        if (token != null && jwtProvider.validateToken(token)) {
-            String username = jwtProvider.extractUsername(token);
+        String token = jwtUtil.getToken(request);
+
+        if (token != null && jwtUtil.validateToken(token)) {
+            String username = jwtUtil.extractUsername(token);
             UserDetails userDetails = uServiceCustom.loadUserByUsername(username);
+
             if (userDetails != null) {
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails.getUsername(), null, userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authentication = 
+                    new UsernamePasswordAuthenticationToken(userDetails.getUsername(), 
+                            null, userDetails.getAuthorities());
 
                 log.info("authenticated user with username :{}", username);
                 SecurityContextHolder.getContext().setAuthentication(authentication);

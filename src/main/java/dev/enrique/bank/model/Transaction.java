@@ -1,6 +1,6 @@
-package dev.enrique.bank.pojo.entity;
+package dev.enrique.bank.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import dev.enrique.bank.commons.enums.TransactionType;
 import jakarta.persistence.Column;
@@ -17,14 +17,16 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    private TransactionType transactionType;
-
-    @Column(nullable = false)
+    @Column(name = "amount")
     private Double amount;
 
+    @Column(name = "notes")
     private String notes;
 
-    @Column(nullable = false)
-    private Date timeStamp;
+    @Column(name = "transaction_date")
+    private LocalDateTime transactionDate;
+
+    @Column(name = "transaction_type")
+    @Enumerated(EnumType.STRING)
+    private TransactionType transactionType;
 }

@@ -1,4 +1,4 @@
-package dev.enrique.bank.pojo.entity;
+package dev.enrique.bank.model;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,7 +19,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "roles")
+@Table(name = "role")
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,5 +30,5 @@ public class Role {
     RoleName roleName;
 
     @ManyToMany(mappedBy = "roles")
-    private Set<User> users  = new HashSet<>();
+    private Set<User> users = new HashSet<>();
 }

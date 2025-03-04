@@ -1,4 +1,4 @@
-package dev.enrique.bank.pojo.dto;
+package dev.enrique.bank.model.dto;
 
 import lombok.Getter;
 import lombok.Setter;

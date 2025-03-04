@@ -1,27 +1,24 @@
 CREATE TABLE users
 (
-    id                 INT NOT NULL,
+    id                 SERIAL PRIMARY KEY,
     username           VARCHAR(255) NOT NULL UNIQUE,
     password           VARCHAR(255) NOT NULL,
     email              VARCHAR(255) NOT NULL UNIQUE,
-    country            VARCHAR(255),
-    gender             VARCHAR(15),
-    phone_number       VARCHAR(20),
-    registration_date  TIMESTAMP DEFAULT current_timestamp,
-    PRIMARY KEY(id)
-)
+    country            VARCHAR(255) NOT NULL,
+    gender             VARCHAR(15)  NOT NULL,
+    phone_number       VARCHAR(20) NOT NULL,
+    registration_date  TIMESTAMP DEFAULT current_timestamp
+);
 
-CREATE TABLE roles
+CREATE TABLE role
 (
-    id        INT NOT NULL,
-    rolename  VARCHAR(255) NOT NULL
-)
+    id        SERIAL PRIMARY KEY,
+    role_name  VARCHAR(255) NOT NULL
+);
 
 CREATE TABLE user_role
 (
-    user_id INT NOT NULL,
-    role_id INT NOT NULL,
-    PRIMARY KEY (user_id, role_id),
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE,
-)
+    user_id INT REFERENCES users (id) ON DELETE CASCADE,
+    role_id INT REFERENCES role (id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, role_id)
+);

@@ -1,6 +1,7 @@
-package dev.enrique.bank.pojo.entity;
+package dev.enrique.bank.model;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -45,21 +46,21 @@ public class User {
     @Pattern(regexp = "^([0-9]{10})$")
     private String phoneNumber;
 
-    @Column(name = "registration_date")
-    private LocalDateTime registrationDate;
-
     @Column(name = "country")
     private String country;
 
     @Column(name = "gender")
     private String gender;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @Column(name = "registration_date")
+    private LocalDateTime registrationDate;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
             name = "user_role",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles;
+    private Set<Role> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts;

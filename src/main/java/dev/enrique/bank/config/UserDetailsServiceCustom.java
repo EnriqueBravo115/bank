@@ -5,7 +5,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
-import dev.enrique.bank.pojo.entity.User;
+import dev.enrique.bank.model.SecurityUser;
+import dev.enrique.bank.model.User;
 import dev.enrique.bank.dao.UserRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +19,6 @@ public class UserDetailsServiceCustom implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = uRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return user;
+        return new SecurityUser(user);
     }
 }
