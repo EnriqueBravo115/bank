@@ -13,6 +13,8 @@ import dev.enrique.bank.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import static dev.enrique.bank.commons.constants.ErrorMessage.*;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
