@@ -5,20 +5,13 @@ CREATE TABLE users
     password           VARCHAR(255) NOT NULL,
     email              VARCHAR(255) NOT NULL UNIQUE,
     country            VARCHAR(255) NOT NULL,
+    country_code       VARCHAR(255),
     gender             VARCHAR(15)  NOT NULL,
-    phone_number       VARCHAR(20) NOT NULL,
-    registration_date  TIMESTAMP DEFAULT current_timestamp
-);
-
-CREATE TABLE role
-(
-    id        SERIAL PRIMARY KEY,
-    role_name  VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE user_role
-(
-    user_id INT REFERENCES users (id) ON DELETE CASCADE,
-    role_id INT REFERENCES role (id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, role_id)
+    phone_code         VARCHAR(255),
+    birthday           VARCHAR(255),
+    role               VARCHAR(255) NOT NULL,
+    phone_number       INT8         NOT NULL UNIQUE,
+    active             BOOLEAN      NOT NULL DEFAULT FALSE,
+    registration_date  TIMESTAMP    DEFAULT current_timestamp,
+    updated_at         TIMESTAMP
 );

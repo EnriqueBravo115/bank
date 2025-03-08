@@ -20,6 +20,5 @@ public class UserController {
         return userRepository.findById(id)
             .map(user -> ResponseEntity.ok(user.getPassword()))
             .orElseGet(() -> ResponseEntity.notFound().build());
-        
     }
 }

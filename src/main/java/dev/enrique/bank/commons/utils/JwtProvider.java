@@ -1,4 +1,4 @@
-package dev.enrique.bank.config;
+package dev.enrique.bank.commons.utils;
 
 import java.security.Key;
 import java.time.Instant;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-public class JwtUtil {
+public class JwtProvider {
     @Value("${jwt.expiration}")
     private Long expiration;
 
@@ -61,10 +61,11 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public String generateToken(Map<String, Object> claims, String subject) {
+    public String generateToken(String role, String subject) {
+        Claims claims = Jwts.claims().setSubject(subject);
+        claims.put("role", role);
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(Date.from(Instant.now().plus(expiration, ChronoUnit.MILLIS)))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)

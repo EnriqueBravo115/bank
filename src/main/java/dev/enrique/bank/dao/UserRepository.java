@@ -14,11 +14,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findByEmail(String email);
+
     // Page<UserProjection> findAllProjected(Pageable pageable);
 
     Boolean existsByEmail(String email);
 
     @Query("SELECT user FROM User user WHERE user.email = :email")
     <T> Optional<T> getUserByEmail(@Param("email") String email, Class<T> type);
-
 }

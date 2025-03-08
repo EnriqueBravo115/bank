@@ -1,20 +1,20 @@
 package dev.enrique.bank.model;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import dev.enrique.bank.commons.enums.UserRole;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -42,25 +42,38 @@ public class User {
     @Email(regexp = ".+@.+\\..+", message = "Invalid email")
     private String email;
 
-    @Column(name = "phone_number")
-    @Pattern(regexp = "^([0-9]{10})$")
-    private String phoneNumber;
-
     @Column(name = "country")
     private String country;
+
+    @Column(name = "country_code")
+    private String countryCode;
 
     @Column(name = "gender")
     private String gender;
 
+    @Column(name = "phone_number")
+    private Long phoneNumber;
+
+    @Column(name = "birthday")
+    private String birthday;
+
+    @Column(name = "phone_code")
+    private String phoneCode;
+
+    @Column(name = "active", nullable = false, columnDefinition = "boolean default false")
+    private boolean active = false;
+
+    @CreationTimestamp
     @Column(name = "registration_date")
     private LocalDateTime registrationDate;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles = new HashSet<>();
+    @UpdateTimestamp
+    @Column
+    private LocalDateTime updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts;

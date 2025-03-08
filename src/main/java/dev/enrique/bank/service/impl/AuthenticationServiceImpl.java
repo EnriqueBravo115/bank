@@ -1,22 +1,25 @@
 package dev.enrique.bank.service.impl;
 
-import java.util.HashMap;
+import static dev.enrique.bank.commons.constants.ErrorMessage.USER_NOT_FOUND;
+
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.BindingResult;
 
-import dev.enrique.bank.config.JwtUtil;
-import dev.enrique.bank.model.User;
-import dev.enrique.bank.model.dto.LoginDto;
-import dev.enrique.bank.model.dto.RegisterDto;
+import dev.enrique.bank.commons.enums.UserRole;
+import dev.enrique.bank.commons.exception.ApiRequestException;
+import dev.enrique.bank.commons.utils.JwtProvider;
+import dev.enrique.bank.commons.utils.UserServiceHelper;
 import dev.enrique.bank.dao.UserRepository;
+import dev.enrique.bank.dao.projection.AuthUserProjection;
+import dev.enrique.bank.model.User;
+import dev.enrique.bank.model.dto.RegisterDto;
+import dev.enrique.bank.model.dto.request.AuthenticationRequest;
 import dev.enrique.bank.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 
@@ -24,25 +27,20 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtilities;
+    private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final UserServiceHelper userServiceHelper;
 
     @Override
-    public ResponseEntity<?> authenticate(LoginDto loginDto) {
-        User user = userRepository.findByUsername(loginDto.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult) {
+        userServiceHelper.processInputErrors(bindingResult);
 
-        Set<String> roles = user.getRoles().stream()
-                .map(r -> r.getRoleName().toString())
-                .collect(Collectors.toSet());
+        AuthUserProjection user = userRepository.getUserByEmail(request.getEmail(), AuthUserProjection.class)
+                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", roles);
-
-        String token = jwtUtilities.generateToken(claims, user.getUsername());
-
-        return new ResponseEntity<>(token, HttpStatus.OK);
+        String token = jwtProvider.generateToken(UserRole.USER.name(), request.getEmail());
+        return Map.of("user", user, "token", token);
     }
 
     @Override

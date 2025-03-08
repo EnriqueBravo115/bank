@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import dev.enrique.bank.commons.utils.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,17 +21,17 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
     private final UserDetailsServiceCustom uServiceCustom;
-    private final JwtUtil jwtUtil;
+    private final JwtProvider jwtProvider;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = jwtUtil.getToken(request);
+        String token = jwtProvider.getToken(request);
 
-        if (token != null && jwtUtil.validateToken(token)) {
-            String username = jwtUtil.extractUsername(token);
+        if (token != null && jwtProvider.validateToken(token)) {
+            String username = jwtProvider.extractUsername(token);
             UserDetails userDetails = uServiceCustom.loadUserByUsername(username);
 
             if (userDetails != null) {

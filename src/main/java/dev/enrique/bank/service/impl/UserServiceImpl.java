@@ -3,10 +3,8 @@ package dev.enrique.bank.service.impl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.model.Role;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.commons.exception.*;
-import dev.enrique.bank.dao.RoleRepository;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserProjection;
 import dev.enrique.bank.service.UserService;
@@ -20,7 +18,6 @@ import static dev.enrique.bank.commons.constants.ErrorMessage.*;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
 
     @Override
     public UserProjection getUserById(Long userId) {
@@ -36,11 +33,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public User saveUser(User user) {
         return userRepository.save(user);
-    }
-
-    @Override
-    public Role saveRole(Role role) {
-        return roleRepository.save(role);
     }
 
     private <T> T getUserById(Long userId, Class<T> type) {
