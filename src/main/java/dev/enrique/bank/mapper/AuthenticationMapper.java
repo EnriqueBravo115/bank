@@ -1,4 +1,4 @@
-package dev.enrique.bank.commons.mapper;
+package dev.enrique.bank.mapper;
 
 import java.util.Map;
 

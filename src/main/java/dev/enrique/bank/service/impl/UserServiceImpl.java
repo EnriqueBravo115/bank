@@ -8,13 +8,11 @@ import dev.enrique.bank.commons.exception.*;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserProjection;
 import dev.enrique.bank.service.UserService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import static dev.enrique.bank.commons.constants.ErrorMessage.*;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;

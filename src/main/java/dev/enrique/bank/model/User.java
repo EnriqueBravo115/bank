@@ -31,6 +31,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "full_name")
+    private String fullName;
+
     @Column(name = "username")
     private String username;
 
@@ -47,6 +50,9 @@ public class User {
 
     @Column(name = "country_code")
     private String countryCode;
+
+    @Column(name = "activation_code")
+    private String activationCode;
 
     @Column(name = "gender")
     private String gender;

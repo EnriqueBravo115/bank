@@ -4,12 +4,12 @@ import static dev.enrique.bank.commons.constants.ErrorMessage.USER_NOT_FOUND;
 
 import java.util.Map;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.ApiRequestException;
@@ -17,19 +17,20 @@ import dev.enrique.bank.commons.utils.JwtProvider;
 import dev.enrique.bank.commons.utils.UserServiceHelper;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.AuthUserProjection;
+import dev.enrique.bank.dao.projection.UserPrincipalProjection;
 import dev.enrique.bank.model.User;
-import dev.enrique.bank.model.dto.RegisterDto;
 import dev.enrique.bank.model.dto.request.AuthenticationRequest;
 import dev.enrique.bank.service.AuthenticationService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+
+import static dev.enrique.bank.commons.constants.PathConstants.AUTH_USER_ID_HEADER;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
-    private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
     private final UserServiceHelper userServiceHelper;
 
     @Override
@@ -43,17 +44,33 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return Map.of("user", user, "token", token);
     }
 
+
     @Override
-    public ResponseEntity<?> register(RegisterDto registerDto) {
-        if (userRepository.existsByEmail(registerDto.getEmail())) {
-            return new ResponseEntity<>("email is already taken !", HttpStatus.SEE_OTHER);
-        } else {
-            User user = modelMapper.map(registerDto, User.class);
-            user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
+    public Long getAuthenticatedUserId() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAuthenticatedUserId'");
+    }
 
-            userRepository.save(user);
+    @Override
+    public User getAuthenticatedUser() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAuthenticatedUser'");
+    }
 
-            return new ResponseEntity<>("ok", HttpStatus.OK);
+    @Override
+    public UserPrincipalProjection getUserPrincipalByEmail() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getUserPrincipalByEmail'");
+    }
+
+    private Long getUserId() {
+        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
+        String userIdHeader = request.getHeader(AUTH_USER_ID_HEADER);
+
+        if (userIdHeader == null || userIdHeader.isEmpty()) {
+            throw new RuntimeException("auth user id header is missing");
         }
+        return Long.parseLong(userIdHeader);
     }
 }
