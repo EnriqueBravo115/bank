@@ -1,4 +1,4 @@
-package dev.enrique.bank.model.dto.request;
+package dev.enrique.bank.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -10,11 +10,15 @@ import static dev.enrique.bank.commons.constants.ErrorMessage.*;
 
 @Getter
 @Setter
-public class AuthenticationRequest {
+public class RegistrationRequest {
+    private String fullName;
+
     @Email(regexp = ".+@.+\\..+", message = EMAIL_NOT_VALID)
     private String email;
 
-    @NotBlank(message = EMPTY_PASSWORD)
-    @Size(min = 8, message = SHORT_PASSWORD)
-    private String password;
+    @NotBlank(message = BLANK_NAME)
+    @Size(min = 1, max = 50, message = NAME_NOT_VALID)
+    private String username;
+
+    private String birthday;
 }

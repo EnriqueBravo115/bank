@@ -1,4 +1,4 @@
-package dev.enrique.bank.model.dto.response;
+package dev.enrique.bank.dto.response;
 
 import java.time.LocalDateTime;
 

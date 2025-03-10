@@ -4,7 +4,8 @@ import java.util.Map;
 
 import org.springframework.validation.BindingResult;
 
-import dev.enrique.bank.model.dto.request.RegistrationRequest;
+import dev.enrique.bank.dto.request.RegistrationRequest;
+
 
 public interface RegistrationService {
     String registration(RegistrationRequest request, BindingResult bindingResult);
