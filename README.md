@@ -19,3 +19,32 @@ fecha y monto.
 - Nivel 1: Agrupado por fecha en formato ISO 8601
 - Nivel 2: Agrupado por monto(Representado como String)
 - Valor: Lista de objetos `TransferRequest` que representan las transferencias
+
+Ejemplo de resultado:
+
+```json
+{
+  "2023-05-15T10:30:00": {
+    "500.00": [
+      {
+        "id": 1,
+        "description": "Transferencia 1",
+        "sourceAccountNumber": "ACC123",
+        "targetAccountNumber": "ACC456",
+        "transactionType": "TRANSFER"
+      }
+    ],
+  },
+  "2023-05-16T09:00:00": {
+    "500.00": [
+      {
+        "id": 3,
+        "description": "Transferencia 3",
+        "sourceAccountNumber": "ACC123",
+        "targetAccountNumber": "ACC456",
+        "transactionType": "TRANSFER"
+      }
+    ]
+  }
+}
+```
