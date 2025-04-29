@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import dev.enrique.bank.dao.projection.AuthUserProjection;
 import dev.enrique.bank.dao.projection.UserCommonProjection;
 import dev.enrique.bank.model.User;
 
@@ -29,6 +30,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT user FROM User user WHERE user.activationCode = :code")
     Optional<UserCommonProjection> getCommonUserByActivationCode(@Param("code") String code);
 
+    @Query("SELECT user FROM User user WHERE user.passwordResetCode = :code")
+    Optional<AuthUserProjection> getByPasswordResetCode(@Param("code") String code);
+
     @Modifying
     @Query("UPDATE User user SET user.activationCode = :activationCode WHERE user.id = :userId")
     void updateActivationCode(@Param("activationCode") String activationCode, @Param("userId") Long userId);
@@ -40,4 +44,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query("UPDATE User user SET user.active = true WHERE user.id = :userId")
     void updateActiveUserProfile(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("UPDATE User user SET user.passwordResetCode = :passwordResetCode WHERE user.id = :userId")
+    void updatePasswordResetCode(@Param("passwordResetCode") String passwordResetCode, @Param("userId") Long userId);
 }

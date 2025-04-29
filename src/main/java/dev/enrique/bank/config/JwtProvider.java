@@ -1,4 +1,4 @@
-package dev.enrique.bank.commons.utils;
+package dev.enrique.bank.config;
 
 import java.security.Key;
 import java.time.Instant;

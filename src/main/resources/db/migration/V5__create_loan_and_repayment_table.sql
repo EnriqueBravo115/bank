@@ -6,8 +6,7 @@ CREATE TABLE loan
     start_date     TIMESTAMP DEFAULT current_timestamp,
     end_date       TIMESTAMP,
     status         VARCHAR(255),
-    account_id     INT,
-    FOREIGN KEY (account_id) REFERENCES account (id) ON DELETE SET NULL
+    account_id     INT REFERENCES account (id) ON DELETE SET NULL
 );
 
 CREATE TABLE repayment
@@ -15,6 +14,5 @@ CREATE TABLE repayment
     id              SERIAL PRIMARY KEY,
     payment_date    TIMESTAMP,
     amount          DOUBLE PRECISION,
-    loan_id         INT,
-    FOREIGN KEY (loan_id) REFERENCES loan(id) ON DELETE SET NULL
+    loan_id         INT REFERENCES loan(id) ON DELETE SET NULL
 );

@@ -14,8 +14,8 @@ import org.springframework.validation.BindingResult;
 
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.commons.utils.JwtProvider;
 import dev.enrique.bank.commons.utils.UserServiceHelper;
+import dev.enrique.bank.config.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserCommonProjection;
 import dev.enrique.bank.dto.request.RegistrationRequest;
@@ -75,7 +75,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         String subject = "Verificación de registro";
         String body = "Tu código de verificación es: " + activationCode;
 
-        emailService.sendVerificationEmail(email, subject, body);
+        emailService.sendEmail(email, subject, body);
         return "Código de verificación enviado";
     }
 

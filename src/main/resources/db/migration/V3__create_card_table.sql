@@ -7,6 +7,5 @@ CREATE TABLE card
     card_type         VARCHAR(255),
     creation_date     TIMESTAMP DEFAULT current_timestamp,
     status            VARCHAR(255),
-    account_id        INT,
-    FOREIGN KEY(account_id) REFERENCES account(id) ON DELETE SET NULL
+    account_id        INT REFERENCES account(id) ON DELETE SET NULL
 );

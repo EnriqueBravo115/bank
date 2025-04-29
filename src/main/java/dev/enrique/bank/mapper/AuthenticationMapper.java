@@ -6,9 +6,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 
-import dev.enrique.bank.model.dto.request.AuthenticationRequest;
-import dev.enrique.bank.model.dto.response.AuthUserResponse;
-import dev.enrique.bank.model.dto.response.AuthenticationResponse;
+import dev.enrique.bank.dto.request.AuthenticationRequest;
+import dev.enrique.bank.dto.response.AuthUserResponse;
+import dev.enrique.bank.dto.response.AuthenticationResponse;
 import dev.enrique.bank.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 

@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.enrique.bank.dto.request.AuthenticationRequest;
+import dev.enrique.bank.dto.response.AuthenticationResponse;
 import dev.enrique.bank.mapper.AuthenticationMapper;
-import dev.enrique.bank.model.dto.request.AuthenticationRequest;
-import dev.enrique.bank.model.dto.response.AuthenticationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

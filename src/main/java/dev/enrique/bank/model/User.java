@@ -31,22 +31,32 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "full_name")
-    private String fullName;
-
-    @Column(name = "username")
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
 
-    @Column(name = "password")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "Invalid password")
-    private String password;
-
-    @Column(name = "email")
+    @Column(name = "email", nullable = false, unique = true)
     @Email(regexp = ".+@.+\\..+", message = "Invalid email")
     private String email;
 
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
+    @Column(name = "password", nullable = false)
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$", message = "Invalid password")
+    private String password;
+
     @Column(name = "country")
     private String country;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
+
+    @Column(name = "password_reset_code")
+    private String passwordResetCode;
 
     @Column(name = "country_code")
     private String countryCode;
@@ -54,17 +64,14 @@ public class User {
     @Column(name = "activation_code")
     private String activationCode;
 
-    @Column(name = "gender")
-    private String gender;
-
-    @Column(name = "phone_number")
-    private Long phoneNumber;
+    @Column(name = "phone_code")
+    private String phoneCode;
 
     @Column(name = "birthday")
     private String birthday;
 
-    @Column(name = "phone_code")
-    private String phoneCode;
+    @Column(name = "phone_number")
+    private Long phoneNumber;
 
     @Column(name = "active", nullable = false, columnDefinition = "boolean default false")
     private boolean active = false;
@@ -76,10 +83,6 @@ public class User {
     @UpdateTimestamp
     @Column
     private LocalDateTime updatedAt;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserRole role;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts;
