@@ -7,6 +7,7 @@ import java.util.List;
 import dev.enrique.bank.commons.enums.AccountType;
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.Status;
+import dev.enrique.bank.commons.exception.InsufficientFundsException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -70,4 +71,21 @@ public class Account {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void increaseBalance(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+        this.balance = this.balance.add(amount);
+    }
+
+    public void reduceBalance(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+        if (this.balance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException("Not enough balance");
+        }
+        this.balance = this.balance.subtract(amount);
+    }
 }

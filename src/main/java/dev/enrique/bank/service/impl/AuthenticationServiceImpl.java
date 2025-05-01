@@ -16,7 +16,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.commons.exception.InputFieldException;
 import dev.enrique.bank.commons.utils.UserServiceHelper;
 import dev.enrique.bank.config.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;

@@ -1,5 +1,5 @@
 # bank
-A continuación se presenta una explicación de métodos de servicios que tienen un grado de complejidad alto:
+A continuación se presenta una explicación de métodos de servicios que tienen complejidad alta:
 
 ## getTransferHistory()
 ```java
@@ -38,8 +38,8 @@ Ejemplo de resultado:
   "2023-05-16T09:00:00": {
     "500.00": [
       {
-        "id": 3,
-        "description": "Transferencia 3",
+        "id": 2,
+        "description": "Transferencia 2",
         "sourceAccountNumber": "ACC123",
         "targetAccountNumber": "ACC456",
         "transactionType": "TRANSFER"

@@ -16,9 +16,9 @@ public interface TransferService {
 
     Map<String, Map<String, List<TransferRequest>>> getTransferHistory(Long accountId);
 
-    void reverseTrasfer(Long transactionId);
+    void reverseTransfer(Long transactionId);
 
-    boolean hasSuffiicientFunds(Long accountId, BigDecimal amount);
+    boolean hasSufficientFunds(Long accountId, BigDecimal amount);
 
     void scheduleTransfer(TransferRequest request, LocalDateTime scheduleDate);
 

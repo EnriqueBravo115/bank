@@ -1,4 +1,4 @@
-package dev.enrique.bank.pojo;
+package dev.enrique.bank;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;

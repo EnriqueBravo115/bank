@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import dev.enrique.bank.model.Transaction;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-
     // All Transactions where the Account is source or target
     @Query("""
             SELECT t FROM Transaction t 
