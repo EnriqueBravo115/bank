@@ -1,7 +1,7 @@
 package dev.enrique.bank.commons.enums;
 
 public enum TransactionType {
-    DEPOSIT, 
+    TRANSFER, 
     WITHDRAW, 
     FOOD, 
     SERVICE,

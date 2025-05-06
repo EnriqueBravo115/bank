@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import dev.enrique.bank.service.impl.TransferServiceImpl;
+import dev.enrique.bank.service.util.TransferHelper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.enrique.bank.commons.enums.Status;
@@ -28,6 +30,7 @@ import dev.enrique.bank.commons.exception.AccountNotFoundException;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dto.request.TransferRequest;
+import dev.enrique.bank.dto.response.TransferResponse;
 import dev.enrique.bank.mapper.BasicMapper;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.Transaction;
@@ -41,6 +44,9 @@ public class TransferServiceTest {
     private AccountRepository accountRepository;
 
     @Mock
+    private TransferHelper transferHelper;
+
+    @Mock
     private BasicMapper basicMapper;
 
     @InjectMocks
@@ -48,8 +54,8 @@ public class TransferServiceTest {
 
     private Transaction transaction1;
     private Transaction transaction2;
-    private TransferRequest transferRequest1;
-    private TransferRequest transferRequest2;
+    private TransferResponse transferRequest1;
+    private TransferResponse transferRequest2;
     private Account sourceAccount;
     private Account targetAccount;
 
@@ -76,7 +82,7 @@ public class TransferServiceTest {
                 .amount(BigDecimal.valueOf(200))
                 .description("Transfer 1")
                 .transactionDate(now)
-                .transactionType(TransactionType.DEPOSIT)
+                .transactionType(TransactionType.TRANSFER)
                 .transactionStatus(TransactionStatus.COMPLETED)
                 .sourceAccount(sourceAccount)
                 .targetAccount(targetAccount)
@@ -87,26 +93,28 @@ public class TransferServiceTest {
                 .amount(BigDecimal.valueOf(1000))
                 .description("Transfer 2")
                 .transactionDate(now.plusSeconds(1))
-                .transactionType(TransactionType.DEPOSIT)
+                .transactionType(TransactionType.TRANSFER)
                 .transactionStatus(TransactionStatus.COMPLETED)
                 .sourceAccount(sourceAccount)
                 .targetAccount(targetAccount)
                 .build();
 
-        transferRequest1 = TransferRequest.builder()
+        transferRequest1 = TransferResponse.builder()
                 .id(Long.valueOf(1L))
                 .description("Transfer to relatives")
                 .sourceAccountNumber("123456789")
                 .targetAccountNumber("987654321")
-                .transactionType("TRANSFER")
+                .transactionType(TransactionType.TRANSFER)
+                .transactionStatus(TransactionStatus.PROCESSING)
                 .build();
 
-        transferRequest2 = TransferRequest.builder()
+        transferRequest2 = TransferResponse.builder()
                 .id(Long.valueOf(2L))
                 .description("Transfer to relatives")
                 .sourceAccountNumber("123456789")
                 .targetAccountNumber("987654321")
-                .transactionType("TRANSFER")
+                .transactionType(TransactionType.TRANSFER)
+                .transactionStatus(TransactionStatus.PROCESSING)
                 .build();
     }
 
@@ -116,10 +124,10 @@ public class TransferServiceTest {
         List<Transaction> transactions = Arrays.asList(transaction1, transaction2);
 
         when(transactionRepository.findAllByAccountId(accountId)).thenReturn(transactions);
-        when(basicMapper.convertToResponse(transaction1, TransferRequest.class)).thenReturn(transferRequest1);
-        when(basicMapper.convertToResponse(transaction2, TransferRequest.class)).thenReturn(transferRequest2);
+        when(basicMapper.convertToResponse(transaction1, TransferResponse.class)).thenReturn(transferRequest1);
+        when(basicMapper.convertToResponse(transaction2, TransferResponse.class)).thenReturn(transferRequest2);
 
-        Map<String, Map<String, List<TransferRequest>>> result = transferService.getTransferHistory(accountId);
+        Map<String, Map<String, List<TransferResponse>>> result = transferService.getTransferHistory(accountId);
         assertNotNull(result);
         assertEquals(2, result.size());
 
@@ -142,10 +150,10 @@ public class TransferServiceTest {
         assertEquals(transferRequest2, result.get(dateKey2).get(amountKey2).get(0));
 
         // Verify field mapping
-        TransferRequest firstRequest = result.get(dateKey1).get(amountKey1).get(0);
+        TransferResponse firstRequest = result.get(dateKey1).get(amountKey1).get(0);
         assertEquals("123456789", firstRequest.getSourceAccountNumber());
         assertEquals("987654321", firstRequest.getTargetAccountNumber());
-        assertEquals("TRANSFER", firstRequest.getTransactionType());
+        assertEquals(TransactionType.TRANSFER, firstRequest.getTransactionType());
     }
 
     @Test

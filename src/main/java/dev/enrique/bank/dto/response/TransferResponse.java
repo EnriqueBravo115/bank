@@ -1,7 +1,8 @@
-package dev.enrique.bank.dto.request;
+package dev.enrique.bank.dto.response;
 
 import java.math.BigDecimal;
 
+import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,11 +13,12 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
-public class TransferRequest {
+public class TransferResponse {
     private Long id;
     private BigDecimal amount;
     private String description;
     private String sourceAccountNumber;
     private String targetAccountNumber;
     private TransactionType transactionType;
+    private TransactionStatus transactionStatus;
 }

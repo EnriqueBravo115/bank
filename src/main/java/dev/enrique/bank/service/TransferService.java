@@ -5,16 +5,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import dev.enrique.bank.dto.request.TransferRequest;
+import dev.enrique.bank.dto.response.TransferResponse;
 import dev.enrique.bank.model.Transaction;
 
 public interface TransferService {
-    void transfer(Long sourceAccountId, Long targetAccountId, BigDecimal amount);
+    Map<String, Map<String, List<TransferResponse>>> getTransferHistory(Long accountId);
 
-    Map<String, Map<String, List<TransferRequest>>> getTransferHistory(Long accountId);
+    List<Transaction> getTransactionByYear(Integer year);
+
+    Page<Transaction> getAllTransfers(Pageable pageable);
+
+    void transfer(Long sourceAccountId, Long targetAccountId, BigDecimal amount);
 
     void reverseTransfer(Long transactionId);
 
@@ -22,21 +27,13 @@ public interface TransferService {
 
     void scheduleTransfer(TransferRequest request, LocalDateTime scheduleDate);
 
-    Transaction getTransferDetails(Long transactionId);
-
     void cancelScheduledTransfer(Long transactionId);
 
-    void transferBetweenUsers(Long sourceId, Long targetUserId, BigDecimal amount);
-
     BigDecimal calculateTransferFee(BigDecimal amount, String currency);
-
-    void urgentTransfer(TransferRequest request);
 
     BigDecimal getTransferLimit(Long accountId);
 
     void notifyTransfer(Long transactionId);
 
     void validateTransfer(TransferRequest request);
-
-    Page<Transaction> getAllTransfers(Pageable pageable);
 }

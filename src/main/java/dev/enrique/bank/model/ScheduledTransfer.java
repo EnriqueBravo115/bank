@@ -39,6 +39,10 @@ public class ScheduledTransfer {
 
     private LocalDateTime scheduledDate;
 
+    private LocalDateTime creationDate;
+
+    private LocalDateTime cancellationDate;
+
     @Enumerated(EnumType.STRING)
     private ScheduledTransferStatus status;
     
