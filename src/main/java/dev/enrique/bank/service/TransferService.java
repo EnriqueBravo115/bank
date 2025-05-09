@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.dto.request.TransferRequest;
 import dev.enrique.bank.dto.response.TransferResponse;
 import dev.enrique.bank.model.Transaction;
@@ -29,7 +30,7 @@ public interface TransferService {
 
     void cancelScheduledTransfer(Long transactionId);
 
-    BigDecimal calculateTransferFee(BigDecimal amount, String currency);
+    BigDecimal calculateTransferFee(BigDecimal amount, Currency currency);
 
     BigDecimal getTransferLimit(Long accountId);
 

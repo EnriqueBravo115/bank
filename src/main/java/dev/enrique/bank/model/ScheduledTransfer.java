@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import dev.enrique.bank.commons.enums.ScheduledTransferStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,7 +35,7 @@ public class ScheduledTransfer {
     private Account targetAccount;
 
     private BigDecimal amount;
-    
+
     private String description;
 
     private LocalDateTime scheduledDate;
@@ -43,7 +44,10 @@ public class ScheduledTransfer {
 
     private LocalDateTime cancellationDate;
 
+    @Column(name = "quartz_job_id")
+    private String quartzJobId;
+
     @Enumerated(EnumType.STRING)
     private ScheduledTransferStatus status;
-    
+
 }

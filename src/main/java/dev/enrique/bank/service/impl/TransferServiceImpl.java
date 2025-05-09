@@ -1,31 +1,42 @@
 package dev.enrique.bank.service.impl;
 
+import static dev.enrique.bank.service.util.TransferHelper.*;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.springframework.context.ApplicationEventPublisher;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.ScheduledTransferStatus;
 import dev.enrique.bank.commons.enums.Status;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
-import dev.enrique.bank.commons.exception.AccountNotFoundException;
-import dev.enrique.bank.commons.exception.InsufficientFundsException;
 import dev.enrique.bank.commons.exception.ScheduledTransferNotFoundException;
-import dev.enrique.bank.commons.exception.TransactionNotFoundException;
 import dev.enrique.bank.commons.exception.TransferException;
+import dev.enrique.bank.config.ScheduledTransferJob;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.ScheduledTransferRepository;
 import dev.enrique.bank.dao.TransactionRepository;
@@ -36,8 +47,6 @@ import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.ScheduledTransfer;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransferService;
-import dev.enrique.bank.service.util.TransferHelper;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -46,15 +55,14 @@ public class TransferServiceImpl implements TransferService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final ScheduledTransferRepository scheduledTransferRepository;
-    private final TransferHelper transferHelper;
     private final BasicMapper basicMapper;
-    private final ScheduledExecutorService scheduledTransferExecutor;
+    private final Scheduler quartzScheduler;
 
     // Transfer history grouped in two levels(date -> amount),
     @Override
     public Map<String, Map<String, List<TransferResponse>>> getTransferHistory(Long accountId) {
         return transactionRepository.findAllByAccountId(accountId).stream()
-                .collect(transferHelper.twoLevelGroupingBy(
+                .collect(twoLevelGroupingBy(
                         t -> t.getTransactionDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                         t -> t.getAmount().toString(),
                         t -> basicMapper.convertToResponse(t, TransferResponse.class)));
@@ -118,19 +126,19 @@ public class TransferServiceImpl implements TransferService {
                 .orElseThrow(() -> new TransferException("Transaction not found with id: " + transactionId));
 
         if (transaction.getTransactionStatus() == TransactionStatus.REVERSED)
-            throw new TransferException("Transaction is already reversed");
+            throw new IllegalStateException("Transaction is already reversed");
 
         if (transaction.getTransactionStatus() != TransactionStatus.COMPLETED)
-            throw new TransferException("Only completed can be reversed");
+            throw new IllegalStateException("Only completed can be reversed");
 
         Account sourceAccount = transaction.getSourceAccount();
         Account targetAccount = transaction.getTargetAccount();
 
         if (sourceAccount.getStatus() != Status.OPEN || targetAccount.getStatus() != Status.OPEN)
-            throw new TransferException("Both accounts must be open to reverse the transaction");
+            throw new IllegalStateException("Both accounts must be open to reverse the transaction");
 
         if (targetAccount.getBalance().compareTo(transaction.getAmount()) < 0)
-            throw new TransferException("Insufficient balance in target account to reverse transaction");
+            throw new IllegalStateException("Insufficient balance in target account to reverse transaction");
 
         Transaction reversal = Transaction.builder()
                 .sourceAccount(targetAccount)
@@ -180,7 +188,7 @@ public class TransferServiceImpl implements TransferService {
         Account targetAccount = accountRepository.findByAccountNumber(request.getTargetAccountNumber())
                 .orElseThrow(() -> new TransferException("Target account not found"));
 
-        transferHelper.validateTransferRequestAndAccounts(request, scheduleDate, sourceAccount, targetAccount,
+        validateTransferRequestAndAccounts(request, scheduleDate, sourceAccount, targetAccount,
                 request.getAmount());
 
         ScheduledTransfer scheduledTransfer = ScheduledTransfer.builder()
@@ -194,35 +202,16 @@ public class TransferServiceImpl implements TransferService {
                 .build();
 
         scheduledTransferRepository.save(scheduledTransfer);
-        scheduleTransferExecution(scheduledTransfer);
+        scheduleTransferWithQuartz(scheduledTransfer);
     }
 
-    // aun tengo que implementar la logica de cancelacion xd me cago en todo lo
-    // cagable tio
     @Override
     public void cancelScheduledTransfer(Long scheduledTransferId) {
-        if (scheduledTransferId == null)
-            throw new IllegalArgumentException("Scheduled transfer ID cannot be null");
-
         ScheduledTransfer scheduledTransfer = scheduledTransferRepository.findById(scheduledTransferId)
                 .orElseThrow(() -> new ScheduledTransferNotFoundException(
                         "Scheduled transfer not found with id: " + scheduledTransferId));
 
-        if (scheduledTransfer.getStatus() != ScheduledTransferStatus.PENDING) {
-            throw new IllegalStateException(
-                    "Only PENDING scheduled transfers can be cancelled. Current status: " +
-                            scheduledTransfer.getStatus());
-        }
-
-        if (scheduledTransfer.getScheduledDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException(
-                    "Cannot cancel a scheduled transfer that has already passed its execution date");
-        }
-
-        if (scheduledTransfer.getSourceAccount().getStatus() != Status.OPEN ||
-                scheduledTransfer.getTargetAccount().getStatus() != Status.OPEN) {
-            throw new IllegalStateException("Cannot cancel transfer because one or both accounts are not OPEN");
-        }
+        validateCancelScheduled(scheduledTransferId, scheduledTransfer);
 
         scheduledTransfer.setStatus(ScheduledTransferStatus.CANCELLED);
         scheduledTransfer.setCancellationDate(LocalDateTime.now());
@@ -231,62 +220,28 @@ public class TransferServiceImpl implements TransferService {
     }
 
     @Override
-    public BigDecimal calculateTransferFee(BigDecimal amount, String currency) {
-        // Validaciones básicas
-        if (amount == null) {
+    public BigDecimal calculateTransferFee(BigDecimal amount, Currency currency) {
+        if (amount == null)
             throw new IllegalArgumentException("Amount cannot be null");
-        }
 
-        if (currency == null || currency.isBlank()) {
+        if (currency == null)
             throw new IllegalArgumentException("Currency cannot be null or empty");
-        }
 
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException("Amount must be greater than zero");
-        }
 
-        // Definir las tarifas según la lógica de negocio
-        BigDecimal feePercentage;
-        BigDecimal minimumFee;
-        BigDecimal maximumFee;
+        BigDecimal feePercentage = currency.getFeePercentage();
+        BigDecimal minimumFee = currency.getMinimumFee();
+        BigDecimal maximumFee = currency.getMaximumFee();
 
-        // Lógica de tarifas basada en la moneda
-        switch (currency.toUpperCase()) {
-            case "USD":
-                feePercentage = new BigDecimal("0.02"); // 2%
-                minimumFee = new BigDecimal("5.00");
-                maximumFee = new BigDecimal("50.00");
-                break;
-
-            case "EUR":
-                feePercentage = new BigDecimal("0.015"); // 1.5%
-                minimumFee = new BigDecimal("4.00");
-                maximumFee = new BigDecimal("40.00");
-                break;
-
-            case "GBP":
-                feePercentage = new BigDecimal("0.025"); // 2.5%
-                minimumFee = new BigDecimal("6.00");
-                maximumFee = new BigDecimal("60.00");
-                break;
-
-            default: // Para otras monedas
-                feePercentage = new BigDecimal("0.03"); // 3%
-                minimumFee = new BigDecimal("10.00");
-                maximumFee = new BigDecimal("100.00");
-        }
-
-        // Calcular la tarifa base (porcentaje del monto)
         BigDecimal calculatedFee = amount.multiply(feePercentage);
 
-        // Aplicar mínimo y máximo
         if (calculatedFee.compareTo(minimumFee) < 0) {
             calculatedFee = minimumFee;
         } else if (calculatedFee.compareTo(maximumFee) > 0) {
             calculatedFee = maximumFee;
         }
 
-        // Redondear a 2 decimales (centavos)
         calculatedFee = calculatedFee.setScale(2, RoundingMode.HALF_UP);
 
         return calculatedFee;
@@ -294,88 +249,108 @@ public class TransferServiceImpl implements TransferService {
 
     @Override
     public BigDecimal getTransferLimit(Long accountId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getTransferLimit'");
+        if (accountId == null) {
+            throw new IllegalArgumentException("Account ID cannot be null");
+        }
+
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new TransferException("Account not found with id: " + accountId));
+
+        if (account.getStatus() != Status.OPEN) {
+            throw new IllegalStateException("Account is not open");
+        }
+
+        return account.getBalance().multiply(new BigDecimal("2"));
     }
 
     @Override
     public void notifyTransfer(Long transactionId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'notifyTransfer'");
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new TransferException("Transaction not found with id: " + transactionId));
+
+        // En una implementación real, esto enviaría notificaciones a los usuarios
+        // Aquí solo simulamos la lógica básica
+        String sourceMessage = String.format("Transfer of %s from your account %s has been processed",
+                transaction.getAmount(),
+                transaction.getSourceAccount().getAccountNumber());
+
+        String targetMessage = String.format("Transfer of %s to your account %s has been received",
+                transaction.getAmount(),
+                transaction.getTargetAccount().getAccountNumber());
+
+        // En una implementación real, llamaríamos a un servicio de notificación
+        System.out.println("Notification to source account: " + sourceMessage);
+        System.out.println("Notification to target account: " + targetMessage);
+
+        // Marcamos la transacción como notificada
+        transaction.setNotified(true);
+        transactionRepository.save(transaction);
     }
 
     @Override
     public void validateTransfer(TransferRequest request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'validateTransfer'");
-    }
-
-    private void scheduleTransferExecution(ScheduledTransfer scheduledTransfer) {
-        Long delay = ChronoUnit.MILLIS.between(LocalDateTime.now(), scheduledTransfer.getScheduledDate());
-
-        scheduledTransferExecutor.schedule(
-                () -> executeScheduledTransfer(scheduledTransfer.getId()),
-                delay,
-                TimeUnit.MILLISECONDS);
-    }
-
-    @Transactional
-    public void executeScheduledTransfer(Long transferId) {
-        ScheduledTransfer transfer = scheduledTransferRepository.findById(transferId)
-                .orElseThrow(() -> new ScheduledTransferNotFoundException(
-                        "Scheduled transfer not found with id: " + transferId));
-
-        try {
-            if (transfer.getStatus() != ScheduledTransferStatus.PENDING)
-                throw new IllegalStateException("Transfer is not in PENDING state");
-
-            // 2. Validar cuentas
-            Account source = transfer.getSourceAccount();
-            Account target = transfer.getTargetAccount();
-
-            if (source.getStatus() != Status.OPEN || target.getStatus() != Status.OPEN)
-                throw new IllegalStateException("One or both accounts are not OPEN");
-
-            // 3. Validar fondos
-            if (source.getBalance().compareTo(transfer.getAmount()) < 0)
-                throw new InsufficientFundsException("Insufficient funds in source account");
-
-            // 4. Ejecutar transferencia
-            source.setBalance(source.getBalance().subtract(transfer.getAmount()));
-            target.setBalance(target.getBalance().add(transfer.getAmount()));
-
-            // 5. Actualizar estado
-            transfer.setStatus(ScheduledTransferStatus.PROCESSED);
-            transfer.setProcessedDate(LocalDateTime.now());
-
-            // 6. Guardar cambios
-            accountRepository.save(source);
-            accountRepository.save(target);
-            scheduledTransferRepository.save(transfer);
-
-            // 7. Crear registro de transacción (opcional)
-            Transaction transaction = Transaction.builder()
-                    .sourceAccount(source)
-                    .targetAccount(target)
-                    .amount(transfer.getAmount())
-                    .description("Scheduled transfer: " + transfer.getDescription())
-                    .transactionDate(LocalDateTime.now())
-                    .transactionType(TransactionType.TRANSFER)
-                    .transactionStatus(TransactionStatus.COMPLETED)
-                    .build();
-
-            transactionRepository.save(transaction);
-
-        } catch (Exception e) {
-            transfer.setStatus(ScheduledTransferStatus.FAILED);
-            transfer.setErrorMessage(e.getMessage());
-            scheduledTransferRepository.save(transfer);
-
-            // Puedes agregar logging aquí
-            // logger.error("Failed to execute scheduled transfer ID: " + transferId, e);
-
-            // Relanzar si es necesario
-            throw new RuntimeException("Failed to execute scheduled transfer", e);
+        if (request == null) {
+            throw new IllegalArgumentException("Transfer request cannot be null");
         }
+
+        if (request.getSourceAccountNumber() == null || request.getTargetAccountNumber() == null) {
+            throw new IllegalArgumentException("Account numbers cannot be null");
+        }
+
+        if (request.getSourceAccountNumber().equals(request.getTargetAccountNumber())) {
+            throw new IllegalArgumentException("Source and target accounts cannot be the same");
+        }
+
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+
+        Account sourceAccount = accountRepository.findByAccountNumber(request.getSourceAccountNumber())
+                .orElseThrow(() -> new TransferException("Source account not found"));
+
+        Account targetAccount = accountRepository.findByAccountNumber(request.getTargetAccountNumber())
+                .orElseThrow(() -> new TransferException("Target account not found"));
+
+        validateTransferRequestAndAccounts(request, LocalDateTime.now(), sourceAccount, targetAccount,
+                request.getAmount());
+    }
+
+    public void scheduleTransferWithQuartz(ScheduledTransfer scheduledTransfer) {
+        try {
+            JobDetail jobDetail = buildJobDetail(scheduledTransfer);
+            Trigger trigger = buildJobTrigger(jobDetail, scheduledTransfer.getScheduledDate());
+
+            quartzScheduler.scheduleJob(jobDetail, trigger);
+
+            scheduledTransfer.setQuartzJobId(jobDetail.getKey().getName());
+            scheduledTransferRepository.save(scheduledTransfer);
+
+        } catch (SchedulerException e) {
+            scheduledTransfer.setStatus(ScheduledTransferStatus.FAILED);
+            scheduledTransferRepository.save(scheduledTransfer);
+            throw new TransferException("Failed to schedule transfer", e);
+        }
+    }
+
+    public JobDetail buildJobDetail(ScheduledTransfer scheduledTransfer) {
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("transferId", scheduledTransfer.getId());
+
+        return JobBuilder.newJob(ScheduledTransferJob.class)
+                .withIdentity(UUID.randomUUID().toString(), "scheduled-transfers")
+                .withDescription("Execute Scheduled Transfer")
+                .usingJobData(jobDataMap)
+                .storeDurably()
+                .build();
+    }
+
+    public Trigger buildJobTrigger(JobDetail jobDetail, LocalDateTime startAt) {
+        return TriggerBuilder.newTrigger()
+                .forJob(jobDetail)
+                .withIdentity(jobDetail.getKey().getName(), "scheduled-transfer-triggers")
+                .withDescription("Scheduled Transfer Trigger")
+                .startAt(Date.from(startAt.atZone(ZoneId.systemDefault()).toInstant()))
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow())
+                .build();
     }
 }
