@@ -14,7 +14,6 @@ import org.springframework.validation.BindingResult;
 
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.commons.utils.UserServiceHelper;
 import dev.enrique.bank.config.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserCommonProjection;
@@ -22,6 +21,7 @@ import dev.enrique.bank.dto.request.RegistrationRequest;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.EmailService;
 import dev.enrique.bank.service.RegistrationService;
+import dev.enrique.bank.service.util.UserHelper;
 import lombok.RequiredArgsConstructor;
 
 import static dev.enrique.bank.commons.constants.ErrorMessage.*;
@@ -30,7 +30,7 @@ import static dev.enrique.bank.commons.constants.ErrorMessage.*;
 @RequiredArgsConstructor
 public class RegistrationServiceImpl implements RegistrationService {
     private final UserRepository userRepository;
-    private final UserServiceHelper userServiceHelper;
+    private final UserHelper userHelper;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final EmailService emailService;
@@ -38,7 +38,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public String registration(RegistrationRequest request, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userHelper.processInputErrors(bindingResult);
         Optional<User> existingUser = userRepository.getUserByEmail(request.getEmail(), User.class);
 
         if (existingUser.isEmpty()) {
@@ -64,7 +64,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public String sendRegistrationCode(String email, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userHelper.processInputErrors(bindingResult);
 
         UserCommonProjection user = userRepository.getUserByEmail(email, UserCommonProjection.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -91,10 +91,9 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public Map<String, Object> endRegistration(String email, String password, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
-        if (password.length() < 8) {
+        userHelper.processInputErrors(bindingResult);
+        if (password.length() < 8)
             throw new ApiRequestException(PASSWORD_LENGTH_ERROR, HttpStatus.BAD_REQUEST);
-        }
 
         User user = userRepository.getUserByEmail(email, User.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));

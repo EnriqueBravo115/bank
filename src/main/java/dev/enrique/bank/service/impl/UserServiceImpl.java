@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.commons.exception.*;
 import dev.enrique.bank.dao.UserRepository;
-import dev.enrique.bank.dao.projection.UserProjection;
+import dev.enrique.bank.dao.projection.UserBasicProjection;
 import dev.enrique.bank.service.UserService;
 import lombok.RequiredArgsConstructor;
 
@@ -18,8 +18,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public UserProjection getUserById(Long userId) {
-        return userRepository.getUserById(userId, UserProjection.class)
+    public UserBasicProjection getUserById(Long userId) {
+        return userRepository.getUserById(userId, UserBasicProjection.class)
                 .orElseThrow(() -> new ApiRequestException("USER NOT FOUND", HttpStatus.NOT_FOUND));
     }
 

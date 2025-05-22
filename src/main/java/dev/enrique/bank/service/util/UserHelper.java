@@ -1,4 +1,4 @@
-package dev.enrique.bank.commons.utils;
+package dev.enrique.bank.service.util;
 
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class UserServiceHelper {
+public class UserHelper {
     public void processInputErrors(BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new InputFieldException(bindingResult);

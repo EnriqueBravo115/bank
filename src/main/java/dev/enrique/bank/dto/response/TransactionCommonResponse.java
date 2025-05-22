@@ -1,0 +1,20 @@
+package dev.enrique.bank.dto.response;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import dev.enrique.bank.commons.enums.TransactionType;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+public class TransactionCommonResponse {
+    private Long id;
+    private BigDecimal amount;
+    private String description;
+    private LocalDateTime transactionDate;
+    private TransactionType transactionType;
+}

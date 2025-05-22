@@ -1,6 +1,6 @@
 package dev.enrique.bank.dao.projection;
 
-public interface UserProjection {
+public interface UserBasicProjection {
     Long getId();
 
     String getFullName();

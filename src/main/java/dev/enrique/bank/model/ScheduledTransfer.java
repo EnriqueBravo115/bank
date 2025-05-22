@@ -28,26 +28,31 @@ public class ScheduledTransfer {
     @GeneratedValue
     private Long id;
 
+    @Column(name = "quartz_job_id")
+    private String quartzJobId;
+
+    @Column(name = "amount")
+    private BigDecimal amount;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "scheduled_date")
+    private LocalDateTime scheduledDate;
+
+    @Column(name = "creation_date")
+    private LocalDateTime creationDate;
+
+    @Column(name = "cancellation_date")
+    private LocalDateTime cancellationDate;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private ScheduledTransferStatus status;
+
     @ManyToOne
     private Account sourceAccount;
 
     @ManyToOne
     private Account targetAccount;
-
-    private BigDecimal amount;
-
-    private String description;
-
-    private LocalDateTime scheduledDate;
-
-    private LocalDateTime creationDate;
-
-    private LocalDateTime cancellationDate;
-
-    @Column(name = "quartz_job_id")
-    private String quartzJobId;
-
-    @Enumerated(EnumType.STRING)
-    private ScheduledTransferStatus status;
-
 }

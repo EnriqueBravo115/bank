@@ -11,18 +11,17 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 @Entity
-@Getter
-@Setter
+@Data
 @Table(name = "notification")
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "message")
     private String message;
@@ -37,4 +36,13 @@ public class Notification {
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
     private NotificationType type;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "read")
+    private boolean read;
+
+    @ManyToOne
+    private User user;
 }

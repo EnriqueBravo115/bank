@@ -81,9 +81,12 @@ public class User {
     private LocalDateTime registrationDate;
 
     @UpdateTimestamp
-    @Column
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Notification> notifications;
 }

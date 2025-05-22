@@ -16,7 +16,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.commons.utils.UserServiceHelper;
 import dev.enrique.bank.config.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.AuthUserProjection;
@@ -26,6 +25,7 @@ import dev.enrique.bank.dto.request.AuthenticationRequest;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.AuthenticationService;
 import dev.enrique.bank.service.EmailService;
+import dev.enrique.bank.service.util.UserHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -36,7 +36,7 @@ import static dev.enrique.bank.commons.constants.PathConstants.AUTH_USER_ID_HEAD
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
-    private final UserServiceHelper userServiceHelper;
+    private final UserHelper userHelper;
     private final EmailService emailService;
 
     @Override
@@ -58,7 +58,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userHelper.processInputErrors(bindingResult);
 
         AuthUserProjection user = userRepository.getUserByEmail(request.getEmail(), AuthUserProjection.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
@@ -69,7 +69,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public String sendPasswordResetCode(String email, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userHelper.processInputErrors(bindingResult);
         UserCommonProjection user = userRepository.getUserByEmail(email, UserCommonProjection.class)
             .orElseThrow(() -> new ApiRequestException(EMAIL_NOT_FOUND, HttpStatus.NOT_FOUND));
 
@@ -90,7 +90,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public String passwordReset(String email, String password1, String password2, BindingResult bindingResult) {
-        userServiceHelper.processInputErrors(bindingResult);
+        userHelper.processInputErrors(bindingResult);
         return "hello";
     }
 

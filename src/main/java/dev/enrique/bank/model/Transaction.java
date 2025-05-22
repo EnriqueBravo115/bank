@@ -2,8 +2,9 @@ package dev.enrique.bank.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
@@ -22,17 +23,15 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "transaction")
 @AllArgsConstructor
+@NoArgsConstructor
+@Data
 @Builder
-@Getter
-@Setter
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,18 +56,20 @@ public class Transaction {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_account_id")
+    @JsonIgnore
     private Account sourceAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "target_account_id")
+    @JsonIgnore
     private Account targetAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "original_transaction_id")
+    @JsonIgnore
     private Transaction originalTransaction;
 
     @OneToMany(mappedBy = "originalTransaction", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Transaction> reversals = new ArrayList<>();
+    @JsonIgnore
+    private List<Transaction> reversals;
 }

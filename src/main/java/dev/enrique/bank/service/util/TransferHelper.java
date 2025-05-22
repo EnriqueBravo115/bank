@@ -15,10 +15,11 @@ import org.springframework.stereotype.Component;
 
 import dev.enrique.bank.commons.enums.ScheduledTransferStatus;
 import dev.enrique.bank.commons.enums.Status;
-import dev.enrique.bank.commons.exception.InsufficientFundsException;
+import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.dto.request.TransferRequest;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.ScheduledTransfer;
+import dev.enrique.bank.model.Transaction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TransferHelper {
     // Agrupa elementos en un mapa anidado de dos niveles(f1 -> f2), y devuelve
     // List<R>
-    public static <T, A, B, R> Collector<T, ?, Map<A, Map<B, List<R>>>> twoLevelGroupingBy(
+    public <T, A, B, R> Collector<T, ?, Map<A, Map<B, List<R>>>> twoLevelGroupingBy(
             Function<? super T, ? extends A> f1,
             Function<? super T, ? extends B> f2,
             Function<? super T, ? extends R> mapper) {
@@ -39,29 +40,10 @@ public class TransferHelper {
         return groupingBy(f1, secondGrouping);
     }
 
-    public static void validateTransferForExecution(ScheduledTransfer transfer) {
-        if (transfer.getStatus() != ScheduledTransferStatus.PENDING) {
-            throw new IllegalStateException("Transfer is not in PENDING state");
-        }
-
-        if (transfer.getSourceAccount().getStatus() != Status.OPEN ||
-                transfer.getTargetAccount().getStatus() != Status.OPEN) {
-            throw new IllegalStateException("One or both accounts are not OPEN");
-        }
-
-        if (transfer.getSourceAccount().getBalance().compareTo(transfer.getAmount()) < 0) {
-            throw new InsufficientFundsException("Insufficient funds in source account");
-        }
-    }
-
-    public static void validateTransferRequestAndAccounts(TransferRequest request, LocalDateTime scheduleDate,
+    public void validateTransferRequestAndAccounts(TransferRequest request,
+            LocalDateTime scheduleDate,
             Account source,
             Account target, BigDecimal amount) {
-        if (request == null)
-            throw new IllegalArgumentException("TransferRequest cannot be null");
-
-        if (scheduleDate == null)
-            throw new IllegalArgumentException("Schedule date cannot be null");
 
         if (scheduleDate.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Schedule date cannot be in the past");
@@ -79,10 +61,7 @@ public class TransferHelper {
             throw new IllegalStateException("Insufficient funds in source account");
     }
 
-    public static void validateCancelScheduled(Long id, ScheduledTransfer scheduledTransfer) {
-        if (id == null)
-            throw new IllegalArgumentException("Scheduled transfer ID cannot be null");
-
+    public void validateCancelScheduled(Long id, ScheduledTransfer scheduledTransfer) {
         if (scheduledTransfer.getStatus() != ScheduledTransferStatus.PENDING) {
             throw new IllegalStateException(
                     "Only PENDING scheduled transfers can be cancelled. Current status: " +
@@ -100,7 +79,17 @@ public class TransferHelper {
         }
     }
 
-    public static void validateHasSufficientFunds(){
+    public void validateReverseTransfer(Transaction transaction, Account sourceAccount, Account targetAccount) {
+        if (transaction.getTransactionStatus() == TransactionStatus.REVERSED)
+            throw new IllegalStateException("Transaction is already reversed");
 
+        if (transaction.getTransactionStatus() != TransactionStatus.COMPLETED)
+            throw new IllegalStateException("Only completed can be reversed");
+
+        if (sourceAccount.getStatus() != Status.OPEN || targetAccount.getStatus() != Status.OPEN)
+            throw new IllegalStateException("Both accounts must be open to reverse the transaction");
+
+        if (targetAccount.getBalance().compareTo(transaction.getAmount()) < 0)
+            throw new IllegalStateException("Insufficient balance in target account to reverse transaction");
     }
 }
