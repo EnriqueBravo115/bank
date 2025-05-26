@@ -8,17 +8,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
-import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.model.Transaction;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     @Query("""
             SELECT t FROM Transaction t
             WHERE t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId
+            AND (t.transactionStatus = 'COMPLETED')
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionDetailedProjection> findAllTransactionsInvolvingAccount(@Param("accountId") Long accountId);
+    <T> List<T> findAllTransactions(@Param("accountId") Long accountId, Class<T> type);
 
     @Query("""
             SELECT t FROM Transaction t
@@ -32,21 +33,21 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("""
             SELECT t FROM Transaction t
             WHERE t.transactionStatus = 'COMPLETED'
+            AND (t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
             ORDER BY t.transactionDate DESC
             """)
-    Page<TransactionCommonProjection> findAllTransactions(Pageable pageable);
+    Page<TransactionCommonProjection> findAllTransactions(@Param("accountId") Long accountId, Pageable pageable);
 
     @Query("""
             SELECT t FROM Transaction t
-            WHERE t.transactionStatus = 'COMPLETED'
-            ORDER BY t.transactionDate DESC
+            WHERE t.transactionType = 'REVERSAL'
+            AND (t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
             """)
-    List<TransactionCommonProjection> findAllTransactions();
+    List<TransactionBasicProjection> findByTransactionReversal(@Param("accountId") Long accountId);
 
     @Query("""
             SELECT t FROM Transaction t
-            WHERE t.sourceAccount.id = :accountId
-            OR t.targetAccount.id = :accountId
+            WHERE t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId
             """)
     List<Transaction> findAllByAccountId(@Param("accountId") Long accountId);
 }

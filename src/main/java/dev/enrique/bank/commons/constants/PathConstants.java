@@ -9,7 +9,8 @@ public class PathConstants {
     public static final String API_V1_TRANSACTION = API_V1 + TRANSACTION;
 
     public static final String ACCOUNT_ID = "/{accountId}";
-    public static final String HISTORY = "/history" + ACCOUNT_ID;
+    public static final String HISTORY = "/history";
+    public static final String HISTORY_ID = HISTORY + ACCOUNT_ID;
     public static final String YEAR = "/{year}";
     public static final String YEAR_AND_ACCOUNT_ID = YEAR + ACCOUNT_ID;
     public static final String ALL = "/all";

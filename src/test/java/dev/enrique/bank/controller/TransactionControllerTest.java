@@ -1,6 +1,5 @@
 package dev.enrique.bank.controller;
 
-import static dev.enrique.bank.commons.constants.PathConstants.API_V1;
 import static dev.enrique.bank.commons.constants.PathConstants.API_V1_TRANSACTION;
 import static dev.enrique.bank.commons.constants.PathConstants.HISTORY;
 import static org.hamcrest.Matchers.hasSize;
@@ -32,7 +31,7 @@ public class TransactionControllerTest {
     @Test
     @DisplayName("[200] GET /api/v1/transaction/history/1 - Obtener historial de transacciones")
     public void getTransactionHistory_ShouldReturnTransactions() throws Exception {
-        mockMvc.perform(get(API_V1_TRANSACTION + "/history/1"))
+        mockMvc.perform(get(API_V1_TRANSACTION + HISTORY + 1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].id").value(3))

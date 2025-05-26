@@ -27,19 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class TransferHelper {
-    // Agrupa elementos en un mapa anidado de dos niveles(f1 -> f2), y devuelve
-    // List<R>
-    public <T, A, B, R> Collector<T, ?, Map<A, Map<B, List<R>>>> twoLevelGroupingBy(
-            Function<? super T, ? extends A> f1,
-            Function<? super T, ? extends B> f2,
-            Function<? super T, ? extends R> mapper) {
-
-        Collector<T, ?, List<R>> downstream = mapping(mapper, toList());
-        Collector<T, ?, Map<B, List<R>>> secondGrouping = groupingBy(f2, downstream);
-
-        return groupingBy(f1, secondGrouping);
-    }
-
     public void validateTransferRequestAndAccounts(TransferRequest request,
             LocalDateTime scheduleDate,
             Account source,
