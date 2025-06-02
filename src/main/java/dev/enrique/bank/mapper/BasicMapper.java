@@ -1,15 +1,19 @@
 package dev.enrique.bank.mapper;
 
 import static dev.enrique.bank.commons.constants.PathConstants.PAGE_TOTAL_COUNT;
+import static java.util.stream.Collectors.toMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dto.response.HeaderResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -46,5 +50,25 @@ public class BasicMapper {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add(PAGE_TOTAL_COUNT, String.valueOf(totalPages));
         return new HeaderResponse<S>(responses, responseHeaders);
+    }
+
+    public <T, S> Map<TransactionType, List<S>> convertToTypedResponseMap(
+            Map<TransactionType, List<T>> sourceMap, Class<S> targetType) {
+        return sourceMap.entrySet().stream()
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        entry -> convertToResponseList(entry.getValue(), targetType)));
+    }
+
+    public <T, S> Map<Boolean, List<S>> convertToBooleanKeyResponseMap(
+            Map<Boolean, List<T>> sourceMap, Class<S> targetType) {
+        return sourceMap.entrySet().stream()
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        entry -> convertToResponseList(entry.getValue(), targetType)));
+    }
+
+    public <T, S> Optional<S> convertOptionalResponse(Optional<T> source, Class<S> targetType) {
+        return source.map(item -> convertToResponse(item, targetType));
     }
 }

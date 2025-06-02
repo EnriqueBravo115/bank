@@ -23,11 +23,6 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ApiRequestException("USER NOT FOUND", HttpStatus.NOT_FOUND));
     }
 
-    //@Override
-    //public Page<UserProjection> getUsers(Pageable pageable) {
-    //    return userRepository.findAllProjected(pageable);
-    //}
-
     @Override
     public User saveUser(User user) {
         return userRepository.save(user);

@@ -6,11 +6,13 @@ import java.time.LocalDateTime;
 import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class TransactionCommonResponse {
     private Long id;
     private BigDecimal amount;
