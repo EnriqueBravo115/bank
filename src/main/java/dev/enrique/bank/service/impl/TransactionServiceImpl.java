@@ -122,6 +122,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public BigDecimal calculateTotalTransactionAmount(Long accountId) {
+        accountHelper.validateAccountId(accountId);
         return transactionRepository.findAllByAccountId(accountId).stream()
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -129,6 +130,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public BigDecimal calculateTotalAmountByType(Long accountId, TransactionType type) {
+        accountHelper.validateAccountIdAndTransactionType(accountId, type);
         return transactionRepository.findAllByAccountId(accountId).stream()
                 .filter(t -> t.getTransactionType() == type)
                 .map(Transaction::getAmount)
@@ -164,6 +166,7 @@ public class TransactionServiceImpl implements TransactionService {
     // el limite sera 50,000 dls crear otro type de normal y deluxe
     @Override
     public BigDecimal getTransferLimit(Long accountId) {
+        accountHelper.validateAccountId(accountId);
         Account account = accountHelper.getAccountById(accountId);
 
         if (account.getStatus() != Status.OPEN)

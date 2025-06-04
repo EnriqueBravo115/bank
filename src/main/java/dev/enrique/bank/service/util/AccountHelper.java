@@ -6,6 +6,7 @@ import java.time.Year;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.model.Account;
@@ -39,6 +40,12 @@ public class AccountHelper {
 
         if (year > Year.now().getValue())
             throw new ApiRequestException("Cannot query transactions for future years", HttpStatus.BAD_REQUEST);
+    }
+
+    public void validateAccountIdAndTransactionType(Long accountId, TransactionType type) {
+        validateAccountId(accountId);
+        if (type == null)
+            throw new ApiRequestException("TransactionType cannot be null", HttpStatus.BAD_REQUEST);
     }
 
     public Account getAccountById(Long accountId) {
