@@ -254,7 +254,6 @@ public class TransactionServiceImplTest {
         assertEquals(new BigDecimal("300.00"), result);
         verify(accountHelper).validateAccountId(accountId);
     }
-
     @Test
     void calculateTotalAmountByType_ValidInput_ReturnsSum() {
         Long accountId = 1L;
