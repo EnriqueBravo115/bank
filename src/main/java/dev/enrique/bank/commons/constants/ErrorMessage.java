@@ -12,7 +12,7 @@ public class ErrorMessage {
     public static final String SHORT_PASSWORD = "Your password needs to be at least 8 characters. Please enter a longer one.";
     public static final String PASSWORD_LENGTH_ERROR = "Your password needs to be at least 8 characters";
     public static final String BLANK_NAME = "What's your name?";
-    public static final String NAME_NOT_VALID = "Please enter a valid name"; 
+    public static final String NAME_NOT_VALID = "Please enter a valid name";
     public static final String ACTIVATION_CODE_NOT_FOUND = "Activation code not found";
 
     public static final String ACCOUNT_NOT_FOUND = "Account not found";
