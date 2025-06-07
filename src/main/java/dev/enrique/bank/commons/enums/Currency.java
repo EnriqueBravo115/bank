@@ -14,7 +14,7 @@ public enum Currency {
     MXN(new BigDecimal("0.03"), new BigDecimal("10.00"), new BigDecimal("100.00")),
     OTHER(new BigDecimal("0.03"), new BigDecimal("10.00"), new BigDecimal("100.00"));
 
-    private final BigDecimal feePercentage;
-    private final BigDecimal minimumFee;
-    private final BigDecimal maximumFee;
+    public final BigDecimal feePercentage;
+    public final BigDecimal minimumFee;
+    public final BigDecimal maximumFee;
 }

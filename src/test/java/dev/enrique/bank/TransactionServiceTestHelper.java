@@ -29,7 +29,7 @@ public class TransactionServiceTestHelper {
                         put("id", 1L);
                         put("amount", new BigDecimal("100.50"));
                         put("transactionDate", LocalDateTime.now());
-                        put("description", "Test transaction");
+                        put("description", "transaction");
                         put("transactionType", "TRANSFER");
                     }
                 });
@@ -40,7 +40,7 @@ public class TransactionServiceTestHelper {
                         put("id", 2L);
                         put("amount", new BigDecimal("300.00"));
                         put("transactionDate", LocalDateTime.now());
-                        put("description", "Test transaction");
+                        put("description", "transaction");
                         put("transactionType", "TRANSFER");
                     }
                 });
@@ -53,7 +53,7 @@ public class TransactionServiceTestHelper {
                     {
                         put("id", 1L);
                         put("amount", new BigDecimal("150.75"));
-                        put("description", "Ejemplo de transacción común");
+                        put("description", "transaction");
                         put("transactionDate", LocalDateTime.now());
                         put("transactionType", TransactionType.TRANSFER);
                         put("transactionStatus", TransactionStatus.COMPLETED);
@@ -65,7 +65,7 @@ public class TransactionServiceTestHelper {
                     {
                         put("id", 2L);
                         put("amount", new BigDecimal("150.75"));
-                        put("description", "Ejemplo de transacción común");
+                        put("description", "transaction");
                         put("transactionDate", LocalDateTime.now());
                         put("transactionType", TransactionType.TRANSFER);
                         put("transactionStatus", TransactionStatus.COMPLETED);
@@ -80,7 +80,7 @@ public class TransactionServiceTestHelper {
                     {
                         put("id", 1L);
                         put("amount", new BigDecimal("150.75"));
-                        put("description", "Ejemplo de transacción común");
+                        put("description", "transaction");
                         put("transactionDate", LocalDateTime.now());
                         put("transactionType", TransactionType.TRANSFER);
                         put("transactionStatus", TransactionStatus.COMPLETED);
@@ -92,7 +92,7 @@ public class TransactionServiceTestHelper {
                     {
                         put("id", 2L);
                         put("amount", new BigDecimal("150.75"));
-                        put("description", "Ejemplo de transacción común");
+                        put("description", "transaction");
                         put("transactionDate", LocalDateTime.now());
                         put("transactionType", TransactionType.TRANSFER);
                         put("transactionStatus", TransactionStatus.COMPLETED);

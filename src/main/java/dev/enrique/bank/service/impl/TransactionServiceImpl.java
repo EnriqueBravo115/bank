@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -179,9 +180,12 @@ public class TransactionServiceImpl implements TransactionService {
     public Set<String> getAllUniqueTransactionDescriptions(Long accountId) {
         accountHelper.validateAccountId(accountId);
         return transactionRepository.findAllByAccountId(accountId).stream()
-                .collect(flatMapping(
-                        t -> Stream.of(t.getDescription().split(" ")),
-                        toSet()));
+                .map(Transaction::getDescription)
+                .filter(Objects::nonNull)
+                .filter(desc -> !desc.isBlank())
+                .flatMap(desc -> Stream.of(desc.split(" ")))
+                .filter(word -> !word.isBlank())
+                .collect(toSet());
     }
 
     @Override
