@@ -40,7 +40,7 @@ import dev.enrique.bank.service.impl.TransferServiceImpl;
 import dev.enrique.bank.service.util.TransferHelper;
 
 @ExtendWith(MockitoExtension.class)
-public class TransferServiceTest {
+public class TransferServiceImplTest {
     @Mock
     private ScheduledTransferRepository scheduledTransferRepository;
     @Mock

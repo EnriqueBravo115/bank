@@ -19,6 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 public class AccountHelper {
     private final AccountRepository accountRepository;
 
+    public Account getAccountById(Long accountId) {
+        return accountRepository.findById(accountId)
+                .orElseThrow(() -> new ApiRequestException(ACCOUNT_NOT_FOUND, HttpStatus.NOT_FOUND));
+    }
+
     public void validateAccountId(Long accountId) {
         if (accountId == null)
             throw new ApiRequestException("Account ID cannot be null", HttpStatus.BAD_REQUEST);
@@ -46,10 +51,5 @@ public class AccountHelper {
         validateAccountId(accountId);
         if (type == null)
             throw new ApiRequestException("TransactionType cannot be null", HttpStatus.BAD_REQUEST);
-    }
-
-    public Account getAccountById(Long accountId) {
-        return accountRepository.findById(accountId)
-                .orElseThrow(() -> new ApiRequestException(ACCOUNT_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 }

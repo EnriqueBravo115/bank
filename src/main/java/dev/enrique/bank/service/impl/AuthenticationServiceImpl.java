@@ -77,7 +77,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userRepository.updatePasswordResetCode(passwordResetCode, user.getId());
 
         String subject = "Password reset code";
-        String body = "Tu código de reset es: " + passwordResetCode;
+        String body = "Your reset code is:" + passwordResetCode;
         emailService.sendEmail(email, subject, body);
         return "Password reset code send";
     }
