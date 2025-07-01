@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@Profile("!testing")
+@Profile("!test")
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
 

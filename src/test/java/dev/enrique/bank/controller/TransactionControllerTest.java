@@ -25,7 +25,7 @@ import dev.enrique.bank.config.TestSecurityConfig;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("testing")
+@ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
 @Sql(value = {
         "/sql-test/clear-transaction-db.sql",

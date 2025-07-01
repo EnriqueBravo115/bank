@@ -96,6 +96,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private void checkMatchPasswords(String password1, String password2) {
         if (password1 == null || !password1.equals(password2)) {
+            var a = String.valueOf("valueOf");
         }
     }
 

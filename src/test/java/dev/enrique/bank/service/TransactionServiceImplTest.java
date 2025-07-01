@@ -48,7 +48,7 @@ public class TransactionServiceImplTest {
     @InjectMocks
     private TransactionServiceImpl transactionService;
 
-    private PageRequest pageable = PageRequest.of(0, 20);
+    private final PageRequest pageable = PageRequest.of(0, 20);
     private Transaction t1;
     private Transaction t2;
     private Transaction t3;
@@ -315,15 +315,14 @@ public class TransactionServiceImplTest {
 
     @Test
     void getAllUniqueTransactionDescriptions_shouldReturnUniqueWordsFromDescriptions() {
-        Transaction t1 = Transaction.builder().description("Salary payment January").build();
-        Transaction t2 = Transaction.builder().description("Salary payment February").build();
-        Transaction t3 = Transaction.builder().description(null).build();
+        t1.setDescription("Salary payment January");
+        t2.setDescription("Salary payment February");
+        t3.setDescription(null);
 
         when(transactionRepository.findAllByAccountId(TestConstants.ACCOUNT_ID))
                 .thenReturn(List.of(t1, t2, t3));
 
         Set<String> result = transactionService.getAllUniqueTransactionDescriptions(TestConstants.ACCOUNT_ID);
-
         Set<String> expected = Set.of("Salary", "payment", "January", "February");
         assertEquals(expected, result);
     }
