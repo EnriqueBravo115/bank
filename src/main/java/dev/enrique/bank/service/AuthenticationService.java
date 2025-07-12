@@ -12,10 +12,6 @@ import dev.enrique.bank.model.User;
 
 @Service
 public interface AuthenticationService {
-    Long getAuthenticatedUserId();
-
-    User getAuthenticatedUser();
-
     UserPrincipalProjection getUserPrincipalByEmail(String email);
 
     Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult);
@@ -25,4 +21,6 @@ public interface AuthenticationService {
     AuthUserProjection getUserByPasswordResetCode(String code);
 
     String passwordReset(String email, String password1, String password2, BindingResult bindingResult);
+
+    String currentPasswordReset(String currentPassword, String password, String password2, BindingResult bindingResult);
 }

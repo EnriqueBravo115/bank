@@ -22,6 +22,11 @@ public class InputFieldException extends RuntimeException {
         this.bindingResult = bindingResult;
     }
 
+    public InputFieldException(HttpStatus status, Map<String, String> errorsMap) {
+        this.httpStatus = status;
+        this.errorsMap = errorsMap;
+    }
+
     private Map<String, String> handleErrors(BindingResult bindingResult) {
         Map<String, String> errors = new HashMap<>();
         bindingResult.getFieldErrors()

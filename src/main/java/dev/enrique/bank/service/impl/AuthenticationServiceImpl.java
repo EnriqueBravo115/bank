@@ -8,28 +8,24 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.ApiRequestException;
+import dev.enrique.bank.commons.exception.InputFieldException;
 import dev.enrique.bank.config.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.AuthUserProjection;
 import dev.enrique.bank.dao.projection.UserCommonProjection;
 import dev.enrique.bank.dao.projection.UserPrincipalProjection;
 import dev.enrique.bank.dto.request.AuthenticationRequest;
-import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.AuthenticationService;
 import dev.enrique.bank.service.EmailService;
 import dev.enrique.bank.service.util.UserHelper;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-
-import static dev.enrique.bank.commons.constants.PathConstants.AUTH_USER_ID_HEADER;
 
 @Service
 @RequiredArgsConstructor
@@ -37,18 +33,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final UserHelper userHelper;
+    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-
-    @Override
-    public Long getAuthenticatedUserId() {
-        return getUserId();
-    }
-
-    @Override
-    public User getAuthenticatedUser() {
-        return userRepository.findById(getUserId())
-                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
-    }
 
     @Override
     public UserPrincipalProjection getUserPrincipalByEmail(String email) {
@@ -60,18 +46,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
 
-        AuthUserProjection user = userRepository.getUserByEmail(request.getEmail(), AuthUserProjection.class)
+        AuthUserProjection authUserProjection = userRepository
+                .getUserByEmail(request.getEmail(), AuthUserProjection.class)
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
+        String userPassword = userRepository.getUserPasswordById(authUserProjection.getId());
+
+        if (!passwordEncoder.matches(request.getPassword(), userPassword)) {
+            userHelper.processPasswordException("currentPassword", "The password is incorrect", HttpStatus.NOT_FOUND);
+        }
+
         String token = jwtProvider.generateToken(UserRole.USER.name(), request.getEmail());
-        return Map.of("user", user, "token", token);
+        return Map.of("user", authUserProjection, "token", token);
     }
 
     @Override
+    @Transactional
     public String sendPasswordResetCode(String email, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
         UserCommonProjection user = userRepository.getUserByEmail(email, UserCommonProjection.class)
-            .orElseThrow(() -> new ApiRequestException(EMAIL_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiRequestException(EMAIL_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         String passwordResetCode = UUID.randomUUID().toString().substring(0, 7);
         userRepository.updatePasswordResetCode(passwordResetCode, user.getId());
@@ -85,32 +79,37 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public AuthUserProjection getUserByPasswordResetCode(String code) {
         return userRepository.getByPasswordResetCode(code)
-            .orElseThrow(() -> new ApiRequestException(INVALID_PASSWORD_RESET_CODE, HttpStatus.BAD_REQUEST));
+                .orElseThrow(() -> new ApiRequestException(INVALID_PASSWORD_RESET_CODE, HttpStatus.BAD_REQUEST));
     }
 
     @Override
-    public String passwordReset(String email, String password1, String password2, BindingResult bindingResult) {
+    @Transactional
+    public String passwordReset(String email, String password, String password2, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
-        return "hello";
+        userHelper.checkMatchPasswords(password, password2);
+
+        UserCommonProjection user = userRepository.getUserByEmail(email, UserCommonProjection.class)
+                .orElseThrow(() -> new InputFieldException(HttpStatus.NOT_FOUND, Map.of("email", EMAIL_NOT_FOUND)));
+
+        userRepository.updatePassword(passwordEncoder.encode(password), user.getId());
+        userRepository.updatePasswordResetCode(null, user.getId());
+        return "Password successfully changed!";
     }
 
-    private void checkMatchPasswords(String password1, String password2) {
-        if (password1 == null || !password1.equals(password2)) {
-            var a = String.valueOf("valueOf");
+    @Override
+    @Transactional
+    public String currentPasswordReset(String currentPassword, String password, String password2,
+            BindingResult bindingResult) {
+        userHelper.processInputErrors(bindingResult);
+        Long authUserId = userHelper.getAuthenticatedUserId();
+        String userPassword = userRepository.getUserPasswordById(authUserId);
+
+        if (!passwordEncoder.matches(currentPassword, userPassword)) {
+            userHelper.processPasswordException("currentPassword", "The password is incorrect", HttpStatus.NOT_FOUND);
         }
-    }
 
-    private void processPasswordException(String paramName, String exceptionMessage, HttpStatus status) {
-    }
-
-    private Long getUserId() {
-        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-        HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-        String userIdHeader = request.getHeader(AUTH_USER_ID_HEADER);
-
-        if (userIdHeader == null || userIdHeader.isEmpty()) {
-            throw new RuntimeException("auth user id header is missing");
-        }
-        return (Long) Long.parseLong(userIdHeader);
+        userHelper.checkMatchPasswords(password, password2);
+        userRepository.updatePassword(passwordEncoder.encode(password), authUserId);
+        return "Your password has been successfully updated.";
     }
 }

@@ -1,7 +1,7 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
+    username: user
     password: password
   jpa:
     hibernate:
@@ -16,15 +16,17 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: enriquebravo115@gmail.com
-    password:
+    username: testerapipersonal@gmail.com
+    password: yalu erjx xclw otqr 
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
-            enable:
-              true: true
+          starttls.enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
       #server:
       #  ssl:
       #    key-store-type: PKCS12
@@ -34,12 +36,3 @@ jwt:
   secret: qM5z2D7NDo8hnB6TVtX6KaZ5kQO+f7hwTcdI/3yfcW4=
   expiration: 36000000
   issuer: api
-logging:
-  level:
-    org:
-      hibernate:
-        SQL: DEBUG
-        type:
-          descriptor:
-            sql:
-              BasicBinder: TRACE

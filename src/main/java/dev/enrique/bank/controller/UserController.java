@@ -10,7 +10,7 @@ import dev.enrique.bank.dao.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/public/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserRepository userRepository;

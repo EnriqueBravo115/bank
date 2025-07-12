@@ -10,6 +10,8 @@ public class ErrorMessage {
     public static final String INVALID_PASSWORD_RESET_CODE = "Password reset code is invalid";
 
     public static final String SHORT_PASSWORD = "Your password needs to be at least 8 characters. Please enter a longer one.";
+    public static final String EMPTY_CURRENT_PASSWORD = "Current password cannot be empty.";
+    public static final String EMPTY_PASSWORD_CONFIRMATION = "Password confirmation cannot be empty.";
     public static final String PASSWORD_LENGTH_ERROR = "Your password needs to be at least 8 characters";
     public static final String BLANK_NAME = "What's your name?";
     public static final String NAME_NOT_VALID = "Please enter a valid name";

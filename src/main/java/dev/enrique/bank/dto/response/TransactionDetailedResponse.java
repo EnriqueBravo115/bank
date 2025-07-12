@@ -17,7 +17,5 @@ public class TransactionDetailedResponse {
     private BigDecimal amount;
     private LocalDateTime transactionDate;
     private String description;
-    // private String sourceAccountNumber;
-    // private String targetAccountNumber;
     private String transactionType;
 }

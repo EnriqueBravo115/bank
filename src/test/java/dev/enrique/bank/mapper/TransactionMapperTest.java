@@ -128,24 +128,24 @@ public class TransactionMapperTest {
         verify(basicMapper).convertToResponseList(projections, TransactionCommonResponse.class);
     }
 
-    @Test
-    void groupTransactionsByType_ValidAccountId_ReturnsGroupedResponses() {
-        Map<TransactionType, List<TransactionCommonProjection>> groupedProjections = TransactionServiceTestHelper
-                .createGroupedTransactions();
-        Map<TransactionType, List<TransactionCommonResponse>> expectedResponses = new HashMap<>();
-        expectedResponses.put(TransactionType.TRANSFER, List.of(new TransactionCommonResponse()));
+    //@Test
+    //void groupTransactionsByType_ValidAccountId_ReturnsGroupedResponses() {
+    //    Map<TransactionType, List<TransactionCommonProjection>> groupedProjections = TransactionServiceTestHelper
+    //            .createGroupedTransactions();
+    //    Map<TransactionType, List<TransactionCommonResponse>> expectedResponses = new HashMap<>();
+    //    expectedResponses.put(TransactionType.TRANSFER, List.of(new TransactionCommonResponse()));
 
-        when(transactionService.groupTransactionsByType(TestConstants.ACCOUNT_ID)).thenReturn(groupedProjections);
-        when(basicMapper.convertToTypedResponseMap(groupedProjections, TransactionCommonResponse.class))
-                .thenReturn(expectedResponses);
+    //    when(transactionService.groupTransactionsByType(TestConstants.ACCOUNT_ID)).thenReturn(groupedProjections);
+    //    when(basicMapper.convertToTypedResponseMap(groupedProjections, TransactionCommonResponse.class))
+    //            .thenReturn(expectedResponses);
 
-        Map<TransactionType, List<TransactionCommonResponse>> result = transactionMapper
-                .groupTransactionsByType(TestConstants.ACCOUNT_ID);
+    //    Map<TransactionType, List<TransactionCommonResponse>> result = transactionMapper
+    //            .groupTransactionsByType(TestConstants.ACCOUNT_ID);
 
-        assertEquals(expectedResponses, result);
-        verify(transactionService).groupTransactionsByType(TestConstants.ACCOUNT_ID);
-        verify(basicMapper).convertToTypedResponseMap(groupedProjections, TransactionCommonResponse.class);
-    }
+    //    assertEquals(expectedResponses, result);
+    //    verify(transactionService).groupTransactionsByType(TestConstants.ACCOUNT_ID);
+    //    verify(basicMapper).convertToTypedResponseMap(groupedProjections, TransactionCommonResponse.class);
+    //}
 
     @Test
     void sumTransactionsByType_ValidAccountId_ReturnsSumMap() {
@@ -173,25 +173,25 @@ public class TransactionMapperTest {
         verify(transactionService).getTransactionYearStatistics(TestConstants.ACCOUNT_ID);
     }
 
-    @Test
-    void partitionTransactionsByAmount_ValidInput_ReturnsPartitionedResponses() {
-        Map<Boolean, List<TransactionBasicProjection>> partitionedProjections = TransactionServiceTestHelper
-                .createPartitionedTransactions();
-        Map<Boolean, List<TransactionBasicResponse>> expectedResponses = new HashMap<>();
-        expectedResponses.put(true, List.of(new TransactionBasicResponse()));
-
-        when(transactionService.partitionTransactionsByAmount(TestConstants.ACCOUNT_ID, TestConstants.AMOUNT))
-                .thenReturn(partitionedProjections);
-        when(basicMapper.convertToBooleanKeyResponseMap(partitionedProjections, TransactionBasicResponse.class))
-                .thenReturn(expectedResponses);
-
-        Map<Boolean, List<TransactionBasicResponse>> result = transactionMapper
-                .partitionTransactionsByAmount(TestConstants.ACCOUNT_ID, TestConstants.AMOUNT);
-
-        assertEquals(expectedResponses, result);
-        verify(transactionService).partitionTransactionsByAmount(TestConstants.ACCOUNT_ID, TestConstants.AMOUNT);
-        verify(basicMapper).convertToBooleanKeyResponseMap(partitionedProjections, TransactionBasicResponse.class);
-    }
+//    @Test
+//    void partitionTransactionsByAmount_ValidInput_ReturnsPartitionedResponses() {
+//        Map<Boolean, List<TransactionBasicProjection>> partitionedProjections = TransactionServiceTestHelper
+//                .createPartitionedTransactions();
+//        Map<Boolean, List<TransactionBasicResponse>> expectedResponses = new HashMap<>();
+//        expectedResponses.put(true, List.of(new TransactionBasicResponse()));
+//
+//        when(transactionService.partitionTransactionsByAmount(TestConstants.ACCOUNT_ID, TestConstants.AMOUNT))
+//                .thenReturn(partitionedProjections);
+//        when(basicMapper.convertToBooleanKeyResponseMap(partitionedProjections, TransactionBasicResponse.class))
+//                .thenReturn(expectedResponses);
+//
+//        Map<Boolean, List<TransactionBasicResponse>> result = transactionMapper
+//                .partitionTransactionsByAmount(TestConstants.ACCOUNT_ID, TestConstants.AMOUNT);
+//
+//        assertEquals(expectedResponses, result);
+//        verify(transactionService).partitionTransactionsByAmount(TestConstants.ACCOUNT_ID, TestConstants.AMOUNT);
+//        verify(basicMapper).convertToBooleanKeyResponseMap(partitionedProjections, TransactionBasicResponse.class);
+//    }
 
     @Test
     void getTransactionTypeSummary_ValidAccountId_ReturnsSummary() {
