@@ -6,6 +6,7 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import dev.enrique.bank.commons.enums.Gender;
 import dev.enrique.bank.commons.enums.UserRole;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -49,7 +50,8 @@ public class User {
     private String country;
 
     @Column(name = "gender")
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
@@ -71,7 +73,7 @@ public class User {
     private String birthday;
 
     @Column(name = "phone_number")
-    private Long phoneNumber;
+    private String phoneNumber;
 
     @Column(name = "active", nullable = false, columnDefinition = "boolean default false")
     private boolean active = false;

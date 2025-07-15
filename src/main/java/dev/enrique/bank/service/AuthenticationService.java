@@ -8,7 +8,6 @@ import org.springframework.validation.BindingResult;
 import dev.enrique.bank.dao.projection.AuthUserProjection;
 import dev.enrique.bank.dao.projection.UserPrincipalProjection;
 import dev.enrique.bank.dto.request.AuthenticationRequest;
-import dev.enrique.bank.model.User;
 
 @Service
 public interface AuthenticationService {

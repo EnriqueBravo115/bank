@@ -2,8 +2,10 @@ package dev.enrique.bank.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Setter;
 
-@Data
+@Gettter
+@Setter
 @AllArgsConstructor
 public class NotificationResponse {
     private Long id;

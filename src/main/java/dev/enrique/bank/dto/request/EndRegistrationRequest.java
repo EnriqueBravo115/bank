@@ -12,7 +12,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class AuthenticationRequest {
+public class EndRegistrationRequest {
     @Email(regexp = ".+@.+\\..+", message = EMAIL_NOT_VALID)
     private String email;
 
@@ -20,3 +20,4 @@ public class AuthenticationRequest {
     @Size(min = 8, message = SHORT_PASSWORD)
     private String password;
 }
+

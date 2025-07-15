@@ -3,7 +3,6 @@ package dev.enrique.bank.service.impl;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.averagingDouble;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
@@ -81,7 +80,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Map<TransactionType, List<TransactionCommonProjection>> groupTransactionsByType(Long accountId) {
         accountHelper.validateAccountId(accountId);
-        return transactionRepository.findCompletedByAccountId(accountId, TransactionCommonProjection.class).stream()
+        return transactionRepository
+                .findCompletedByAccountId(accountId, TransactionCommonProjection.class).stream()
                 .collect(groupingBy(TransactionCommonProjection::getTransactionType));
     }
 

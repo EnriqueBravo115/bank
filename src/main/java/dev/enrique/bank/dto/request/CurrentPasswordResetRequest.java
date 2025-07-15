@@ -1,12 +1,17 @@
 package dev.enrique.bank.dto.request;
 
+import static dev.enrique.bank.commons.constants.ErrorMessage.EMPTY_CURRENT_PASSWORD;
+import static dev.enrique.bank.commons.constants.ErrorMessage.EMPTY_PASSWORD;
+import static dev.enrique.bank.commons.constants.ErrorMessage.EMPTY_PASSWORD_CONFIRMATION;
+import static dev.enrique.bank.commons.constants.ErrorMessage.SHORT_PASSWORD;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import static dev.enrique.bank.commons.constants.ErrorMessage.*;
-
-@Data
+@Getter
+@Setter
 public class CurrentPasswordResetRequest {
 
     @NotBlank(message = EMPTY_CURRENT_PASSWORD)

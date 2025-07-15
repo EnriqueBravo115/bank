@@ -15,7 +15,6 @@ import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
-import dev.enrique.bank.model.Transaction;
 
 public interface TransactionService {
     List<TransactionDetailedProjection> getTransactionHistory(Long accountId);

@@ -8,6 +8,8 @@ import lombok.Setter;
 
 import static dev.enrique.bank.commons.constants.ErrorMessage.*;
 
+import dev.enrique.bank.commons.enums.Gender;
+
 @Getter
 @Setter
 public class RegistrationRequest {
@@ -21,4 +23,8 @@ public class RegistrationRequest {
     private String username;
 
     private String birthday;
+    private String country;
+    private String phoneNumber;
+    private String phoneCode;
+    private Gender gender;
 }

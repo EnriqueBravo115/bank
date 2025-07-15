@@ -29,10 +29,10 @@ import static dev.enrique.bank.commons.constants.ErrorMessage.*;
 @Service
 @RequiredArgsConstructor
 public class RegistrationServiceImpl implements RegistrationService {
-    private final UserRepository userRepository;
     private final UserHelper userHelper;
-    private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
     @Override
@@ -43,10 +43,14 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         if (existingUser.isEmpty()) {
             User user = new User();
-            user.setFullName(request.getFullName());
-            user.setEmail(request.getEmail());
             user.setUsername(request.getUsername());
+            user.setEmail(request.getEmail());
+            user.setFullName(request.getFullName());
             user.setBirthday(request.getBirthday());
+            user.setCountry(request.getCountry());
+            user.setGender(request.getGender());
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setPhoneCode(request.getPhoneCode());
             user.setRole(UserRole.USER);
             userRepository.save(user);
             return "User data checked";
@@ -72,11 +76,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         String activationCode = UUID.randomUUID().toString().substring(0, 7);
         userRepository.updateActivationCode(activationCode, user.getId());
 
-        String subject = "Verificación de registro";
-        String body = "Tu código de verificación es: " + activationCode;
+        String subject = "Register verification";
+        String body = "Verification code: " + activationCode;
 
         emailService.sendEmail(email, subject, body);
-        return "Código de verificación enviado";
+        return "Verification code send!";
     }
 
     @Override

@@ -1,11 +1,24 @@
 services:
-  db:
+  database:
     image: postgres
     restart: always
-    shm_size: 128mb
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgres
+      POSTGRES_USER: bank
+      POSTGRES_PASSWORD: bank
+      POSTGRES_DB: bank
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
     ports:
       - "5432:5432"
+    networks:
+        - backend
+
+  bank:
+    build: .
+    ports:
+      - "8080:8080"
+    container_name: springboot-api
+    networks:
+      - backend
+
+networks:
+  backend:
