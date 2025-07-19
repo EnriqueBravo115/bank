@@ -1,0 +1,31 @@
+controller:
+  image:
+    repository: your-dockerhub-user/jenkins-custom
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  adminUser: admin
+  adminPassword: admin
+
+  installPlugins: []
+  JCasC:
+    enabled: true
+    defaultConfig: false
+
+  serviceType: LoadBalancer
+
+  persistence:
+    enabled: true
+    storageClass: gp2
+    size: 10Gi
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+
+  ingress:
+    enabled: false
