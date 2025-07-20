@@ -1,8 +1,0 @@
-kubernetes
-kubernetes-cli
-workflow-aggregator
-git
-configuration-as-code
-credentials-binding
-blueocean
-docker-workflow
