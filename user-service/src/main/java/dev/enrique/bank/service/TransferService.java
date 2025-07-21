@@ -9,8 +9,4 @@ public interface TransferService {
     void transfer(Long sourceAccountId, Long targetAccountId, BigDecimal amount);
 
     void reverseTransfer(Long transactionId);
-
-    void scheduleTransfer(TransferRequest request, LocalDateTime scheduleDate);
-
-    void cancelScheduledTransfer(Long transactionId);
 }

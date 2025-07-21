@@ -21,6 +21,6 @@ public class ErrorMessage {
 
     public static final String TRANSACTION_NOT_FOUND = "Transaction not found";
     public static final String SCHEDULED_TRANSFER_NOT_FOUND = "Scheduled transfer not found";
-    public static final String INSUFFICIENT_FUNDS = "Insuficient funds";
+    public static final String INSUFFICIENT_FUNDS = "Insufficient funds";
     public static final String FAILED_SCHEDULED_TRANSFER = "Failed to schedule transfer";
 }

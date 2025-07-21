@@ -1,4 +1,4 @@
-package dev.enrique.api_gateway;
+package dev.enrique.bank;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

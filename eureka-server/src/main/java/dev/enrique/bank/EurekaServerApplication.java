@@ -1,4 +1,4 @@
-package dev.enrique.eureka_server;
+package dev.enrique.bank;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

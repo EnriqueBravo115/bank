@@ -1,40 +1,22 @@
 package dev.enrique.bank.service.impl;
 
 import static dev.enrique.bank.commons.constants.ErrorMessage.ACCOUNT_NOT_FOUND;
-import static dev.enrique.bank.commons.constants.ErrorMessage.FAILED_SCHEDULED_TRANSFER;
 import static dev.enrique.bank.commons.constants.ErrorMessage.INSUFFICIENT_FUNDS;
-import static dev.enrique.bank.commons.constants.ErrorMessage.SCHEDULED_TRANSFER_NOT_FOUND;
 import static dev.enrique.bank.commons.constants.ErrorMessage.TRANSACTION_NOT_FOUND;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.UUID;
 
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.enrique.bank.commons.enums.ScheduledTransferStatus;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.config.ScheduledTransferJob;
 import dev.enrique.bank.dao.AccountRepository;
-import dev.enrique.bank.dao.ScheduledTransferRepository;
 import dev.enrique.bank.dao.TransactionRepository;
-import dev.enrique.bank.dto.request.TransferRequest;
 import dev.enrique.bank.model.Account;
-import dev.enrique.bank.model.ScheduledTransfer;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransferService;
 import dev.enrique.bank.service.util.TransferHelper;
@@ -43,11 +25,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TransferServiceImpl implements TransferService {
-    private final ScheduledTransferRepository scheduledTransferRepository;
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final TransferHelper transferHelper;
-    private final Scheduler quartzScheduler;
 
     @Override
     @Transactional

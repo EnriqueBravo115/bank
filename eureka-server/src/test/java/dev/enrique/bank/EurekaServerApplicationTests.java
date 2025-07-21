@@ -1,10 +1,10 @@
-package dev.enrique.api_gateway;
+package dev.enrique.bank;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ApiGatewayApplicationTests {
+class EurekaServerApplicationTests {
 
 	@Test
 	void contextLoads() {
