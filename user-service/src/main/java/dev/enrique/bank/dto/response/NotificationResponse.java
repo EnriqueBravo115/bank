@@ -1,10 +1,10 @@
 package dev.enrique.bank.dto.response;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Setter;
+import lombok.Getter;
 
-@Gettter
+@Getter
 @Setter
 @AllArgsConstructor
 public class NotificationResponse {
