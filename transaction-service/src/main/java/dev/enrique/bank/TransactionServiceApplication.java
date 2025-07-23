@@ -2,12 +2,10 @@ package dev.enrique.bank;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
 
 @SpringBootApplication
-@EnableEurekaServer
-public class EurekaServerApplication {
+public class TransactionServiceApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(EurekaServerApplication.class, args);
+		SpringApplication.run(TransactionServiceApplication.class, args);
 	}
 }
