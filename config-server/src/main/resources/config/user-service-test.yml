@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://database:5432/bank
+    username: bank
+    password: bank
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: testerapipersonal@gmail.com
+    password: yalu erjx xclw otqr 
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+      #server:
+      #  ssl:
+      #    key-store-type: PKCS12
+      #    key-store: classpath:certificate.p12
+      #    key-store-password: password
+jwt:
+  secret: qM5z2D7NDo8hnB6TVtX6KaZ5kQO+f7hwTcdI/3yfcW4=
+  expiration: 36000000
+  issuer: api
