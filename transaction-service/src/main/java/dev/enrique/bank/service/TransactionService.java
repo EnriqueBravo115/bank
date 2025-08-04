@@ -1,12 +1,20 @@
 package dev.enrique.bank.service;
 
 import java.math.BigDecimal;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import dev.enrique.bank.enums.Currency;
+import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.dao.projection.TransactionBasicProjection;
+import dev.enrique.bank.dao.projection.TransactionCommonProjection;
+import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 
 public interface TransactionService {
 

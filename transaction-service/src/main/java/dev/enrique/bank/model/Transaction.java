@@ -6,8 +6,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import dev.enrique.bank.commons.enums.TransactionStatus;
-import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.enums.TransactionStatus;
+import dev.enrique.bank.enums.TransactionType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
