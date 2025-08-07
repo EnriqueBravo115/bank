@@ -22,10 +22,12 @@ public class AuthenticationMapper {
 
     public AuthenticationResponse login(AuthenticationRequest request, BindingResult bindingResult) {
         Map<String, Object> authResult = authenticationService.login(request, bindingResult);
-        AuthenticationResponse response = new AuthenticationResponse();
 
-        response.setUser(basicMapper.convertToResponse(authResult.get("user"), AuthUserResponse.class));
-        response.setToken((String) authResult.get("token"));
+        AuthenticationResponse response = AuthenticationResponse.builder()
+                .user(basicMapper.convertToResponse(authResult.get("user"), AuthUserResponse.class))
+                .token((String) authResult.get("token"))
+                .build();
+
         return response;
     }
 

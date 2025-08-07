@@ -8,11 +8,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import dev.enrique.bank.configuration.FeignConfiguration;
 import static dev.enrique.bank.constants.FeignConstants.ACCOUNT_SERVICE;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @FeignClient(value = ACCOUNT_SERVICE, path = "/api/v1/account", configuration = FeignConfiguration.class)
 public interface AccountClient {
     @CircuitBreaker
     @GetMapping()
-    List<String> getAccounId(@PathVariable());
+    List<String> getAccounId(@PathVariable("text") String text);
+
+    default ArrayList<String> defaultEmptyArray(Throwable throwable) {
+        return new ArrayList<>();
+    }
 }

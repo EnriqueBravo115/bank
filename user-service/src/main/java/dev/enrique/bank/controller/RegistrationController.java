@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/registration")
+@RequestMapping("/registration")
 public class RegistrationController {
     private final RegistrationMapper registrationMapper;
 

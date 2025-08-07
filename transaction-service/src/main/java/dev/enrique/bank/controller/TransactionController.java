@@ -31,7 +31,7 @@ import dev.enrique.bank.mapper.TransactionMapper;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping(TRANSACTIONS)
+@RequestMapping(TRANSACTION)
 @RequiredArgsConstructor
 public class TransactionController {
     private final TransactionMapper transactionMapper;

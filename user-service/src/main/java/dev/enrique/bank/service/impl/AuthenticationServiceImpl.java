@@ -1,8 +1,8 @@
 package dev.enrique.bank.service.impl;
 
-import static dev.enrique.bank.commons.constants.ErrorMessage.EMAIL_NOT_FOUND;
-import static dev.enrique.bank.commons.constants.ErrorMessage.INVALID_PASSWORD_RESET_CODE;
-import static dev.enrique.bank.commons.constants.ErrorMessage.USER_NOT_FOUND;
+import static dev.enrique.bank.constants.ErrorMessage.EMAIL_NOT_FOUND;
+import static dev.enrique.bank.constants.ErrorMessage.INVALID_PASSWORD_RESET_CODE;
+import static dev.enrique.bank.constants.ErrorMessage.USER_NOT_FOUND;
 
 import java.util.Map;
 import java.util.UUID;
@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
-import dev.enrique.bank.commons.enums.UserRole;
-import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.commons.exception.InputFieldException;
-import dev.enrique.bank.config.JwtProvider;
+import dev.enrique.bank.enums.UserRole;
+import dev.enrique.bank.exception.ApiRequestException;
+import dev.enrique.bank.exception.InputFieldException;
+import dev.enrique.bank.configuration.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.AuthUserProjection;
 import dev.enrique.bank.dao.projection.UserCommonProjection;

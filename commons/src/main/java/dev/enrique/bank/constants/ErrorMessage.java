@@ -2,6 +2,7 @@ package dev.enrique.bank.constants;
 
 public class ErrorMessage {
     public static final String USER_NOT_FOUND = "User not found";
+    public static final String JWT_TOKEN_EXPIRED = "JWT token is expired or invalid";
 
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
     public static final String EMAIL_NOT_FOUND = "Email not found";

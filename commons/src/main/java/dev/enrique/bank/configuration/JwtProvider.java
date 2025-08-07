@@ -1,4 +1,4 @@
-package dev.enrique.bank.config;
+package dev.enrique.bank.configuration;
 
 import java.security.Key;
 import java.time.Instant;
@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -20,9 +21,11 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class JwtProvider {
     @Value("${jwt.expiration}")
@@ -71,10 +74,11 @@ public class JwtProvider {
                 .compact();
     }
 
-    public String getToken(HttpServletRequest http) {
-        final String bearerToken = http.getHeader("Authorization");
+    public String getToken(ServerHttpRequest http) {
+        final String bearerToken = http.getHeaders().getFirst("Authorization");
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7, bearerToken.length());
+            return bearerToken.substring(7);
         }
         return null;
     }

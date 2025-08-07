@@ -1,4 +1,4 @@
-package dev.enrique.bank.commons.exception;
+package dev.enrique.bank.exception;
 
 import java.util.HashMap;
 import java.util.Map;
