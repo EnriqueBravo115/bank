@@ -13,7 +13,7 @@ import dev.enrique.bank.dto.request.EmailRequest;
 import dev.enrique.bank.dto.request.EndRegistrationRequest;
 import dev.enrique.bank.dto.request.RegistrationRequest;
 import dev.enrique.bank.dto.response.AuthenticationResponse;
-import dev.enrique.bank.mapper.RegistrationMapper;
+import dev.enrique.bank.service.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -21,28 +21,29 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/registration")
 public class RegistrationController {
-    private final RegistrationMapper registrationMapper;
+    private final RegistrationService registrationService;
 
     @PostMapping("/check")
     public ResponseEntity<String> registration(@Valid @RequestBody RegistrationRequest request,
             BindingResult bindingResult) {
-        return ResponseEntity.ok(registrationMapper.registration(request, bindingResult));
+        return ResponseEntity.ok(registrationService.registration(request, bindingResult));
     }
 
     @PostMapping("/code")
     public ResponseEntity<String> sendRegistrationCode(@Valid @RequestBody EmailRequest request,
             BindingResult bindingResult) {
-        return ResponseEntity.ok(registrationMapper.sendRegistrationCode(request.getEmail(), bindingResult));
+        return ResponseEntity.ok(registrationService.sendRegistrationCode(request.getEmail(), bindingResult));
     }
 
     @GetMapping("/activate/{code}")
     public ResponseEntity<String> checkRegistrationCode(@PathVariable("code") String code) {
-        return ResponseEntity.ok(registrationMapper.checkRegistrationCode(code));
+        return ResponseEntity.ok(registrationService.checkRegistrationCode(code));
     }
 
     @PostMapping("/confirm")
     public ResponseEntity<AuthenticationResponse> endRegistration(@Valid @RequestBody EndRegistrationRequest request,
             BindingResult bindingResult) {
-        return ResponseEntity.ok(registrationMapper.endRegistration(request, bindingResult));
+        return ResponseEntity.ok(registrationService.endRegistration(
+                request.getEmail(), request.getPassword(), bindingResult));
     }
 }

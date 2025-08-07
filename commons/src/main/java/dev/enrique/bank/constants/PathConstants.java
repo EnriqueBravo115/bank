@@ -4,8 +4,9 @@ public class PathConstants {
     public static final String PAGE_TOTAL_COUNT = "page-total-count";
     public static final String AUTH_USER_ID_HEADER = "X-auth-user-id";
 
-    public static final String TRANSACTION = "/transaction";
     public static final String ACCOUNT_ID = "/{accountId}";
+    public static final String TRANSACTION = "/transaction";
+    public static final String AUTH = "/auth";
 
     // TRANSACTION
     public static final String GET_ALL_TRANSACTIONS = ACCOUNT_ID;
@@ -28,4 +29,12 @@ public class PathConstants {
     public static final String FIND_MAX_TRANSACTION = ACCOUNT_ID + "/max-transaction";
     public static final String GROUP_TRANSACTIONS_BY_TYPE = ACCOUNT_ID + "/group-by-type";
     public static final String SUM_TRANSACTIONS_BY_TYPE = ACCOUNT_ID + "/sum-by-type";
+
+    // AUTH
+    public static final String LOGIN = "/login";
+    public static final String FORGOT = "/forgot";
+    public static final String RESET = "/reset";
+    public static final String RESET_CODE = "/reset/{code}";
+    public static final String RESET_CURRENT = "/reset/current";
+    public static final String USER_EMAIL = "/user/{email}";
 }

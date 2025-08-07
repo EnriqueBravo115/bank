@@ -6,8 +6,8 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import dev.enrique.bank.commons.enums.Gender;
-import dev.enrique.bank.commons.enums.UserRole;
+import dev.enrique.bank.enums.Gender;
+import dev.enrique.bank.enums.UserRole;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

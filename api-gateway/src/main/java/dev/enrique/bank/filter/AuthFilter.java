@@ -1,8 +1,11 @@
 package dev.enrique.bank.filter;
 
+import static dev.enrique.bank.constants.ErrorMessage.EMAIL_NOT_ACTIVATED;
 import static dev.enrique.bank.constants.ErrorMessage.JWT_TOKEN_EXPIRED;
 import static dev.enrique.bank.constants.FeignConstants.USER_SERVICE;
 import static dev.enrique.bank.constants.PathConstants.AUTH_USER_ID_HEADER;
+import static dev.enrique.bank.constants.PathConstants.USER_EMAIL;
+import static dev.enrique.bank.constants.PathConstants.AUTH;
 
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -11,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import dev.enrique.bank.configuration.JwtProvider;
 import dev.enrique.bank.dto.UserInfoResponse;
-import dev.enrique.bank.exception.JwtAuthenticationException;
+import io.jsonwebtoken.JwtException;
 
 @Component
 public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> {
@@ -33,12 +36,12 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
 
                 String email = jwtProvider.extractUsername(token);
                 UserInfoResponse user = restTemplate.getForObject(
-                        String.format("http://%s:8001%s", USER_SERVICE, API_V1_AUTH + USER_EMAIL),
+                        String.format("http://%s:8001%s", USER_SERVICE, AUTH + USER_EMAIL),
                         UserInfoResponse.class,
                         email);
 
                 if (user.getActivationCode() != null) {
-                    throw new JwtAuthenticationException("Email not activated");
+                    throw new JwtException(EMAIL_NOT_ACTIVATED);
                 }
 
                 exchange.getRequest()
@@ -47,7 +50,7 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
                         .build();
                 return chain.filter(exchange);
             } else {
-                throw new JwtAuthenticationException(JWT_TOKEN_EXPIRED);
+                throw new JwtException(JWT_TOKEN_EXPIRED);
             }
         };
     }

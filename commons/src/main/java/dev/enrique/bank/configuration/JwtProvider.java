@@ -20,7 +20,6 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,13 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class JwtProvider {
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration:36000000}")
     private Long expiration;
 
-    @Value("${jwt.issuer}")
+    @Value("${jwt.issuer:api}")
     private String issuer;
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:qM5z2D7NDo8hnB6TVtX6KaZ5kQO+f7hwTcdI/3yfcW4=}")
     private String secret;
 
     private Key getSignInKey() {

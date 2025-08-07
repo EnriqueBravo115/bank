@@ -5,6 +5,7 @@ public class ErrorMessage {
     public static final String JWT_TOKEN_EXPIRED = "JWT token is expired or invalid";
 
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
+    public static final String EMAIL_NOT_ACTIVATED = "Email not activated";
     public static final String EMAIL_NOT_FOUND = "Email not found";
     public static final String EMAIL_HAS_ALREADY_BE_TAKEN = "Email has already be taken";
     public static final String EMPTY_PASSWORD = "Password cannot be empty.";

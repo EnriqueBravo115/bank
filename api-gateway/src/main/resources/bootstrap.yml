@@ -1,0 +1,7 @@
+spring:
+    main:
+    application:
+        name: api-gateway
+    cloud:
+        config:
+            uri: http://${CONFIG_SERVER_HOST:localhost}:8888/

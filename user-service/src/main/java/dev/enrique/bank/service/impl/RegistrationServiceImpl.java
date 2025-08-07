@@ -1,6 +1,9 @@
 package dev.enrique.bank.service.impl;
 
-import static dev.enrique.bank.commons.constants.ErrorMessage.EMAIL_HAS_ALREADY_BE_TAKEN;
+import static dev.enrique.bank.constants.ErrorMessage.ACTIVATION_CODE_NOT_FOUND;
+import static dev.enrique.bank.constants.ErrorMessage.EMAIL_HAS_ALREADY_BE_TAKEN;
+import static dev.enrique.bank.constants.ErrorMessage.PASSWORD_LENGTH_ERROR;
+import static dev.enrique.bank.constants.ErrorMessage.USER_NOT_FOUND;
 
 import java.util.Map;
 import java.util.Optional;
@@ -12,19 +15,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
-import dev.enrique.bank.commons.enums.UserRole;
-import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.config.JwtProvider;
+import dev.enrique.bank.configuration.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserCommonProjection;
 import dev.enrique.bank.dto.request.RegistrationRequest;
+import dev.enrique.bank.dto.response.AuthUserResponse;
+import dev.enrique.bank.dto.response.AuthenticationResponse;
+import dev.enrique.bank.enums.UserRole;
+import dev.enrique.bank.exception.ApiRequestException;
+import dev.enrique.bank.mapper.BasicMapper;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.EmailService;
 import dev.enrique.bank.service.RegistrationService;
 import dev.enrique.bank.service.util.UserHelper;
 import lombok.RequiredArgsConstructor;
-
-import static dev.enrique.bank.commons.constants.ErrorMessage.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final BasicMapper basicMapper;
 
     @Override
     @Transactional
@@ -94,7 +99,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
-    public Map<String, Object> endRegistration(String email, String password, BindingResult bindingResult) {
+    public AuthenticationResponse endRegistration(String email, String password, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
         if (password.length() < 8)
             throw new ApiRequestException(PASSWORD_LENGTH_ERROR, HttpStatus.BAD_REQUEST);
@@ -106,6 +111,12 @@ public class RegistrationServiceImpl implements RegistrationService {
         userRepository.updateActiveUserProfile(user.getId());
 
         String token = jwtProvider.generateToken(UserRole.USER.name(), email);
-        return Map.of("user", user, "token", token);
+        Map<String, Object> result = Map.of("user", user, "token", token);
+
+        return AuthenticationResponse.builder()
+                .user(basicMapper.convertToResponse(result.get("user"), AuthUserResponse.class))
+                .token((String) result.get("token"))
+                .build();
+
     }
 }

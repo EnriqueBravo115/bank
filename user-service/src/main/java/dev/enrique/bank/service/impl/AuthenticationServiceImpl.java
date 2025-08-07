@@ -16,12 +16,16 @@ import org.springframework.validation.BindingResult;
 import dev.enrique.bank.enums.UserRole;
 import dev.enrique.bank.exception.ApiRequestException;
 import dev.enrique.bank.exception.InputFieldException;
+import dev.enrique.bank.mapper.BasicMapper;
 import dev.enrique.bank.configuration.JwtProvider;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.AuthUserProjection;
 import dev.enrique.bank.dao.projection.UserCommonProjection;
 import dev.enrique.bank.dao.projection.UserPrincipalProjection;
+import dev.enrique.bank.dto.UserInfoResponse;
 import dev.enrique.bank.dto.request.AuthenticationRequest;
+import dev.enrique.bank.dto.response.AuthUserResponse;
+import dev.enrique.bank.dto.response.AuthenticationResponse;
 import dev.enrique.bank.service.AuthenticationService;
 import dev.enrique.bank.service.EmailService;
 import dev.enrique.bank.service.util.UserHelper;
@@ -31,19 +35,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final JwtProvider jwtProvider;
-    private final UserRepository userRepository;
     private final UserHelper userHelper;
+    private final BasicMapper basicMapper;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
     @Override
-    public UserPrincipalProjection getUserPrincipalByEmail(String email) {
-        return userRepository.getUserByEmail(email, UserPrincipalProjection.class)
-                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
-    }
-
-    @Override
-    public Map<String, Object> login(AuthenticationRequest request, BindingResult bindingResult) {
+    public AuthenticationResponse login(AuthenticationRequest request, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
 
         AuthUserProjection authUserProjection = userRepository
@@ -51,13 +50,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         String userPassword = userRepository.getUserPasswordById(authUserProjection.getId());
-
         if (!passwordEncoder.matches(request.getPassword(), userPassword)) {
             userHelper.processPasswordException("currentPassword", "The password is incorrect", HttpStatus.NOT_FOUND);
         }
 
         String token = jwtProvider.generateToken(UserRole.USER.name(), request.getEmail());
-        return Map.of("user", authUserProjection, "token", token);
+        Map<String, Object> authResult = Map.of("user", authUserProjection, "token", token);
+
+        return AuthenticationResponse.builder()
+                .user(basicMapper.convertToResponse(authResult.get("user"), AuthUserResponse.class))
+                .token((String) authResult.get("token"))
+                .build();
     }
 
     @Override
@@ -73,13 +76,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String subject = "Password reset code";
         String body = "Your reset code is:" + passwordResetCode;
         emailService.sendEmail(email, subject, body);
+
         return "Password reset code send";
     }
 
     @Override
-    public AuthUserProjection getUserByPasswordResetCode(String code) {
-        return userRepository.getByPasswordResetCode(code)
+    public AuthUserResponse getUserByPasswordResetCode(String code) {
+        AuthUserProjection authUserProjection = userRepository.getByPasswordResetCode(code)
                 .orElseThrow(() -> new ApiRequestException(INVALID_PASSWORD_RESET_CODE, HttpStatus.BAD_REQUEST));
+        return basicMapper.convertToResponse(authUserProjection, AuthUserResponse.class);
     }
 
     @Override
@@ -111,5 +116,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userHelper.checkMatchPasswords(password, password2);
         userRepository.updatePassword(passwordEncoder.encode(password), authUserId);
         return "Your password has been successfully updated.";
+    }
+
+    @Override
+    public UserInfoResponse getUserPrincipalByEmail(String email) {
+        UserPrincipalProjection userPrincipalProjection = userRepository
+                .getUserByEmail(email, UserPrincipalProjection.class)
+                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+
+        return basicMapper.convertToResponse(userPrincipalProjection, UserInfoResponse.class);
     }
 }

@@ -6,9 +6,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import static dev.enrique.bank.commons.constants.ErrorMessage.*;
+import static dev.enrique.bank.constants.ErrorMessage.*;
 
-import dev.enrique.bank.commons.enums.Gender;
+import dev.enrique.bank.enums.Gender;
 
 @Getter
 @Setter

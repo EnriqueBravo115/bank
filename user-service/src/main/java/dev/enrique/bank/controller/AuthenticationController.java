@@ -1,6 +1,12 @@
 package dev.enrique.bank.controller;
 
-import java.util.Map;
+import static dev.enrique.bank.constants.PathConstants.AUTH;
+import static dev.enrique.bank.constants.PathConstants.FORGOT;
+import static dev.enrique.bank.constants.PathConstants.LOGIN;
+import static dev.enrique.bank.constants.PathConstants.RESET;
+import static dev.enrique.bank.constants.PathConstants.RESET_CODE;
+import static dev.enrique.bank.constants.PathConstants.RESET_CURRENT;
+import static dev.enrique.bank.constants.PathConstants.USER_EMAIL;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -11,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.enrique.bank.dao.projection.AuthUserProjection;
 import dev.enrique.bank.dto.UserInfoResponse;
 import dev.enrique.bank.dto.request.AuthenticationRequest;
 import dev.enrique.bank.dto.request.CurrentPasswordResetRequest;
@@ -19,54 +24,41 @@ import dev.enrique.bank.dto.request.EmailRequest;
 import dev.enrique.bank.dto.request.PasswordResetRequest;
 import dev.enrique.bank.dto.response.AuthUserResponse;
 import dev.enrique.bank.dto.response.AuthenticationResponse;
-import dev.enrique.bank.mapper.AuthenticationMapper;
-import dev.enrique.bank.mapper.BasicMapper;
 import dev.enrique.bank.service.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping(AUTH)
 @RequiredArgsConstructor
 public class AuthenticationController {
-    private final BasicMapper basicMapper;
     private final AuthenticationService authenticationService;
 
-    @PostMapping("/login")
+    @PostMapping(LOGIN)
     public ResponseEntity<AuthenticationResponse> login(@Valid @RequestBody AuthenticationRequest request,
             BindingResult bindingResult) {
-
-        Map<String, Object> authResult = authenticationService.login(request, bindingResult);
-
-        AuthenticationResponse response = AuthenticationResponse.builder()
-                .user(basicMapper.convertToResponse(authResult.get("user"), AuthUserResponse.class))
-                .token((String) authResult.get("token"))
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(authenticationService.login(request, bindingResult));
     }
 
-    @PostMapping("/forgot")
+    @PostMapping(FORGOT)
     public ResponseEntity<String> sendPasswordResetCode(@Valid @RequestBody EmailRequest request,
             BindingResult bindingResult) {
         return ResponseEntity.ok(authenticationService.sendPasswordResetCode(request.getEmail(), bindingResult));
     }
 
-    @GetMapping("/reset/{code}")
-    public ResponseEntity<AuthUserResponse> getUserByPasswordResetCode(@PathVariable("code") String code) {
-        AuthUserProjection authUserProjection = authenticationService.getUserByPasswordResetCode(code);
-        return ResponseEntity.ok(basicMapper.convertToResponse(authUserProjection, AuthUserResponse.class));
-    }
-
-    @PostMapping("/reset")
+    @PostMapping(RESET)
     public ResponseEntity<String> passwordReset(@Valid @RequestBody PasswordResetRequest request,
             BindingResult bindingResult) {
-        return ResponseEntity.ok(authenticationService.passwordReset(
-                request.getEmail(), request.getPassword(),
+        return ResponseEntity.ok(authenticationService.passwordReset(request.getEmail(), request.getPassword(),
                 request.getPassword2(), bindingResult));
     }
 
-    @PostMapping("/reset/current")
+    @GetMapping(RESET_CODE)
+    public ResponseEntity<AuthUserResponse> getUserByPasswordResetCode(@PathVariable("code") String code) {
+        return ResponseEntity.ok(authenticationService.getUserByPasswordResetCode(code));
+    }
+
+    @PostMapping(RESET_CURRENT)
     public ResponseEntity<String> currentPasswordReset(@Valid @RequestBody CurrentPasswordResetRequest request,
             BindingResult bindingResult) {
         return ResponseEntity.ok(authenticationService.currentPasswordReset(
@@ -74,9 +66,8 @@ public class AuthenticationController {
                 request.getPassword2(), bindingResult));
     }
 
-    @GetMapping("/user/{email}")
+    @GetMapping(USER_EMAIL)
     public UserInfoResponse getUserPrincipalByEmail(@PathVariable("email") String email) {
-        return basicMapper.convertToResponse(authenticationService.getUserPrincipalByEmail(email),
-                UserInfoResponse.class);
+        return authenticationService.getUserPrincipalByEmail(email);
     }
 }

@@ -1,5 +1,10 @@
 package dev.enrique.bank.service.util;
 
+import static dev.enrique.bank.constants.ErrorMessage.USER_NOT_FOUND;
+import static dev.enrique.bank.constants.PathConstants.AUTH_USER_ID_HEADER;
+
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -7,17 +12,12 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.commons.exception.InputFieldException;
 import dev.enrique.bank.dao.UserRepository;
+import dev.enrique.bank.exception.ApiRequestException;
+import dev.enrique.bank.exception.InputFieldException;
 import dev.enrique.bank.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-
-import java.util.Map;
-
-import static dev.enrique.bank.commons.constants.ErrorMessage.*;
-import static dev.enrique.bank.commons.constants.PathConstants.AUTH_USER_ID_HEADER;
 
 @Component
 @RequiredArgsConstructor
