@@ -11,15 +11,91 @@ services:
     ports:
       - "5432:5432"
     networks:
-        - postgres
+      - postgres
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - spring
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    ports:
+      - "9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - spring
+
+  eureka-server:
+    container_name: eureka-server
+    hostname: eureka-server
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    environment:
+      EUREKA_HOST: eureka-server
+      ZIPKIN_HOST: zipkin
+    ports:
+      - "8761:8761"
+    networks:
+      - spring
+    depends_on:
+      - zipkin
+
+  config-server:
+    container_name: config-server
+    hostname: config-server
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    environment:
+      EUREKA_HOST: eureka-server
+      ZIPKIN_HOST: zipkin
+    ports:
+      - "8888:8888"
+
+  user-service:
+    container_name: user-service
+    hostname: user-service
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    environment:
+      EUREKA_HOST: eureka-server
+      CONFIG_SERVER_HOST: config-server
+      DATASOURCE_HOST: postgres
+      ZIPKIN_HOST: zipkin
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8001:8001"
+    networks:
+      - postgres
+      - spring
+    depends_on:
+      - db
+      - zipkin
+      - kafka
+      - eureka-server
+      - config-server
 
 networks:
   spring:
     driver: bridge
   postgres:
     driver: bridge
-
-
 
 volumes:
   postgres:
