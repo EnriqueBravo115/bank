@@ -19,13 +19,6 @@ spring:
       group-id: user
   zipkin:
     base-url: http://${ZIPKIN_HOST:localhost}:9411
-
-resilience4j:
-  circuitbreaker:
-    instances:
-      tweet-service:
-        minimum-number-of-calls: 5
-
   mail:
     host: smtp.gmail.com
     port: 587
@@ -40,6 +33,12 @@ resilience4j:
           timeout: 5000
           writetimeout: 5000
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      tweet-service:
+        minimum-number-of-calls: 5
+
 eureka:
     client:
         service-url:
@@ -49,8 +48,8 @@ eureka:
     instance:
         hostname: ${EUREKA_HOST:localhost}
 
-      #server:
-      #  ssl:
-      #    key-store-type: PKCS12
-      #    key-store: classpath:certificate.p12
-      #    key-store-password: password
+#server:
+#  ssl:
+#    key-store-type: PKCS12
+#    key-store: classpath:certificate.p12
+#    key-store-password: password

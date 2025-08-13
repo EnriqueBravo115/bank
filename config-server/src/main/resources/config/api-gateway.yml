@@ -1,0 +1,27 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globlalcors:
+        corsConfigurations:
+          '[/api/v1/**]':
+            allowedOrigins: "http://localhost:3000"
+            exposedHeaders: "page-total-count"
+            allowedHeaders: "*"
+            allowedMethods:
+            - GET
+            - POST
+            - PUT 
+            - DELETE
+            - PATCH
+            - OPTIONS
+            - HEAD
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:

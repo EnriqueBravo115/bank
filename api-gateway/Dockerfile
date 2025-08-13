@@ -1,14 +1,10 @@
 FROM maven:3.9.5-eclipse-temurin-17 AS build
 WORKDIR /app
 
-COPY pom.xml .
-RUN mvn dependency:go-offline
+COPY . .
 
-COPY src ./src
-RUN mvn clean package
+RUN mvn clean package -pl api-gateway -am -DskipTests
 
 FROM eclipse-temurin:17-jdk
-WORKDIR /app
-
-COPY --from=build /app/target/*.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY --from=build /app/api-gateway/target/api-gateway-*.jar /app/api-gateway.jar
+ENTRYPOINT ["java", "-jar", "/app/api-gateway.jar"]

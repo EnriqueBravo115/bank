@@ -21,8 +21,19 @@ services:
     networks:
       - spring
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - spring
+
   kafka:
-    image: confluentinc/cp-kafka:7.0.1
+    image: confluentinc/cp-kafka:7.2.15
     container_name: kafka
     ports:
       - "9092"
@@ -30,7 +41,7 @@ services:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -43,8 +54,8 @@ services:
     container_name: eureka-server
     hostname: eureka-server
     build:
-      context: ./eureka-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: eureka-server/Dockerfile
     environment:
       EUREKA_HOST: eureka-server
       ZIPKIN_HOST: zipkin
@@ -59,38 +70,57 @@ services:
     container_name: config-server
     hostname: config-server
     build:
-      context: ./config-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: config-server/Dockerfile
     environment:
       EUREKA_HOST: eureka-server
       ZIPKIN_HOST: zipkin
     ports:
       - "8888:8888"
 
-  user-service:
-    container_name: user-service
-    hostname: user-service
+  api-gateway:
+    container_name: api-gateway
+    hostname: api-gateway
     build:
-      context: ./user-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api-gateway/Dockerfile
     environment:
       EUREKA_HOST: eureka-server
       CONFIG_SERVER_HOST: config-server
-      DATASOURCE_HOST: postgres
       ZIPKIN_HOST: zipkin
-      SPRING_PROFILES_ACTIVE: dev
     ports:
-      - "8001:8001"
+      - "8080:8080"
     networks:
-      - postgres
       - spring
     depends_on:
-      - db
       - zipkin
-      - kafka
       - eureka-server
       - config-server
 
+#  user-service:
+#    container_name: user-service
+#    hostname: user-service
+#    build:
+#      context: ./user-service
+#      dockerfile: Dockerfile
+#    environment:
+#      EUREKA_HOST: eureka-server
+#      CONFIG_SERVER_HOST: config-server
+#      DATASOURCE_HOST: postgres
+#      ZIPKIN_HOST: zipkin
+#      SPRING_PROFILES_ACTIVE: dev
+#    ports:
+#      - "8001:8001"
+#    networks:
+#      - postgres
+#      - spring
+#    depends_on:
+#      - db
+#      - zipkin
+#      - kafka
+#      - eureka-server
+#      - config-server
+#
 networks:
   spring:
     driver: bridge
