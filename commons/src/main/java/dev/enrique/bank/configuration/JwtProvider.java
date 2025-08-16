@@ -65,6 +65,7 @@ public class JwtProvider {
     public String generateToken(String role, String subject) {
         Claims claims = Jwts.claims().setSubject(subject);
         claims.put("role", role);
+
         return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(new Date(System.currentTimeMillis()))

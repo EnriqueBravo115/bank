@@ -8,8 +8,10 @@ import org.springframework.stereotype.Component;
 
 import dev.enrique.bank.configuration.JwtProvider;
 import io.jsonwebtoken.JwtException;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> {
     private final JwtProvider jwtProvider;
 
@@ -22,11 +24,10 @@ public class AuthFilter extends AbstractGatewayFilterFactory<AuthFilter.Config> 
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             String token = jwtProvider.getToken(exchange.getRequest());
+            String username = jwtProvider.extractUsername(token);
 
             if (token != null && jwtProvider.validateToken(token)) {
-
-                String email = jwtProvider.extractUsername(token);
-
+                log.info("authenticated username: {}", username);
                 exchange.getRequest()
                         .mutate()
                         .build();

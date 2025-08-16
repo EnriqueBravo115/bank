@@ -77,6 +77,8 @@ services:
       ZIPKIN_HOST: zipkin
     ports:
       - "8888:8888"
+    networks:
+      - spring
 
   api-gateway:
     container_name: api-gateway
@@ -89,7 +91,7 @@ services:
       CONFIG_SERVER_HOST: config-server
       ZIPKIN_HOST: zipkin
     ports:
-      - "8080:8080"
+      - "8000:8000"
     networks:
       - spring
     depends_on:
