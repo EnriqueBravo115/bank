@@ -1,128 +1,93 @@
 services:
-  db:
-    container_name: postgres
+  user-db:
+    container_name: user_db
     image: postgres
     restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: bank
+      POSTGRES_DB: user_db
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
     ports:
       - "5432:5432"
-    networks:
-      - postgres
 
-  zipkin:
-    image: openzipkin/zipkin
-    container_name: zipkin
-    ports:
-      - "9411:9411"
-    networks:
-      - spring
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
+  keycloak-db:
+    container_name: keycloak_db
+    image: postgres
+    restart: always
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - spring
-
-  kafka:
-    image: confluentinc/cp-kafka:7.2.15
-    container_name: kafka
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: keycloak_db
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
     ports:
-      - "9092"
+      - "5433:5432"
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: ["start-dev"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak_db
+      KC_DB_USERNAME: user
+      KC_DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "9090:8080"
     depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-    networks:
-      - spring
+      - keycloak-db
 
-  eureka-server:
-    container_name: eureka-server
-    hostname: eureka-server
-    build:
-      context: .
-      dockerfile: eureka-server/Dockerfile
-    environment:
-      EUREKA_HOST: eureka-server
-      ZIPKIN_HOST: zipkin
-    ports:
-      - "8761:8761"
-    networks:
-      - spring
-    depends_on:
-      - zipkin
-
-  config-server:
-    container_name: config-server
-    hostname: config-server
-    build:
-      context: .
-      dockerfile: config-server/Dockerfile
-    environment:
-      EUREKA_HOST: eureka-server
-      ZIPKIN_HOST: zipkin
-    ports:
-      - "8888:8888"
-    networks:
-      - spring
-
-  api-gateway:
-    container_name: api-gateway
-    hostname: api-gateway
-    build:
-      context: .
-      dockerfile: api-gateway/Dockerfile
-    environment:
-      EUREKA_HOST: eureka-server
-      CONFIG_SERVER_HOST: config-server
-      ZIPKIN_HOST: zipkin
-    ports:
-      - "8000:8000"
-    networks:
-      - spring
-    depends_on:
-      - zipkin
-      - eureka-server
-      - config-server
-
-#  user-service:
-#    container_name: user-service
-#    hostname: user-service
-#    build:
-#      context: ./user-service
-#      dockerfile: Dockerfile
-#    environment:
-#      EUREKA_HOST: eureka-server
-#      CONFIG_SERVER_HOST: config-server
-#      DATASOURCE_HOST: postgres
-#      ZIPKIN_HOST: zipkin
-#      SPRING_PROFILES_ACTIVE: dev
+#  zipkin:
+#    image: openzipkin/zipkin
+#    container_name: zipkin
 #    ports:
-#      - "8001:8001"
+#      - "9411:9411"
 #    networks:
-#      - postgres
 #      - spring
-#    depends_on:
-#      - db
-#      - zipkin
-#      - kafka
-#      - eureka-server
-#      - config-server
 #
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:7.0.1
+#    container_name: zookeeper
+#    ports:
+#      - "2181:2181"
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#      ZOOKEEPER_TICK_TIME: 2000
+#    networks:
+#      - spring
+#
+#  kafka:
+#    image: confluentinc/cp-kafka:7.2.15
+#    container_name: kafka
+#    ports:
+#      - "9092"
+#    depends_on:
+#      - zookeeper
+#    environment:
+#      KAFKA_BROKER_ID: 1
+#      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+#    networks:
+#      - spring
+
 networks:
   spring:
     driver: bridge
@@ -131,3 +96,4 @@ networks:
 
 volumes:
   postgres:
+  pgadmin:

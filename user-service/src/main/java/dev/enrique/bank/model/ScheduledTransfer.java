@@ -3,7 +3,7 @@ package dev.enrique.bank.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import dev.enrique.bank.commons.enums.ScheduledTransferStatus;
+import dev.enrique.bank.enums.ScheduledTransferStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

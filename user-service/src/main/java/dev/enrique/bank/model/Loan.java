@@ -3,7 +3,7 @@ package dev.enrique.bank.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import dev.enrique.bank.commons.enums.LoanStatus;
+import dev.enrique.bank.enums.LoanStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

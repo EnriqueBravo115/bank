@@ -2,7 +2,7 @@ package dev.enrique.bank.dto.request;
 
 import java.math.BigDecimal;
 
-import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

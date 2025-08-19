@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import dev.enrique.bank.commons.enums.AccountType;
-import dev.enrique.bank.commons.enums.Currency;
-import dev.enrique.bank.commons.enums.Status;
+import dev.enrique.bank.enums.AccountType;
+import dev.enrique.bank.enums.Currency;
+import dev.enrique.bank.enums.AccountStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -49,7 +49,7 @@ public class Account {
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private AccountStatus status;
 
     @Column(name = "currency")
     @Enumerated(EnumType.STRING)

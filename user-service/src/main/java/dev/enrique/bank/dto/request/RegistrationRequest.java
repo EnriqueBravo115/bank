@@ -1,14 +1,15 @@
 package dev.enrique.bank.dto.request;
 
+import static dev.enrique.bank.constants.ErrorMessage.BLANK_NAME;
+import static dev.enrique.bank.constants.ErrorMessage.EMAIL_NOT_VALID;
+import static dev.enrique.bank.constants.ErrorMessage.NAME_NOT_VALID;
+
+import dev.enrique.bank.enums.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-
-import static dev.enrique.bank.constants.ErrorMessage.*;
-
-import dev.enrique.bank.enums.Gender;
 
 @Getter
 @Setter

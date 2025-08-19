@@ -1,8 +1,8 @@
 package dev.enrique.bank.dto.request;
 
-import static dev.enrique.bank.commons.constants.ErrorMessage.EMAIL_NOT_VALID;
-import static dev.enrique.bank.commons.constants.ErrorMessage.EMPTY_PASSWORD;
-import static dev.enrique.bank.commons.constants.ErrorMessage.SHORT_PASSWORD;
+import static dev.enrique.bank.constants.ErrorMessage.EMAIL_NOT_VALID;
+import static dev.enrique.bank.constants.ErrorMessage.EMPTY_PASSWORD;
+import static dev.enrique.bank.constants.ErrorMessage.SHORT_PASSWORD;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

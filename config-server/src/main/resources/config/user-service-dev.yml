@@ -2,10 +2,15 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:postgresql://${DATASOURCE_HOST:localhost}:5432/bank
+    url: jdbc:postgresql://${DATASOURCE_HOST:localhost}:5432/user_db
     username: user
     password: password
     driverClassName: org.postgresql.Driver
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://idp.example.com/issuer
   jpa:
     hibernate:
       ddl-auto: validate
