@@ -10,7 +10,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://idp.example.com/issuer
+          issuer-uri: http://localhost:9090/realms/bank-realm
   jpa:
     hibernate:
       ddl-auto: validate

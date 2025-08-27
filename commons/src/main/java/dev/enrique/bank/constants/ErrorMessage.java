@@ -5,19 +5,32 @@ public class ErrorMessage {
     public static final String JWT_TOKEN_EXPIRED = "Jwt token is expired or invalid";
 
     public static final String EMAIL_NOT_VALID = "Please enter a valid email address.";
+    public static final String EMAIL_REQUIRED = "Please enter an email address.";
     public static final String EMAIL_NOT_ACTIVATED = "Email not activated";
     public static final String EMAIL_NOT_FOUND = "Email not found";
     public static final String EMAIL_HAS_ALREADY_BE_TAKEN = "Email has already be taken";
     public static final String EMPTY_PASSWORD = "Password cannot be empty.";
     public static final String INVALID_PASSWORD_RESET_CODE = "Password reset code is invalid";
+    public static final String INVALID_PHONE_FORMAT = "Invalid phone format";
+    public static final String INVALID_PHONE_CODE = "Only +52 and +1 codes are accepted";
+    public static final String INVALID_GENDER = "Only MALE or FEMALE are accepted";
+    public static final String INVALID_COUNTRY_BIRTH = "Only US or MX are accepted";
+
+    public static final String CURP_SIZE = "CURP must be exactly 18 characters long";
+    public static final String INVALID_CURP_FORMAT = "Invalid CURP format";
+
+    public static final String RFC_REQUIRED = "RFC is required";
+    public static final String RFC_SIZE = "RFC must be exactly 13 characters long";
+    public static final String INVALID_RFC_FORMAT = "Invalid RFC format";
 
     public static final String SHORT_PASSWORD = "Your password needs to be at least 8 characters. Please enter a longer one.";
     public static final String EMPTY_CURRENT_PASSWORD = "Current password cannot be empty.";
     public static final String EMPTY_PASSWORD_CONFIRMATION = "Password confirmation cannot be empty.";
     public static final String PASSWORD_LENGTH_ERROR = "Your password needs to be at least 8 characters";
     public static final String BLANK_NAME = "What's your name?";
-    public static final String NAME_NOT_VALID = "Please enter a valid name";
     public static final String ACTIVATION_CODE_NOT_FOUND = "Activation code not found";
+    public static final String LETTERS_AND_SPACES_ONLY = "Letters and spaces only";
+    public static final String INVALID_DATE_FORMAT = "Invalid date format";
 
     public static final String ACCOUNT_NOT_FOUND = "Account not found";
 

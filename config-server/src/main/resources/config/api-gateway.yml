@@ -4,27 +4,34 @@ server:
 spring:
   application:
     name: api-gateway
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9090/realms/bank-realm
+        registration:
+          keycloak:
+            client-id: bank-client
+            client-secret: 1xvkhr4kTrSIRQLpC05TcPsE4w3mOEjh
+            authorization-grant-type: authorization_code
+            scope: openid
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9090/realms/bank-realm
   cloud:
     gateway:
-      globlalcors:
-        corsConfigurations:
-          '[/api/v1/**]':
-            allowedOrigins: "http://localhost:3000"
-            exposedHeaders: "page-total-count"
-            allowedHeaders: "*"
-            allowedMethods:
-            - GET
-            - POST
-            - PUT 
-            - DELETE
-            - PATCH
-            - OPTIONS
-            - HEAD
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+      default-filters:
+        - TokenRelay=
       routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/user/**
 
 eureka:
   client:

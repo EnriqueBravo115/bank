@@ -1,5 +1,7 @@
 package dev.enrique.bank.enums;
 
 public enum UserRole {
-    USER, ADMIN
+    CUSTOMER_BASIC,
+    CUSTOMER_PREMIUM,
+    CUSTOMER_BUSINESS,
 }

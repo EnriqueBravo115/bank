@@ -17,30 +17,32 @@ import dev.enrique.bank.service.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import static dev.enrique.bank.constants.PathConstants.*;
+
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/registration")
+@RequestMapping(REGISTER)
 public class RegistrationController {
     private final RegistrationService registrationService;
 
-    @PostMapping("/check")
+    @PostMapping(REGISTER_CHECK)
     public ResponseEntity<String> registration(@Valid @RequestBody RegistrationRequest request,
             BindingResult bindingResult) {
         return ResponseEntity.ok(registrationService.registration(request, bindingResult));
     }
 
-    @PostMapping("/code")
+    @PostMapping(REGISTER_CODE)
     public ResponseEntity<String> sendRegistrationCode(@Valid @RequestBody EmailRequest request,
             BindingResult bindingResult) {
         return ResponseEntity.ok(registrationService.sendRegistrationCode(request.getEmail(), bindingResult));
     }
 
-    @GetMapping("/activate/{code}")
+    @GetMapping(REGISTER_ACTIVATE)
     public ResponseEntity<String> checkRegistrationCode(@PathVariable("code") String code) {
         return ResponseEntity.ok(registrationService.checkRegistrationCode(code));
     }
 
-    @PostMapping("/confirm")
+    @PostMapping(REGISTER_CONFIRM)
     public ResponseEntity<AuthenticationResponse> endRegistration(@Valid @RequestBody EndRegistrationRequest request,
             BindingResult bindingResult) {
         return ResponseEntity.ok(registrationService.endRegistration(

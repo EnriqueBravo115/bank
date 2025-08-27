@@ -3,10 +3,19 @@ package dev.enrique.bank.constants;
 public class PathConstants {
     public static final String PAGE_TOTAL_COUNT = "page-total-count";
     public static final String AUTH_USER_ID_HEADER = "X-auth-user-id";
+    public static final String API = "/api/v1";
+    public static final String USER = "/user";
 
     public static final String ACCOUNT_ID = "/{accountId}";
-    public static final String TRANSACTION = "/transaction";
-    public static final String AUTH = "/auth";
+    public static final String TRANSACTION = API + "/transaction";
+    public static final String AUTH = API + USER + "/auth";
+    public static final String REGISTER = API + USER + "/register";
+
+    // REGISTER
+    public static final String REGISTER_CHECK = REGISTER + "/check";
+    public static final String REGISTER_CODE = REGISTER + "/code";
+    public static final String REGISTER_ACTIVATE = REGISTER + "/activate/{code}";
+    public static final String REGISTER_CONFIRM = REGISTER + "/confirm";
 
     // TRANSACTION
     public static final String GET_ALL_TRANSACTIONS = ACCOUNT_ID;
