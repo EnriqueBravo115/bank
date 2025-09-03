@@ -1,5 +1,5 @@
 CREATE TABLE transaction (
-    id                      SERIAL PRIMARY KEY,
+    id                      BIGSERIAL PRIMARY KEY,
     amount                  DECIMAL,
     description             VARCHAR(255), 
     transaction_date        TIMESTAMP,

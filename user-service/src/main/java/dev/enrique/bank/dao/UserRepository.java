@@ -25,37 +25,37 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("rfc") String rfc,
             @Param("curp") String curp);
 
-    @Query("SELECT user FROM User user WHERE user.id = :userId")
+    @Query("SELECT u FROM User u WHERE u.id = :userId")
     <T> Optional<T> getUserById(@Param("userId") Long userId, Class<T> type);
 
-    @Query("SELECT user FROM User user WHERE user.email = :email")
+    @Query("SELECT u FROM User u WHERE u.email = :email")
     <T> Optional<T> getUserByEmail(@Param("email") String email, Class<T> type);
 
-    @Query("SELECT user.activationCode FROM User user WHERE user.id = :userId")
+    @Query("SELECT u.activationCode FROM User u WHERE user.id = :userId")
     String getActivationCode(@Param("userId") Long userId);
 
-    @Query("SELECT user FROM User user WHERE user.activationCode = :code")
+    @Query("SELECT u FROM User u WHERE u.activationCode = :code")
     Optional<UserCommonProjection> getCommonUserByActivationCode(@Param("code") String code);
 
-    @Query("SELECT user FROM User user WHERE user.passwordResetCode = :code")
+    @Query("SELECT u FROM User u WHERE u.passwordResetCode = :code")
     Optional<AuthUserProjection> getByPasswordResetCode(@Param("code") String code);
 
-    @Query("SELECT user.password FROM User user WHERE user.id = :userId")
+    @Query("SELECT u.password FROM User u WHERE u.id = :userId")
     String getUserPasswordById(@Param("userId") Long userId);
 
     @Modifying
-    @Query("UPDATE User user SET user.activationCode = :activationCode WHERE user.id = :userId")
+    @Query("UPDATE User u SET u.activationCode = :activationCode WHERE u.id = :userId")
     void updateActivationCode(@Param("activationCode") String activationCode, @Param("userId") Long userId);
 
     @Modifying
-    @Query("UPDATE User user SET user.password = :password WHERE user.id = :userId")
+    @Query("UPDATE User u SET u.password = :password WHERE u.id = :userId")
     void updatePassword(@Param("password") String password, @Param("userId") Long userId);
 
     @Modifying
-    @Query("UPDATE User user SET user.active = true WHERE user.id = :userId")
+    @Query("UPDATE User u SET u.active = true WHERE u.id = :userId")
     void updateActiveUserProfile(@Param("userId") Long userId);
 
     @Modifying
-    @Query("UPDATE User user SET user.passwordResetCode = :passwordResetCode WHERE user.id = :userId")
+    @Query("UPDATE User u SET u.passwordResetCode = :passwordResetCode WHERE u.id = :userId")
     void updatePasswordResetCode(@Param("passwordResetCode") String passwordResetCode, @Param("userId") Long userId);
 }

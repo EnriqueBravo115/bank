@@ -49,7 +49,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Transactional
     public String registration(RegistrationRequest request, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
-        ensureUserIdentifierAreUnique(request);
+        userHelper.ensureUserIdentifierAreUnique(request);
 
         Optional<User> existingUser = userRepository.getUserByEmail(request.getEmail(), User.class);
 
@@ -136,25 +136,5 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .user(basicMapper.convertToResponse(result.get("user"), AuthUserResponse.class))
                 .token((String) result.get("token"))
                 .build();
-
-    }
-
-    private void ensureUserIdentifierAreUnique(RegistrationRequest request) {
-        userRepository.findActiveByAnyIdentifier(request.getEmail(), request.getRfc(), request.getCurp()).ifPresent(
-                user -> {
-                    List<String> errors = new ArrayList<>();
-                    if (user.getEmail().equals(request.getEmail()))
-                        errors.add("Email is already taken");
-
-                    if (user.getRfc().equals(request.getRfc()))
-                        errors.add("RFC is already taken");
-
-                    if (user.getCurp().equals(request.getCurp()))
-                        errors.add("CURP is already taken");
-
-                    if (!errors.isEmpty()) {
-                        throw new UniqueFieldValidationException(errors);
-                    }
-                });
     }
 }

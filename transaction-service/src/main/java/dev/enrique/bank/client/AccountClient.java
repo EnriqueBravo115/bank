@@ -15,7 +15,7 @@ import java.util.List;
 public interface AccountClient {
     @CircuitBreaker
     @GetMapping()
-    List<String> getAccounId(@PathVariable("text") String text);
+    List<String> getAccountId(@PathVariable("text") String text);
 
     default ArrayList<String> defaultEmptyArray(Throwable throwable) {
         return new ArrayList<>();

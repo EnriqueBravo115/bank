@@ -1,7 +1,5 @@
 package dev.enrique.bank.model;
 
-import dev.enrique.bank.enums.AccountType;
-import dev.enrique.bank.enums.AccountStatus;
 import dev.enrique.bank.enums.Currency;
 
 import java.math.BigDecimal;
@@ -41,16 +39,8 @@ public class Account {
     @Column(name = "balance")
     private BigDecimal balance;
 
-    @Column(name = "account_number")
+    @Column(name = "account_number", length = 20)
     private String accountNumber;
-
-    @Column(name = "account_type")
-    @Enumerated(EnumType.STRING)
-    private AccountType accountType;
-
-    @Column(name = "account_status")
-    @Enumerated(EnumType.STRING)
-    private AccountStatus status;
 
     @Column(name = "currency")
     @Enumerated(EnumType.STRING)

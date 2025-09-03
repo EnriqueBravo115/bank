@@ -12,7 +12,6 @@ import static java.util.stream.Collectors.summarizingInt;
 import static java.util.stream.Collectors.toSet;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.IntSummaryStatistics;
@@ -28,13 +27,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.enums.Currency;
-import dev.enrique.bank.enums.AccountStatus;
-import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
+import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionService;
@@ -139,41 +136,9 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public BigDecimal calculateTransferFee(BigDecimal amount, Currency currency) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("Amount must be greater than zero");
-
-        BigDecimal feePercentage = currency.getFeePercentage();
-        BigDecimal minimumFee = currency.getMinimumFee();
-        BigDecimal maximumFee = currency.getMaximumFee();
-
-        BigDecimal calculatedFee = amount.multiply(feePercentage);
-
-        if (calculatedFee.compareTo(minimumFee) < 0) {
-            calculatedFee = minimumFee;
-        } else if (calculatedFee.compareTo(maximumFee) > 0) {
-            calculatedFee = maximumFee;
-        }
-
-        return calculatedFee.setScale(2, RoundingMode.HALF_UP);
-    }
-
-    @Override
     public Boolean hasSufficientFunds(Long accountId, BigDecimal amount) {
         Account account = accountHelper.getAccountById(accountId);
         return account.getBalance().compareTo(amount) > 0;
-    }
-
-    // el limite sera 50,000 dls crear otro type de normal y deluxe
-    @Override
-    public BigDecimal getTransferLimit(Long accountId) {
-        accountHelper.validateAccountId(accountId);
-        Account account = accountHelper.getAccountById(accountId);
-
-        if (account.getStatus() != AccountStatus.OPEN)
-            throw new IllegalStateException("Account is not open");
-
-        return account.getBalance().multiply(new BigDecimal("2"));
     }
 
     @Override

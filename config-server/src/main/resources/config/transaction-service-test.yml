@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: jdbc:postgresql://${DATASOURCE_HOST:localhost}:5432/user_db
+    username: user
+    password: password
+    driverClassName: org.postgresql.Driver
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9090/realms/bank-realm
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: testerapipersonal@gmail.com
+    password: yalu erjx xclw otqr 
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
+        fetch-registry: true
+        register-with-eureka: true
+    instance:
+        hostname: ${EUREKA_HOST:localhost}
+
+#server:
+#  ssl:
+#    key-store-type: PKCS12
+#    key-store: classpath:certificate.p12
+#    key-store-password: password

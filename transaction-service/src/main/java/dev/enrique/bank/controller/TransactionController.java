@@ -112,13 +112,6 @@ public class TransactionController {
         return ResponseEntity.ok(transactionMapper.calculateTotalAmountByType(accountId, type));
     }
 
-    @GetMapping(CALCULATE_TRANSFER_FEE)
-    public ResponseEntity<BigDecimal> calculateTransferFee(
-            @RequestParam BigDecimal amount,
-            @RequestParam Currency currency) {
-        return ResponseEntity.ok(transactionMapper.calculateTransferFee(amount, currency));
-    }
-
     @GetMapping(CHECK_SUFFICIENT_FUNDS)
     public ResponseEntity<Boolean> checkSufficientFunds(
             @PathVariable Long accountId,

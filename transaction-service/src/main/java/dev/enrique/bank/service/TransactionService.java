@@ -10,7 +10,6 @@ import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import dev.enrique.bank.enums.Currency;
 import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
@@ -42,11 +41,7 @@ public interface TransactionService {
 
     BigDecimal calculateTotalAmountByType(Long accountId, TransactionType type);
 
-    BigDecimal calculateTransferFee(BigDecimal amount, Currency currency);
-
     Boolean hasSufficientFunds(Long accountId, BigDecimal amount);
-
-    BigDecimal getTransferLimit(Long accountId);
 
     Set<String> getAllUniqueTransactionDescriptions(Long accountId);
 

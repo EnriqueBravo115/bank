@@ -11,15 +11,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import dev.enrique.bank.enums.Currency;
-import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
-import dev.enrique.bank.dto.response.HeaderResponse;
 import dev.enrique.bank.dto.response.TransactionBasicResponse;
 import dev.enrique.bank.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.enums.Currency;
+import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 

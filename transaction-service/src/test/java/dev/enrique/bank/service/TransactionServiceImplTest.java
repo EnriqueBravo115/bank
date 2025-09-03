@@ -2,7 +2,6 @@ package dev.enrique.bank.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -27,13 +26,11 @@ import org.springframework.data.domain.PageRequest;
 
 import dev.enrique.bank.TransactionServiceTestHelper;
 import dev.enrique.bank.constants.TestConstants;
-import dev.enrique.bank.enums.Currency;
-import dev.enrique.bank.enums.AccountStatus;
-import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
+import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.impl.TransactionServiceImpl;
@@ -79,12 +76,10 @@ public class TransactionServiceImplTest {
 
         a1 = Account.builder()
                 .balance(new BigDecimal("1000"))
-                .status(AccountStatus.OPEN)
                 .build();
 
         a2 = Account.builder()
                 .balance(new BigDecimal("2000"))
-                .status(AccountStatus.OPEN)
                 .build();
     }
 
@@ -244,19 +239,6 @@ public class TransactionServiceImplTest {
     }
 
     @Test
-    void calculateTransferFee_AmountZeroOrLess_ThrowsException() {
-        BigDecimal amount = BigDecimal.ZERO;
-        assertThrows(IllegalArgumentException.class,
-                () -> transactionService.calculateTransferFee(amount, Currency.MXN));
-    }
-
-    @Test
-    void calculateTransferFee_ValidInput_ReturnsFee() {
-        BigDecimal result = transactionService.calculateTransferFee(new BigDecimal("1000.00"), Currency.MXN);
-        assertEquals(new BigDecimal("30.00"), result);
-    }
-
-    @Test
     void hasSufficientFunds_ValidInput_ReturnsTrueWhenSufficient() {
         when(accountHelper.getAccountById(TestConstants.ACCOUNT_ID))
                 .thenReturn(a1);
@@ -274,24 +256,16 @@ public class TransactionServiceImplTest {
         assertFalse(result);
     }
 
-    @Test
-    void getTransferLimit_AccountNotOpen_ThrowsException() {
-        a1.setStatus(AccountStatus.CLOSE);
+    // @Test
+    // void getTransferLimit_AccountNotOpen_ThrowsException() {
+    // a1.setStatus(AccountStatus.CLOSE);
 
-        when(accountHelper.getAccountById(TestConstants.ACCOUNT_ID))
-                .thenReturn(a1);
+    // when(accountHelper.getAccountById(TestConstants.ACCOUNT_ID))
+    // .thenReturn(a1);
 
-        assertThrows(IllegalStateException.class, () -> transactionService.getTransferLimit(TestConstants.ACCOUNT_ID));
-    }
-
-    @Test
-    void getTransferLimit_AccountOpen_ReturnsDoubleBalance() {
-        when(accountHelper.getAccountById(TestConstants.ACCOUNT_ID))
-                .thenReturn(a1);
-
-        BigDecimal result = transactionService.getTransferLimit(TestConstants.ACCOUNT_ID);
-        assertEquals(new BigDecimal("2000"), result);
-    }
+    // assertThrows(IllegalStateException.class, () ->
+    // transactionService.getTransferLimit(TestConstants.ACCOUNT_ID));
+    // }
 
     @Test
     void getAllUniqueTransactionDescriptions_ValidAccountId_ReturnsUniqueWords() {
