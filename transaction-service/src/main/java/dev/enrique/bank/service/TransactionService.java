@@ -7,33 +7,35 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import dev.enrique.bank.enums.TransactionType;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
-import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
+import dev.enrique.bank.dto.response.TransactionBasicResponse;
+import dev.enrique.bank.dto.response.TransactionCommonResponse;
+import dev.enrique.bank.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.mapper.HeaderResponse;
 
 public interface TransactionService {
 
-    List<TransactionDetailedProjection> getTransactionHistory(Long accountId);
+    List<TransactionDetailedResponse> getTransactionHistory(Long accountId);
 
-    Page<TransactionCommonProjection> getAllTransactions(Long accountId, Pageable pageable);
+    HeaderResponse<TransactionCommonResponse> getAllTransactions(Long accountId, Pageable pageable);
 
-    List<TransactionCommonProjection> getTransactionByYearAndAccount(Long accountId, Integer year);
+    List<TransactionCommonResponse> getTransactionByYearAndAccount(Long accountId, Integer year);
 
-    List<TransactionBasicProjection> getAllTransactionsReversals(Long accountId);
+    List<TransactionBasicResponse> getAllTransactionsReversals(Long accountId);
 
-    List<TransactionCommonProjection> getAllTransactionsFromAccounts(List<Long> accountIds);
+    List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<Long> accountIds);
 
-    Map<TransactionType, List<TransactionCommonProjection>> groupTransactionsByType(Long accountId);
+    Map<TransactionType, List<TransactionCommonResponse>> groupTransactionsByType(Long accountId);
 
     Map<TransactionType, BigDecimal> sumTransactionsByType(Long accountId);
 
     IntSummaryStatistics getTransactionYearStatistics(Long accountId);
 
-    Map<Boolean, List<TransactionBasicProjection>> partitionTransactionsByAmount(Long accountId, BigDecimal amount);
+    Map<Boolean, List<TransactionBasicResponse>> partitionTransactionsByAmount(Long accountId, BigDecimal amount);
 
     Map<TransactionType, String> getTransactionTypeSummary(Long accountId);
 
@@ -49,7 +51,7 @@ public interface TransactionService {
 
     String getFormattedAverageBalance(List<Long> accountIds);
 
-    Optional<TransactionBasicProjection> findMaxTransaction(Long accountId);
+    Optional<TransactionBasicResponse> findMaxTransaction(Long accountId);
 
     double getAverageDaysBetweenTransactions(Long accountId);
 }

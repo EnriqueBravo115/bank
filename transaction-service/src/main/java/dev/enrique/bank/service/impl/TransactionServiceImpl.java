@@ -23,6 +23,12 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import dev.enrique.bank.dto.response.TransactionBasicResponse;
+import dev.enrique.bank.dto.response.TransactionCommonResponse;
+import dev.enrique.bank.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.mapper.BasicMapper;
+import dev.enrique.bank.mapper.HeaderResponse;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -43,43 +49,51 @@ import lombok.RequiredArgsConstructor;
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountHelper accountHelper;
+    private final BasicMapper basicMapper;
 
     @Override
-    public List<TransactionDetailedProjection> getTransactionHistory(Long accountId) {
+    public List<TransactionDetailedResponse> getTransactionHistory(Long accountId) {
         accountHelper.validateAccountId(accountId);
-        return transactionRepository.findCompletedByAccountId(accountId, TransactionDetailedProjection.class);
+        List<TransactionDetailedProjection> projections = transactionRepository
+                .findCompletedByAccountId(accountId, TransactionDetailedProjection.class);
+        return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
     }
 
     @Override
-    public Page<TransactionCommonProjection> getAllTransactions(Long accountId, Pageable pageable) {
+    public HeaderResponse<TransactionCommonResponse> getAllTransactions(Long accountId, Pageable pageable) {
         accountHelper.validateAccountId(accountId);
-        return transactionRepository.findCompletedByAccountId(accountId, pageable);
+        Page<TransactionCommonProjection> page = transactionRepository.findCompletedByAccountId(accountId, pageable);
+        return basicMapper.getHeaderResponse(page, TransactionCommonResponse.class);
     }
 
     @Override
-    public List<TransactionCommonProjection> getTransactionByYearAndAccount(Long accountId, Integer year) {
+    public List<TransactionCommonResponse> getTransactionByYearAndAccount(Long accountId, Integer year) {
         accountHelper.validateAccountIdAndYear(accountId, year);
-        return transactionRepository.findByAccountIdAndYear(accountId, year);
+        List<TransactionCommonProjection> projections = transactionRepository.findByAccountIdAndYear(accountId, year);
+        return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
     }
 
     @Override
-    public List<TransactionBasicProjection> getAllTransactionsReversals(Long accountId) {
+    public List<TransactionBasicResponse> getAllTransactionsReversals(Long accountId) {
         accountHelper.validateAccountId(accountId);
-        return transactionRepository.findReversalsByAccountId(accountId);
+        List<TransactionBasicProjection> projections = transactionRepository.findReversalsByAccountId(accountId);
+        return basicMapper.convertToResponseList(projections, TransactionBasicResponse.class);
     }
 
     @Override
-    public List<TransactionCommonProjection> getAllTransactionsFromAccounts(List<Long> accountIds) {
+    public List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<Long> accountIds) {
         accountIds.forEach(accountHelper::validateAccountId);
-        return transactionRepository.findCompletedByAccountIdsIn(accountIds);
+        List<TransactionCommonProjection> projections = transactionRepository.findCompletedByAccountIdsIn(accountIds);
+        return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
     }
 
     @Override
-    public Map<TransactionType, List<TransactionCommonProjection>> groupTransactionsByType(Long accountId) {
+    public Map<TransactionType, List<TransactionCommonResponse>> groupTransactionsByType(Long accountId) {
         accountHelper.validateAccountId(accountId);
-        return transactionRepository
+        Map<TransactionType, List<TransactionCommonProjection>> projections = transactionRepository
                 .findCompletedByAccountId(accountId, TransactionCommonProjection.class).stream()
                 .collect(groupingBy(TransactionCommonProjection::getTransactionType));
+        return basicMapper.convertToTypedResponseMap(projections, TransactionCommonResponse.class);
     }
 
     @Override
@@ -99,11 +113,14 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Map<Boolean, List<TransactionBasicProjection>> partitionTransactionsByAmount(Long accountId,
+    public Map<Boolean, List<TransactionBasicResponse>> partitionTransactionsByAmount(Long accountId,
             BigDecimal amount) {
         accountHelper.validateAccountId(accountId);
-        return transactionRepository.findCompletedByAccountId(accountId, TransactionBasicProjection.class).stream()
+        Map<Boolean, List<TransactionBasicProjection>> projection = transactionRepository
+                .findCompletedByAccountId(accountId, TransactionBasicProjection.class).stream()
                 .collect(partitioningBy(t -> t.getAmount().compareTo(amount) > 0));
+
+        return basicMapper.convertToBooleanKeyResponseMap(projection, TransactionBasicResponse.class);
     }
 
     @Override
@@ -172,10 +189,11 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Optional<TransactionBasicProjection> findMaxTransaction(Long accountId) {
+    public Optional<TransactionBasicResponse> findMaxTransaction(Long accountId) {
         accountHelper.validateAccountId(accountId);
-        return transactionRepository.findCompletedByAccountId(accountId, TransactionBasicProjection.class).stream()
+        Optional<TransactionBasicProjection> projection = transactionRepository.findCompletedByAccountId(accountId, TransactionBasicProjection.class).stream()
                 .collect(reducing((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2));
+        return basicMapper.convertOptionalResponse(projection, TransactionBasicResponse.class);
     }
 
     @Override

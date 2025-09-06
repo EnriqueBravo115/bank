@@ -33,9 +33,9 @@ public class BasicMapper {
     }
 
     public <T, S> HeaderResponse<S> getHeaderResponse(Page<T> pageableItems, Class<S> type) {
-        if (pageableItems == null) {
+        if (pageableItems == null)
             throw new IllegalArgumentException("Pageable items cannot be null");
-        }
+
         List<S> responses = convertToResponseList(pageableItems.getContent(), type);
         return constructHeaderResponse(responses, pageableItems.getTotalPages());
     }

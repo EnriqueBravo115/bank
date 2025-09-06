@@ -3,7 +3,6 @@ package dev.enrique.bank.dto.response;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import dev.enrique.bank.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,5 +17,4 @@ public class TransactionCommonResponse {
     private BigDecimal amount;
     private String description;
     private LocalDateTime transactionDate;
-    private TransactionType transactionType;
 }
