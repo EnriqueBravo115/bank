@@ -191,7 +191,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Optional<TransactionBasicResponse> findMaxTransaction(Long accountId) {
         accountHelper.validateAccountId(accountId);
-        Optional<TransactionBasicProjection> projection = transactionRepository.findCompletedByAccountId(accountId, TransactionBasicProjection.class).stream()
+        Optional<TransactionBasicProjection> projection = transactionRepository
+                .findCompletedByAccountId(accountId, TransactionBasicProjection.class).stream()
                 .collect(reducing((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2));
         return basicMapper.convertOptionalResponse(projection, TransactionBasicResponse.class);
     }

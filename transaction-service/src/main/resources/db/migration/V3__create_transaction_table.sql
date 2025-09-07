@@ -1,5 +1,6 @@
 CREATE TABLE transaction (
     id                      BIGINT PRIMARY KEY,
+    transaction_number      VARCHAR(255), 
     amount                  DECIMAL,
     description             VARCHAR(255), 
     transaction_date        TIMESTAMP,

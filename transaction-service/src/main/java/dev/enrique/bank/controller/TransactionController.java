@@ -26,7 +26,6 @@ import dev.enrique.bank.mapper.HeaderResponse;
 import dev.enrique.bank.dto.response.TransactionBasicResponse;
 import dev.enrique.bank.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.mapper.TransactionMapper;
 import dev.enrique.bank.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 
@@ -34,7 +33,6 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping(TRANSACTION)
 @RequiredArgsConstructor
 public class TransactionController {
-    private final TransactionMapper transactionMapper;
     private final TransactionService transactionService;
 
     @GetMapping(GET_TRANSACTION_HISTORY)

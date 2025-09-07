@@ -37,6 +37,9 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "transaction_number")
+    private String transactionNumber;
+
     @Column(name = "amount")
     private BigDecimal amount;
 
