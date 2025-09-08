@@ -18,16 +18,14 @@ import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.Transaction;
-import dev.enrique.bank.service.TransferService;
-import dev.enrique.bank.service.util.TransferHelper;
+import dev.enrique.bank.service.TransactionCreationService;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class TransferServiceImpl implements TransferService {
+public class TransactionCreationServiceImpl implements TransactionCreationService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
-    private final TransferHelper transferHelper;
 
     @Override
     @Transactional
@@ -65,8 +63,6 @@ public class TransferServiceImpl implements TransferService {
         Account sourceAccount = transaction.getSourceAccount();
         Account targetAccount = transaction.getTargetAccount();
 
-        transferHelper.validateReverseTransfer(transaction, sourceAccount, targetAccount);
-
         Transaction reversal = Transaction.builder()
                 .sourceAccount(targetAccount)
                 .targetAccount(sourceAccount)
@@ -83,4 +79,3 @@ public class TransferServiceImpl implements TransferService {
         transactionRepository.save(reversal);
     }
 }
-

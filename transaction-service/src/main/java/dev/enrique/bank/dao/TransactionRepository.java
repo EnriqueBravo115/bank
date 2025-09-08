@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
+import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.model.Transaction;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
@@ -49,7 +49,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             WHERE t.transactionType = 'REVERSAL'
             AND (t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
             """)
-    List<TransactionBasicProjection> findReversalsByAccountId(@Param("accountId") Long accountId);
+    List<TransactionCommonProjection> findReversalsByAccountId(@Param("accountId") Long accountId);
 
     @Query("""
             SELECT t FROM Transaction t
@@ -57,6 +57,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             AND (:accountId IS NULL OR t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionCommonProjection> findByAccountIdAndYear(
+    List<TransactionDetailedProjection> findByAccountIdAndYear(
             @Param("accountId") Long accountId, @Param("year") Integer year);
 }

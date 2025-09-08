@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 @Service
 public interface TransactionSupportService {
     Set<String> getAllUniqueTransactionDescriptions(Long accountId);
-
     String getAllTransactionDescriptions(Long accountId);
-
     String getFormattedAverageBalance(List<Long> accountIds);
 }

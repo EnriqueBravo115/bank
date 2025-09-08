@@ -13,8 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TransactionCommonResponse {
-    private Long id;
+    private String transactionNumber;
     private BigDecimal amount;
-    private String description;
     private LocalDateTime transactionDate;
 }

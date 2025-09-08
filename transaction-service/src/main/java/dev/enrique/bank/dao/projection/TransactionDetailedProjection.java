@@ -3,14 +3,14 @@ package dev.enrique.bank.dao.projection;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import dev.enrique.bank.enums.TransactionStatus;
+import dev.enrique.bank.enums.TransactionType;
+
 public interface TransactionDetailedProjection {
-    Long getId();
-
+    String getTransactionNumber();
     BigDecimal getAmount();
-
-    LocalDateTime getTransactionDate();
-
     String getDescription();
-
-    String getTransactionType();
+    LocalDateTime getTransactionDate();
+    TransactionType getTransactionType();
+    TransactionStatus getTransactionStatus();
 }
