@@ -57,15 +57,11 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_account_id")
-    @JsonIgnore
-    private Account sourceAccount;
+    @Column(name = "source_account_number")
+    private String sourceAccountNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "target_account_id")
-    @JsonIgnore
-    private Account targetAccount;
+    @Column(name = "target_account_number")
+    private String targetAccountNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "original_transaction_id")
