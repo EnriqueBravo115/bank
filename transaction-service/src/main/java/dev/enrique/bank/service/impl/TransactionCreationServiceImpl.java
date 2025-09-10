@@ -1,8 +1,8 @@
 package dev.enrique.bank.service.impl;
 
-import static dev.enrique.bank.constants.ErrorMessage.ACCOUNT_NOT_FOUND;
-import static dev.enrique.bank.constants.ErrorMessage.INSUFFICIENT_FUNDS;
-import static dev.enrique.bank.constants.ErrorMessage.TRANSACTION_NOT_FOUND;
+import static dev.enrique.bank.commons.constants.ErrorMessage.ACCOUNT_NOT_FOUND;
+import static dev.enrique.bank.commons.constants.ErrorMessage.INSUFFICIENT_FUNDS;
+import static dev.enrique.bank.commons.constants.ErrorMessage.TRANSACTION_NOT_FOUND;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,9 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.enrique.bank.enums.TransactionStatus;
-import dev.enrique.bank.enums.TransactionType;
-import dev.enrique.bank.exception.ApiRequestException;
+import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Account;

@@ -5,8 +5,8 @@ import org.springframework.retry.annotation.CircuitBreaker;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import dev.enrique.bank.configuration.FeignConfiguration;
-import static dev.enrique.bank.constants.FeignConstants.ACCOUNT_SERVICE;
+import dev.enrique.bank.config.FeignConfiguration;
+import static dev.enrique.bank.commons.constants.PathConstants.ACCOUNT_SERVICE;
 
 import java.util.ArrayList;
 import java.util.List;

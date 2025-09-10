@@ -49,6 +49,5 @@ public class TransactionSupportServiceImpl implements TransactionSupportService 
                 .collect(collectingAndThen(
                         averagingDouble(a -> a.getBalance().doubleValue()),
                         avg -> String.format("$%,.2f", avg)));
-
     }
 }

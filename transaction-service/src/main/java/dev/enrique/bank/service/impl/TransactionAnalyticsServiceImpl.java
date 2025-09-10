@@ -23,7 +23,7 @@ import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import dev.enrique.bank.service.util.BasicMapper;

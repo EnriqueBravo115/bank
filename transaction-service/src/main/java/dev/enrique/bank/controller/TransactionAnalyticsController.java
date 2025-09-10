@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.enrique.bank.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;
 

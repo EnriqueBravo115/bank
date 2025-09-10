@@ -100,11 +100,10 @@
             <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
-            <groupId>dev.enrique</groupId>
-            <artifactId>commons</artifactId>
-            <version>1.0.0</version>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+            <version>3.2.0</version>
         </dependency>
     </dependencies>
 

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionType;
 
 @Service
 public interface TransactionAnalyticsService {

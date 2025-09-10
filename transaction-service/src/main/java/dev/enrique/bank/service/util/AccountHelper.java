@@ -1,13 +1,13 @@
 package dev.enrique.bank.service.util;
 
-import static dev.enrique.bank.constants.ErrorMessage.ACCOUNT_NOT_FOUND;
+import static dev.enrique.bank.commons.constants.ErrorMessage.ACCOUNT_NOT_FOUND;
 import java.time.Year;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import dev.enrique.bank.enums.TransactionType;
-import dev.enrique.bank.exception.ApiRequestException;
+import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.model.Account;
 import lombok.RequiredArgsConstructor;

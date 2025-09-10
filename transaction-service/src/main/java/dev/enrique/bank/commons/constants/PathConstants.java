@@ -5,6 +5,8 @@ public class PathConstants {
     public static final String AUTH_USER_ID_HEADER = "X-auth-user-id";
     public static final String API = "/api/v1";
 
+    public static final String ACCOUNT_SERVICE = "account-service";
+
     public static final String TRANSACTION = API + "/transaction";
     public static final String TRANSACTION_QUERY = TRANSACTION + "/query";
     public static final String TRANSACTION_ANALYTICS = TRANSACTION + "/analytics";

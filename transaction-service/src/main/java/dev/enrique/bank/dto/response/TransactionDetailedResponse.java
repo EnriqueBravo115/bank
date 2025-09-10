@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.transaction.TransactionStatus;
 
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

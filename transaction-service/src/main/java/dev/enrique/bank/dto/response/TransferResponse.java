@@ -2,8 +2,8 @@ package dev.enrique.bank.dto.response;
 
 import java.math.BigDecimal;
 
-import dev.enrique.bank.enums.TransactionStatus;
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

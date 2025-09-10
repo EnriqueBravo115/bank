@@ -1,6 +1,6 @@
 package dev.enrique.bank.model;
 
-import dev.enrique.bank.enums.Currency;
+import dev.enrique.bank.commons.enums.Currency;
 
 import java.math.BigDecimal;
 import java.util.List;

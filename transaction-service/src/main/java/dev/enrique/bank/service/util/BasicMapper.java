@@ -1,6 +1,6 @@
 package dev.enrique.bank.service.util;
 
-import static dev.enrique.bank.constants.PathConstants.PAGE_TOTAL_COUNT;
+import static dev.enrique.bank.commons.constants.PathConstants.PAGE_TOTAL_COUNT;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import dev.enrique.bank.dto.response.HeaderResponse;
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
 
 @Component

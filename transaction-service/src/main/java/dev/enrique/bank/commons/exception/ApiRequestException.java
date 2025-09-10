@@ -1,4 +1,4 @@
-package dev.enrique.bank.exception;
+package dev.enrique.bank.commons.exception;
 
 import org.springframework.http.HttpStatus;
 

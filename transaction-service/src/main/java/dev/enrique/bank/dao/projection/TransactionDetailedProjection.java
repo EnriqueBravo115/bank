@@ -3,8 +3,8 @@ package dev.enrique.bank.dao.projection;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import dev.enrique.bank.enums.TransactionStatus;
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.enums.TransactionType;
 
 public interface TransactionDetailedProjection {
     String getTransactionNumber();
