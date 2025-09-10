@@ -14,7 +14,6 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 
 import dev.enrique.bank.enums.TransactionStatus;
 import dev.enrique.bank.enums.TransactionType;
-import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 
@@ -26,24 +25,27 @@ public class TransactionServiceTestHelper {
         TransactionDetailedProjection tProjection1 = factory.createProjection(TransactionDetailedProjection.class,
                 new HashMap<>() {
                     {
-                        put("id", 1L);
+                        put("transactionNumber", "123");
                         put("amount", new BigDecimal("100.50"));
                         put("transactionDate", LocalDateTime.now());
-                        put("description", "transaction");
-                        put("transactionType", "TRANSFER");
+                        put("description", "test transaction 1");
+                        put("transactionType", TransactionType.TRANSFER);
+                        put("transactionStatus", TransactionStatus.COMPLETED);
                     }
                 });
 
         TransactionDetailedProjection tProjection2 = factory.createProjection(TransactionDetailedProjection.class,
                 new HashMap<>() {
                     {
-                        put("id", 2L);
+                        put("transactionNumber", "456");
                         put("amount", new BigDecimal("300.00"));
                         put("transactionDate", LocalDateTime.now());
-                        put("description", "transaction");
-                        put("transactionType", "TRANSFER");
+                        put("description", "test transaction 2");
+                        put("transactionType", TransactionType.TRANSFER);
+                        put("transactionStatus", TransactionStatus.COMPLETED);
                     }
                 });
+
         return Arrays.asList(tProjection1, tProjection2);
     }
 
@@ -96,30 +98,6 @@ public class TransactionServiceTestHelper {
                         put("transactionDate", LocalDateTime.now());
                         put("transactionType", TransactionType.TRANSFER);
                         put("transactionStatus", TransactionStatus.COMPLETED);
-                    }
-                });
-
-        return Arrays.asList(tProjection1, tProjection2);
-    }
-
-    public static List<TransactionBasicProjection> createTransactionBasicProjections() {
-        TransactionBasicProjection tProjection1 = factory.createProjection(TransactionBasicProjection.class,
-                new HashMap<>() {
-                    {
-                        put("id", 1L);
-                        put("amount", new BigDecimal("50.00"));
-                        put("transactionType", TransactionType.TRANSFER);
-                        put("transactionDate", LocalDateTime.now());
-                    }
-                });
-
-        TransactionBasicProjection tProjection2 = factory.createProjection(TransactionBasicProjection.class,
-                new HashMap<>() {
-                    {
-                        put("id", 2L);
-                        put("amount", new BigDecimal("100.00"));
-                        put("transactionType", TransactionType.TRANSFER);
-                        put("transactionDate", LocalDateTime.now());
                     }
                 });
 
