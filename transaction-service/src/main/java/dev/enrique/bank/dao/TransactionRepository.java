@@ -15,10 +15,18 @@ import dev.enrique.bank.model.Transaction;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     @Query("""
             SELECT t FROM Transaction t
-            WHERE (t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
+            WHERE (t.sourceAccountNumber = :accountNumber OR t.targetAccountNumber = :accountNumber)
             AND t.transactionStatus = 'COMPLETED'
             """)
-    List<Transaction> findAllByAccountId(@Param("accountId") Long accountId);
+    List<Transaction> findAllCompletedByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    @Query("""
+            SELECT t FROM Transaction t
+            WHERE t.sourceAccountNumber = :accountNumber OR t.targetAccountNumber = :accountNumber
+            AND (t.transactionStatus = 'COMPLETED')
+            ORDER BY t.transactionDate DESC
+            """)
+    <T> List<T> findAllCompletedByAccountNumber(@Param("accountId") String accountNumber, Class<T> type);
 
     @Query("""
             SELECT t FROM Transaction t
@@ -30,11 +38,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("""
             SELECT t FROM Transaction t
-            WHERE t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId
-            AND (t.transactionStatus = 'COMPLETED')
+            WHERE t.sourceAccountNumber = :accountNumber OR t.targetAccountNumber = :accountNumber
             ORDER BY t.transactionDate DESC
             """)
-    <T> List<T> findCompletedByAccountId(@Param("accountId") Long accountId, Class<T> type);
+    <T> List<T> findAllByAccountNumber(@Param("accountId") String accountNumber, Class<T> type);
 
     @Query("""
             SELECT t FROM Transaction t

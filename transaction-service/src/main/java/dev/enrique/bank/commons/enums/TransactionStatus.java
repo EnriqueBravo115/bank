@@ -6,9 +6,7 @@ public enum TransactionStatus {
     COMPLETED,
     FAILED,
     REVERSED,
-    PARTIALLY_REVERSED,
     CANCELLED,
     DECLINED,
-    ON_HOLD,
     EXPIRED
 }

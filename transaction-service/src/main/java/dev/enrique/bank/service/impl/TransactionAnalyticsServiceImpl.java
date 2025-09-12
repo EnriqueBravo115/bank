@@ -5,25 +5,24 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.reducing;
-import static java.util.stream.Collectors.summarizingDouble;
-import static java.util.stream.Collectors.summarizingInt;
+import static java.util.stream.Collectors.toList;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.IntSummaryStatistics;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.TransactionRepository;
+import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import dev.enrique.bank.service.util.BasicMapper;
@@ -35,79 +34,89 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     private final TransactionRepository transactionRepository;
     private final BasicMapper basicMapper;
 
+    // TODO: Implement polymorphism according to TransactionStatus
+    // Groups transactions by type and converts projections into DTO responses,
+    // ordered by date descending from the repository
     @Override
-    public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(Long accountId) {
+    public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(String accountNumber) {
         Map<TransactionType, List<TransactionDetailedProjection>> projections = transactionRepository
-                .findCompletedByAccountId(accountId, TransactionDetailedProjection.class).stream()
+                .findAllByAccountNumber(accountNumber, TransactionDetailedProjection.class).stream()
                 .collect(groupingBy(TransactionDetailedProjection::getTransactionType));
 
         return basicMapper.convertToTypedResponseMap(projections, TransactionDetailedResponse.class);
     }
 
     @Override
-    public Map<TransactionType, BigDecimal> sumTransactionsByType(Long accountId) {
-        return transactionRepository.findAllByAccountId(accountId).stream()
+    public Map<TransactionType, BigDecimal> sumTransactionsByType(String accountNumber) {
+        return transactionRepository.findAllCompletedByAccountNumber(accountNumber).stream()
                 .collect(groupingBy(Transaction::getTransactionType,
                         reducing(BigDecimal.ZERO, Transaction::getAmount, BigDecimal::add)));
     }
 
+    // - TRUE: Transactions with amount greater than the specified amount
+    // - FALSE: Transactions with amount less than or equal to the specified threshold
     @Override
-    public IntSummaryStatistics getTransactionYearStatistics(Long accountId) {
-        return transactionRepository.findAllByAccountId(accountId).stream()
-                .collect(summarizingInt(t -> t.getTransactionDate().getYear()));
-    }
-
-    @Override
-    public Map<Boolean, List<TransactionCommonResponse>> partitionTransactionsByAmount(Long accountId,
+    public Map<Boolean, List<TransactionCommonResponse>> partitionTransactionsByAmount(String accountNumber,
             BigDecimal amount) {
         Map<Boolean, List<TransactionCommonProjection>> projection = transactionRepository
-                .findCompletedByAccountId(accountId, TransactionCommonProjection.class).stream()
+                .findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+                .stream()
                 .collect(partitioningBy(t -> t.getAmount().compareTo(amount) > 0));
+
         return basicMapper.convertToBooleanKeyResponseMap(projection, TransactionCommonResponse.class);
     }
 
-    @Override
-    public Map<TransactionType, String> getTransactionTypeSummary(Long accountId) {
-        return transactionRepository.findAllByAccountId(accountId).stream()
+    // Groups transactions by type and calculates a TransactionSummaryResponse with:
+    // 1. The number of transactions
+    // 2. The total amount
+    public Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String accountNumber) {
+        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionBasicProjection.class)
+                .stream()
                 .collect(groupingBy(
-                        Transaction::getTransactionType,
+                        TransactionBasicProjection::getTransactionType,
                         collectingAndThen(
-                                summarizingDouble(t -> t.getAmount().doubleValue()),
-                                stats -> String.format("Count: %d, Total: $%,.2f",
-                                        stats.getCount(), stats.getSum()))));
+                                toList(),
+                                list -> new TransactionSummaryResponse(
+                                        list.size(),
+                                        list.stream()
+                                                .map(TransactionBasicProjection::getAmount)
+                                                .reduce(BigDecimal.ZERO, BigDecimal::add)))));
     }
 
     @Override
-    public BigDecimal calculateTotalTransactionAmount(Long accountId) {
-        return transactionRepository.findAllByAccountId(accountId).stream()
-                .map(Transaction::getAmount)
+    public BigDecimal calculateTotalTransactionAmount(String accountNumber) {
+        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionBasicProjection.class)
+                .stream()
+                .map(TransactionBasicProjection::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override
-    public BigDecimal calculateTotalAmountByType(Long accountId, TransactionType type) {
-        return transactionRepository.findAllByAccountId(accountId).stream()
+    public BigDecimal calculateTotalAmountByType(String accountNumber, TransactionType type) {
+        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionBasicProjection.class)
+                .stream()
                 .filter(t -> t.getTransactionType() == type)
-                .map(Transaction::getAmount)
+                .map(TransactionBasicProjection::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    // Calculates the average days between completed transactions for an account
+    // - Uses ChronoUnit.DAYS.between() for date difference calculation
     @Override
-    public double getAverageDaysBetweenTransactions(Long accountId) {
-        List<Transaction> transactions = transactionRepository.findAllByAccountId(accountId);
+    public double getAverageDaysBetweenTransactions(String accountNumber) {
+        List<Transaction> sorted = transactionRepository.findAllCompletedByAccountNumber(accountNumber)
+                .stream()
+                .sorted(comparing(Transaction::getTransactionDate))
+                .toList();
 
-        if (transactions.size() < 2)
+        if (sorted.size() < 2)
             return 0;
 
-        transactions.sort(comparing(Transaction::getTransactionDate));
-
-        return IntStream.range(0, transactions.size() - 1)
-                .mapToLong(i -> {
-                    LocalDateTime date1 = transactions.get(i).getTransactionDate();
-                    LocalDateTime date2 = transactions.get(i + 1).getTransactionDate();
-                    return Duration.between(date1, date2).toDays();
-                })
+        return IntStream.range(0, sorted.size() - 1)
+                .mapToLong(i -> ChronoUnit.DAYS.between(
+                        sorted.get(i).getTransactionDate().toLocalDate(),
+                        sorted.get(i + 1).getTransactionDate().toLocalDate()))
                 .average()
-                .orElse(0);
+                .orElseThrow(() -> new IllegalStateException("Cannot calculate average"));
     }
 }

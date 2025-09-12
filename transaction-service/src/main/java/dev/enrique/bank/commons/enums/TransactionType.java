@@ -4,5 +4,4 @@ public enum TransactionType {
     TRANSFER, 
     WITHDRAW, 
     SERVICE,
-    REVERSAL
 }
