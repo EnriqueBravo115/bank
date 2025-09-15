@@ -6,7 +6,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.exception.ApiRequestException;
+import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.service.EmailService;
 
 @Service

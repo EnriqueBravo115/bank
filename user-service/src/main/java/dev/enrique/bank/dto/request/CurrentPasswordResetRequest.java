@@ -1,10 +1,5 @@
 package dev.enrique.bank.dto.request;
 
-import static dev.enrique.bank.constants.ErrorMessage.EMPTY_CURRENT_PASSWORD;
-import static dev.enrique.bank.constants.ErrorMessage.EMPTY_PASSWORD;
-import static dev.enrique.bank.constants.ErrorMessage.EMPTY_PASSWORD_CONFIRMATION;
-import static dev.enrique.bank.constants.ErrorMessage.SHORT_PASSWORD;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -13,14 +8,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CurrentPasswordResetRequest {
-    @NotBlank(message = EMPTY_CURRENT_PASSWORD)
+    @NotBlank(message = "Current password cannot be empty")
     private String currentPassword;
 
-    @NotBlank(message = EMPTY_PASSWORD)
-    @Size(min = 8, message = SHORT_PASSWORD)
+    @NotBlank(message = "Password cannot be empty.")
+    @Size(min = 8, message = "Your password needs to be at least 8 characters. Please enter a longer one.")
     private String password;
 
-    @NotBlank(message = EMPTY_PASSWORD_CONFIRMATION)
-    @Size(min = 8, message = SHORT_PASSWORD)
+    @NotBlank(message = "Password confirmation cannot be empty.")
+    @Size(min = 8, message = "Your password needs to be at least 8 characters. Please enter a longer one.")
     private String password2;
 }

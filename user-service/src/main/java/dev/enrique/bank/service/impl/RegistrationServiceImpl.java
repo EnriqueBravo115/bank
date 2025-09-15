@@ -1,13 +1,5 @@
 package dev.enrique.bank.service.impl;
 
-import static dev.enrique.bank.constants.ErrorMessage.ACTIVATION_CODE_NOT_FOUND;
-import static dev.enrique.bank.constants.ErrorMessage.EMAIL_HAS_ALREADY_BE_TAKEN;
-import static dev.enrique.bank.constants.ErrorMessage.PASSWORD_LENGTH_ERROR;
-import static dev.enrique.bank.constants.ErrorMessage.USER_NOT_FOUND;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,22 +11,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
-import dev.enrique.bank.configuration.JwtProvider;
+import dev.enrique.bank.commons.enums.UserRole;
+import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserCommonProjection;
 import dev.enrique.bank.dto.request.RegistrationRequest;
-import dev.enrique.bank.dto.response.AuthUserResponse;
 import dev.enrique.bank.dto.response.AuthenticationResponse;
-import dev.enrique.bank.enums.UserRole;
-import dev.enrique.bank.exception.ApiRequestException;
-import dev.enrique.bank.exception.UniqueFieldValidationException;
-import dev.enrique.bank.mapper.BasicMapper;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.EmailService;
 import dev.enrique.bank.service.RegistrationService;
+import dev.enrique.bank.service.util.BasicMapper;
 import dev.enrique.bank.service.util.UserHelper;
 import lombok.RequiredArgsConstructor;
 
+// TODO: Refactor for integration with KEYCLOAK
 @Service
 @RequiredArgsConstructor
 public class RegistrationServiceImpl implements RegistrationService {
@@ -84,7 +74,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             userRepository.save(existingUser.get());
             return "User updated";
         }
-        throw new ApiRequestException(EMAIL_HAS_ALREADY_BE_TAKEN, HttpStatus.FORBIDDEN);
+        throw new ApiRequestException("Email has already be taken", HttpStatus.FORBIDDEN);
     }
 
     @Override
@@ -93,7 +83,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         userHelper.processInputErrors(bindingResult);
 
         UserCommonProjection user = userRepository.getUserByEmail(email, UserCommonProjection.class)
-                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.NOT_FOUND));
 
         String activationCode = UUID.randomUUID().toString().substring(0, 7);
         userRepository.updateActivationCode(activationCode, user.getId());
@@ -109,7 +99,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Transactional
     public String checkRegistrationCode(String code) {
         UserCommonProjection user = userRepository.getCommonUserByActivationCode(code)
-                .orElseThrow(() -> new ApiRequestException(ACTIVATION_CODE_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiRequestException("Activation code not found", HttpStatus.NOT_FOUND));
         userRepository.updateActivationCode(null, user.getId());
         return "User succesfully updated";
     }
@@ -119,10 +109,10 @@ public class RegistrationServiceImpl implements RegistrationService {
     public AuthenticationResponse endRegistration(String email, String password, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
         if (password.length() < 8)
-            throw new ApiRequestException(PASSWORD_LENGTH_ERROR, HttpStatus.BAD_REQUEST);
+            throw new ApiRequestException("Your password needs to be at least 8 characters", HttpStatus.BAD_REQUEST);
 
         User user = userRepository.getUserByEmail(email, User.class)
-                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.NOT_FOUND));
 
         userRepository.updatePassword(passwordEncoder.encode(password), user.getId());
         userRepository.updateActiveUserProfile(user.getId());
@@ -130,11 +120,15 @@ public class RegistrationServiceImpl implements RegistrationService {
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(CredentialRepresentation.PASSWORD);
 
-        Map<String, Object> result = Map.of("user", user, "token", token);
+        // Map<String, Object> result = Map.of("user", user, "token", token);
 
-        return AuthenticationResponse.builder()
-                .user(basicMapper.convertToResponse(result.get("user"), AuthUserResponse.class))
-                .token((String) result.get("token"))
-                .build();
+        // return AuthenticationResponse.builder()
+        // .user(basicMapper.convertToResponse(result.get("user"),
+        // AuthUserResponse.class))
+        // .token((String) result.get("token"))
+        // .build();
+
+        throw new UnsupportedOperationException("Unimplemented method 'updatePhone'");
+
     }
 }

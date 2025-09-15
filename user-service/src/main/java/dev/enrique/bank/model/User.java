@@ -6,9 +6,9 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import dev.enrique.bank.enums.Country;
-import dev.enrique.bank.enums.Gender;
-import dev.enrique.bank.enums.UserRole;
+import dev.enrique.bank.commons.enums.Country;
+import dev.enrique.bank.commons.enums.Gender;
+import dev.enrique.bank.commons.enums.UserRole;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -88,9 +88,6 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Account> accounts;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Notification> notifications;

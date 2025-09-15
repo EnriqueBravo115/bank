@@ -2,8 +2,8 @@ package dev.enrique.bank.model;
 
 import java.time.LocalDateTime;
 
-import dev.enrique.bank.enums.NotificationStatus;
-import dev.enrique.bank.enums.NotificationType;
+import dev.enrique.bank.commons.enums.NotificationStatus;
+import dev.enrique.bank.commons.enums.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -1,4 +1,4 @@
-package dev.enrique.bank.enums;
+package dev.enrique.bank.commons.enums;
 
 public enum Country {
     MX,

@@ -1,4 +1,4 @@
-package dev.enrique.bank.dto;
+package dev.enrique.bank.dto.response;
 
 import lombok.Data;
 

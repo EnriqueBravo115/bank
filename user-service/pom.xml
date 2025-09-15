@@ -128,12 +128,6 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>dev.enrique</groupId>
-            <artifactId>commons</artifactId>
-            <version>1.0.0</version>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

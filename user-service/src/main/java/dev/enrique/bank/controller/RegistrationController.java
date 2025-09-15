@@ -1,5 +1,11 @@
 package dev.enrique.bank.controller;
 
+import static dev.enrique.bank.commons.constants.PathConstants.REGISTER;
+import static dev.enrique.bank.commons.constants.PathConstants.REGISTER_ACTIVATE;
+import static dev.enrique.bank.commons.constants.PathConstants.REGISTER_CHECK;
+import static dev.enrique.bank.commons.constants.PathConstants.REGISTER_CODE;
+import static dev.enrique.bank.commons.constants.PathConstants.REGISTER_CONFIRM;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +22,6 @@ import dev.enrique.bank.dto.response.AuthenticationResponse;
 import dev.enrique.bank.service.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import static dev.enrique.bank.constants.PathConstants.*;
 
 @RestController
 @RequiredArgsConstructor

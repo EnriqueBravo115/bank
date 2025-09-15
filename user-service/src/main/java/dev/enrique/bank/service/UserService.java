@@ -5,8 +5,6 @@ import dev.enrique.bank.dao.projection.UserBasicProjection;
 
 public interface UserService {
     UserBasicProjection getUserById(Long userId);
-
     //Page<UserProjection> getUsers(Pageable pageable);
-
     User saveUser(User user);
 }

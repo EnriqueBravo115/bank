@@ -1,7 +1,6 @@
 package dev.enrique.bank.service.util;
 
-import static dev.enrique.bank.constants.ErrorMessage.USER_NOT_FOUND;
-import static dev.enrique.bank.constants.PathConstants.AUTH_USER_ID_HEADER;
+import static dev.enrique.bank.commons.constants.PathConstants.AUTH_USER_ID_HEADER;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +15,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dto.request.RegistrationRequest;
-import dev.enrique.bank.exception.ApiRequestException;
-import dev.enrique.bank.exception.InputFieldException;
-import dev.enrique.bank.exception.UniqueFieldValidationException;
+import dev.enrique.bank.commons.exception.ApiRequestException;
+import dev.enrique.bank.commons.exception.InputFieldException;
+import dev.enrique.bank.commons.exception.UniqueFieldValidationException;
 import dev.enrique.bank.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +38,7 @@ public class UserHelper {
 
     public User getAuthenticatedUser() {
         return userRepository.findById(getUserId())
-                .orElseThrow(() -> new ApiRequestException(USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.NOT_FOUND));
     }
 
     public void checkMatchPasswords(String password, String password2) {
