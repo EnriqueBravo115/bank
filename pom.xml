@@ -24,7 +24,6 @@
         <module>transaction-service</module>
         <module>card-service</module>
         <module>report-service</module>
-        <module>commons</module>
     </modules>
 
     <properties>

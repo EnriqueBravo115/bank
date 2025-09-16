@@ -101,7 +101,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     }
 
     // Calculates the average days between completed transactions for an account
-    // - Uses ChronoUnit.DAYS.between() for date difference calculation
+    // - Uses ChronosUnit.DAYS.between() for date difference calculation
     @Override
     public double getAverageDaysBetweenTransactions(String accountNumber) {
         List<Transaction> sorted = transactionRepository.findAllCompletedByAccountNumber(accountNumber)

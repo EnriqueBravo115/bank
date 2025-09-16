@@ -28,17 +28,17 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "transaction")
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Builder
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "transaction_number")
-    private String transactionNumber;
+    @Column(name = "transaction_code")
+    private String transactionCode;
 
     @Column(name = "amount")
     private BigDecimal amount;

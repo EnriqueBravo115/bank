@@ -7,6 +7,8 @@ import static dev.enrique.bank.commons.constants.ErrorMessage.TRANSACTION_NOT_FO
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import dev.enrique.bank.client.AccountClient;
+import dev.enrique.bank.dto.response.AccountResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,27 +16,23 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.commons.exception.ApiRequestException;
-import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.TransactionRepository;
-import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.Transaction;
-import dev.enrique.bank.service.TransactionCreationService;
+import dev.enrique.bank.service.TransferService;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class TransactionCreationServiceImpl implements TransactionCreationService {
+public class TransferServiceImpl implements TransferService {
+    private final AccountClient accountClient;
     private final TransactionRepository transactionRepository;
-    private final AccountRepository accountRepository;
 
+    // This method needs implement validation based on TransferLimit
     @Override
     @Transactional
-    public void transfer(Long sourceAccountId, Long targetAccountId, BigDecimal amount) {
-        Account sourceAccount = accountRepository.findById(sourceAccountId)
-                .orElseThrow(() -> new ApiRequestException(ACCOUNT_NOT_FOUND, HttpStatus.NOT_FOUND));
-
-        Account targetAccount = accountRepository.findById(targetAccountId)
-                .orElseThrow(() -> new ApiRequestException(ACCOUNT_NOT_FOUND, HttpStatus.NOT_FOUND));
+    public void transfer(String sourceAccountNumber, String targetAccountNumber, BigDecimal amount) {
+        AccountResponse sourceAccount = accountClient.getAccount(sourceAccountNumber);
+        AccountResponse targetAccount = accountClient.getAccount(targetAccountNumber);
 
         if (sourceAccount.getBalance().compareTo(amount) < 0)
             throw new ApiRequestException(INSUFFICIENT_FUNDS, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -44,8 +42,8 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
 
         Transaction transaction = Transaction.builder()
                 .amount(amount)
-                .sourceAccount(sourceAccount)
-                .targetAccount(targetAccount)
+                .sourceAccountNumber(sourceAccountNumber)
+                .targetAccountNumber(targetAccountNumber)
                 .transactionType(TransactionType.TRANSFER)
                 .description("Transfer between accounts")
                 .transactionDate(LocalDateTime.now())
@@ -60,15 +58,15 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ApiRequestException(TRANSACTION_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        Account sourceAccount = transaction.getSourceAccount();
-        Account targetAccount = transaction.getTargetAccount();
+        AccountResponse sourceAccount = accountClient.getAccount(transaction.getSourceAccountNumber());
+        AccountResponse targetAccount = accountClient.getAccount(transaction.getTargetAccountNumber());
 
         Transaction reversal = Transaction.builder()
-                .sourceAccount(targetAccount)
-                .targetAccount(sourceAccount)
+                .sourceAccountNumber(transaction.getTargetAccountNumber())
+                .targetAccountNumber(transaction.getSourceAccountNumber())
                 .amount(transaction.getAmount())
-                .transactionType(TransactionType.REVERSAL)
-                .transactionStatus(TransactionStatus.PENDING)
+                .transactionType(transaction.getTransactionType())
+                .transactionStatus(TransactionStatus.REFUND)
                 .originalTransaction(transaction)
                 .build();
 
