@@ -1,7 +1,10 @@
 package dev.enrique.bank.model;
 
+import java.math.BigDecimal;
+
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.LimitType;
+import dev.enrique.bank.commons.enums.TimePeriod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +21,13 @@ public class TransactionLimit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "max_amount")
+    private BigDecimal maxAmount;
+
+    @Column(name = "max_transactions")
+    private BigDecimal maxTransactions;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "currency")
     private Currency currency;
 
@@ -25,4 +35,7 @@ public class TransactionLimit {
     @Column(name = "limit_type")
     private LimitType limitType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "time_period")
+    private TimePeriod timePeriod;
 }

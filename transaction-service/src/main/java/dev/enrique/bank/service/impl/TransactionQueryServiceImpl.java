@@ -67,7 +67,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
         accountHelper.validateAccountId(accountId);
         Optional<TransactionCommonProjection> projection = transactionRepository
                 .findCompletedByAccountId(accountId, TransactionCommonProjection.class).stream()
-                .collect(reducing((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2));
+                .reduce((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2);
         return basicMapper.convertOptionalResponse(projection, TransactionCommonResponse.class);
     }
 }

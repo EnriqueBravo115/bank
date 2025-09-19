@@ -1,50 +1,58 @@
 package dev.enrique.bank.service.impl;
 
-import static dev.enrique.bank.commons.constants.ErrorMessage.ACCOUNT_NOT_FOUND;
-import static dev.enrique.bank.commons.constants.ErrorMessage.INSUFFICIENT_FUNDS;
 import static dev.enrique.bank.commons.constants.ErrorMessage.TRANSACTION_NOT_FOUND;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-import dev.enrique.bank.client.AccountClient;
-import dev.enrique.bank.dto.response.AccountResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.enrique.bank.client.AccountClient;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.TransactionRepository;
+import dev.enrique.bank.dto.request.AccountTransferRequest;
+import dev.enrique.bank.dto.response.AccountResponse;
 import dev.enrique.bank.model.Transaction;
-import dev.enrique.bank.service.TransferService;
+import dev.enrique.bank.service.TransactionCreationService;
+import dev.enrique.bank.service.util.TransferHelper;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class TransferServiceImpl implements TransferService {
+public class TransactionCreationServiceImpl implements TransactionCreationService {
     private final AccountClient accountClient;
     private final TransactionRepository transactionRepository;
+
+    @Override
+    public void transferBetweenAccounts(AccountTransferRequest accountTransferRequest) {
+
+    }
 
     // This method needs implement validation based on TransferLimit
     @Override
     @Transactional
-    public void transfer(String sourceAccountNumber, String targetAccountNumber, BigDecimal amount) {
-        AccountResponse sourceAccount = accountClient.getAccount(sourceAccountNumber);
-        AccountResponse targetAccount = accountClient.getAccount(targetAccountNumber);
+    public void createTransaction(String sourceAccountNumber, String targetAccountNumber, BigDecimal amount) {
+        AccountResponse sourceAccountResponse = accountClient.validateTransaction(sourceAccountNumber);
+        AccountResponse targetAccountResponse = accountClient.validateTransaction(targetAccountNumber);
 
-        if (sourceAccount.getBalance().compareTo(amount) < 0)
-            throw new ApiRequestException(INSUFFICIENT_FUNDS, HttpStatus.UNPROCESSABLE_ENTITY);
+        sourceAccountResponse.setBalance(sourceAccountResponse.getBalance().subtract(amount));
+        targetAccountResponse.setBalance(targetAccountResponse.getBalance().add(amount));
 
-        sourceAccount.setBalance(sourceAccount.getBalance().subtract(amount));
-        targetAccount.setBalance(targetAccount.getBalance().add(amount));
+        accountClient.updateAccountBalance(sourceAccountNumber, sourceAccountResponse);
+        accountClient.updateAccountBalance(targetAccountNumber, targetAccountResponse);
 
         Transaction transaction = Transaction.builder()
                 .amount(amount)
+                .transactionCode(UUID.randomUUID().toString())
                 .sourceAccountNumber(sourceAccountNumber)
                 .targetAccountNumber(targetAccountNumber)
                 .transactionType(TransactionType.TRANSFER)
+                .transactionStatus(TransactionStatus.COMPLETED)
                 .description("Transfer between accounts")
                 .transactionDate(LocalDateTime.now())
                 .build();
@@ -54,7 +62,7 @@ public class TransferServiceImpl implements TransferService {
 
     @Override
     @Transactional
-    public void reverseTransfer(Long transactionId) {
+    public void reverseTransaction(Long transactionId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ApiRequestException(TRANSACTION_NOT_FOUND, HttpStatus.NOT_FOUND));
 
@@ -76,4 +84,5 @@ public class TransferServiceImpl implements TransferService {
         transaction.setTransactionStatus(TransactionStatus.REVERSED);
         transactionRepository.save(reversal);
     }
+
 }

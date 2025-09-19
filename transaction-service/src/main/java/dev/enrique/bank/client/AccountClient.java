@@ -18,12 +18,12 @@ import java.util.ArrayList;
 public interface AccountClient {
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "defaultEmptyArray")
     @GetMapping("")
-    AccountResponse getAccount(@PathVariable("accountNumber") String accountNumber);
+    AccountResponse validateTransaction(@PathVariable("accountNumber") String accountNumber);
 
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "defaultEmptyArray")
     @PostMapping("")
     void updateAccountBalance(@PathVariable("accountNumber") String accountNumber,
-                              @RequestBody AccountResponse accountResponse);
+            @RequestBody AccountResponse accountResponse);
 
     default ArrayList<String> defaultEmptyArray(Throwable throwable) {
         return new ArrayList<>();
