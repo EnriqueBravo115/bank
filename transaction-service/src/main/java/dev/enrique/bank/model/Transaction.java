@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
 import jakarta.persistence.CascadeType;
@@ -46,8 +47,15 @@ public class Transaction {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "reason")
+    private String reason;
+
     @Column(name = "transaction_date")
     private LocalDateTime transactionDate;
+
+    @Column(name = "currency")
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
 
     @Column(name = "transaction_type")
     @Enumerated(EnumType.STRING)

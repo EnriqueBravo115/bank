@@ -16,13 +16,23 @@ import org.springframework.stereotype.Component;
 import dev.enrique.bank.dto.response.HeaderResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class BasicMapper {
     private final ModelMapper mapper;
 
     public <T, S> S convertToResponse(T data, Class<S> type) {
+        try {
+            return mapper.map(data, type);
+        } catch (Exception e) {
+            log.info("");
+        }
+    }
+
+    public <T, S> S mapTo(T data, Class<S> type) {
         return mapper.map(data, type);
     }
 
