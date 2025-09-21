@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-public class TransferHelper {
+public class TransactionHelper {
     public Transaction buildTransfer(TransferRequest transferRequest, String transactionCode,
             TransactionStatus transactionStatus, String reason) {
 

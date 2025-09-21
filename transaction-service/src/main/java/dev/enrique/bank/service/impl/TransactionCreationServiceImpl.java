@@ -2,7 +2,6 @@ package dev.enrique.bank.service.impl;
 
 import static dev.enrique.bank.commons.constants.ErrorMessage.TRANSACTION_NOT_FOUND;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -11,28 +10,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.enrique.bank.client.AccountClient;
 import dev.enrique.bank.commons.enums.TransactionStatus;
-import dev.enrique.bank.commons.exception.AccountServiceException;
 import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.TransactionRepository;
+import dev.enrique.bank.dto.request.AccountPurchaseRequest;
 import dev.enrique.bank.dto.request.AccountTransferRequest;
+import dev.enrique.bank.dto.request.PurchaseRequest;
+import dev.enrique.bank.dto.request.ServiceRequest;
 import dev.enrique.bank.dto.request.TransferRequest;
-import dev.enrique.bank.dto.response.AccountTransferResponse;
+import dev.enrique.bank.dto.response.MovementResultResponse;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionCreationService;
 import dev.enrique.bank.service.util.BasicMapper;
-import dev.enrique.bank.service.util.TransferHelper;
-import feign.FeignException;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import dev.enrique.bank.service.util.TransactionHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+// FIX: refactor models to manage more cases from TRANSACTION to especific operations
 @Service
 @Transactional
 @RequiredArgsConstructor
 @Slf4j
 public class TransactionCreationServiceImpl implements TransactionCreationService {
     private final AccountClient accountClient;
-    private final TransferHelper transferHelper;
+    private final TransactionHelper transactionHelper;
     private final TransactionRepository transactionRepository;
     private final BasicMapper basicMapper;
 
@@ -41,25 +41,23 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
         String transactionCode = UUID.randomUUID().toString();
 
         try {
-            log.debug("Start transaction: {}", transactionCode);
+            log.debug("Start transfer transaction: {}", transactionCode);
 
-            AccountTransferRequest request = basicMapper.mapTo(transferRequest,
-                    AccountTransferRequest.class);
+            AccountTransferRequest request = basicMapper.mapTo(transferRequest, AccountTransferRequest.class);
+            MovementResultResponse response = accountClient.processTransfer(request);
 
-            AccountTransferResponse response = accountClient.processTransfer(request);
-
-            Transaction transaction = transferHelper.buildTransfer(
+            Transaction transaction = transactionHelper.buildTransfer(
                     transferRequest,
                     transactionCode,
                     response.transactionStatus(),
                     response.reason());
 
             transactionRepository.save(transaction);
-            log.debug("End transaction {}", transactionCode);
+            log.debug("End transfer transaction: {}", transactionCode);
         } catch (Exception e) {
-            log.error("Unexpected error during transfer {}: {}", transactionCode, e.getMessage(), e);
+            log.error("Unexpected error during transfer {}: {}", transactionCode, e.getMessage());
 
-            Transaction failedTransaction = transferHelper.buildTransfer(
+            Transaction failedTransaction = transactionHelper.buildTransfer(
                     transferRequest,
                     transactionCode,
                     TransactionStatus.FAILED,
@@ -70,10 +68,36 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
         }
     }
 
-    // This method needs implement validation based on TransferLimit
     @Override
-    @Transactional
-    public void createTransaction(String sourceAccountNumber, String targetAccountNumber, BigDecimal amount) {
+    public void purchaseWithCard(PurchaseRequest purchaseRequest) {
+        String transactionCode = UUID.randomUUID().toString();
+
+        try {
+            log.debug("Start purchase transaction: {}", transactionCode);
+            AccountPurchaseRequest request = basicMapper.mapTo(purchaseRequest, AccountPurchaseRequest.class);
+            MovementResultResponse response = accountClient.processPurchase(request);
+
+            Transaction transaction = transactionHelper.buildPurchase(
+                    purchaseRequest,
+                    transactionCode,
+                    response.transactionStatus(),
+                    response.reason());
+
+            transactionRepository.save(transaction);
+            log.debug("End purchase transaction: {}", transactionCode);
+        } catch (Exception e) {
+
+        }
+    }
+
+    @Override
+    public void servicePayment(ServiceRequest purchaseRequest) {
+
+    }
+
+    @Override
+    public void cancelTransaction(Long transactionId) {
+
     }
 
     @Override

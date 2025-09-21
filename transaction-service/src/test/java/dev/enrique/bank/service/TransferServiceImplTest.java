@@ -26,7 +26,7 @@ import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.impl.TransferServiceImpl;
-import dev.enrique.bank.service.util.TransferHelper;
+import dev.enrique.bank.service.util.TransactionHelper;
 
 @ExtendWith(MockitoExtension.class)
 public class TransferServiceImplTest {
@@ -35,7 +35,7 @@ public class TransferServiceImplTest {
     @Mock
     private AccountRepository accountRepository;
     @Mock
-    private TransferHelper transferHelper;
+    private TransactionHelper transactionHelper;
 
     @InjectMocks
     private TransferServiceImpl transferService;

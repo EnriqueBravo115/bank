@@ -8,19 +8,23 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.config.FeignConfiguration;
+import dev.enrique.bank.dto.request.AccountPurchaseRequest;
 import dev.enrique.bank.dto.request.AccountTransferRequest;
-import dev.enrique.bank.dto.response.AccountTransferResponse;
+import dev.enrique.bank.dto.response.MovementResultResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @FeignClient(value = ACCOUNT_SERVICE, path = "/api/v1/account", configuration = FeignConfiguration.class)
 public interface AccountClient {
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
     @PostMapping("/transfer")
-    AccountTransferResponse processTransfer(@RequestBody AccountTransferRequest accountTransferRequest);
+    MovementResultResponse processTransfer(@RequestBody AccountTransferRequest accountTransferRequest);
 
-    default AccountTransferResponse transferFallback(
-            AccountTransferRequest accountTransferRequest,
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
+    @PostMapping("/purchase")
+    MovementResultResponse processPurchase(@RequestBody AccountPurchaseRequest accountPurchaseRequest);
+
+    default MovementResultResponse transferFallback(AccountTransferRequest accountTransferRequest,
             Throwable throwable) {
-        return new AccountTransferResponse(TransactionStatus.FAILED, "Service unavailable");
+        return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }
 }
