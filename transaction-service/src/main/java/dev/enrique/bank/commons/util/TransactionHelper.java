@@ -1,4 +1,4 @@
-package dev.enrique.bank.service.util;
+package dev.enrique.bank.commons.util;
 
 import java.time.LocalDateTime;
 

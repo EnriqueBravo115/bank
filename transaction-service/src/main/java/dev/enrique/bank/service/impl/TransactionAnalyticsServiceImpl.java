@@ -25,7 +25,7 @@ import dev.enrique.bank.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionAnalyticsService;
-import dev.enrique.bank.service.util.BasicMapper;
+import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.AllArgsConstructor;
 
 @Service

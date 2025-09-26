@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.enrique.bank.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.dto.response.TransactionSummaryResponse;
+import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
+import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;

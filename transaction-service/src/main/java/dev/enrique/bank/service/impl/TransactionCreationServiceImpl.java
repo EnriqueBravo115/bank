@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.enrique.bank.client.AccountClient;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.exception.ApiRequestException;
+import dev.enrique.bank.commons.util.BasicMapper;
+import dev.enrique.bank.commons.util.TransactionHelper;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dto.request.AccountPurchaseRequest;
 import dev.enrique.bank.dto.request.AccountTransferRequest;
@@ -20,8 +22,6 @@ import dev.enrique.bank.dto.request.TransferRequest;
 import dev.enrique.bank.dto.response.MovementResultResponse;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionCreationService;
-import dev.enrique.bank.service.util.BasicMapper;
-import dev.enrique.bank.service.util.TransactionHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,7 +86,15 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
             transactionRepository.save(transaction);
             log.debug("End purchase transaction: {}", transactionCode);
         } catch (Exception e) {
+            log.error("Unexpected error during transfer {}: {}", transactionCode, e.getMessage());
 
+            Transaction failedTransaction = transactionHelper.buildTransfer(
+                    purchaseRequest,
+                    transactionCode,
+                    TransactionStatus.FAILED,
+                    "Unexpected error: " + e.getMessage());
+
+            throw new RuntimeException("Unexpected error processing transfer", e);
         }
     }
 

@@ -1,4 +1,4 @@
-package dev.enrique.bank.service.util;
+package dev.enrique.bank.commons.util;
 
 import static dev.enrique.bank.commons.constants.PathConstants.PAGE_TOTAL_COUNT;
 import static java.util.stream.Collectors.toMap;
@@ -25,11 +25,7 @@ public class BasicMapper {
     private final ModelMapper mapper;
 
     public <T, S> S convertToResponse(T data, Class<S> type) {
-        try {
-            return mapper.map(data, type);
-        } catch (Exception e) {
-            log.info("");
-        }
+        return mapper.map(data, type);
     }
 
     public <T, S> S mapTo(T data, Class<S> type) {

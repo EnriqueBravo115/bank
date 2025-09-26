@@ -16,15 +16,13 @@ import dev.enrique.bank.dto.response.HeaderResponse;
 import dev.enrique.bank.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.service.TransactionQueryService;
-import dev.enrique.bank.service.util.AccountHelper;
-import dev.enrique.bank.service.util.BasicMapper;
+import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class TransactionQueryServiceImpl implements TransactionQueryService {
     private final TransactionRepository transactionRepository;
-    private final AccountHelper accountHelper;
     private final BasicMapper basicMapper;
 
     @Override
@@ -49,7 +47,6 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
 
     @Override
     public List<TransactionCommonResponse> getAllTransactionsReversals(Long accountId) {
-        accountHelper.validateAccountId(accountId);
         List<TransactionCommonProjection> projections = transactionRepository.findReversalsByAccountId(accountId);
         return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
     }

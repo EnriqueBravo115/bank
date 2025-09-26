@@ -1,4 +1,4 @@
-package dev.enrique.bank.dto.response;
+package dev.enrique.bank.commons.dto.response;
 
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import jakarta.validation.constraints.NotBlank;

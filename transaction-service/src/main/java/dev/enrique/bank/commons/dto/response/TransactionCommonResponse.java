@@ -1,11 +1,8 @@
-package dev.enrique.bank.dto.response;
+package dev.enrique.bank.commons.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import org.springframework.transaction.TransactionStatus;
-
-import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,11 +12,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TransactionDetailedResponse {
+public class TransactionCommonResponse {
     private String transactionNumber;
     private BigDecimal amount;
-    private String description;
     private LocalDateTime transactionDate;
-    private TransactionType transactionType;
-    private TransactionStatus transactionStatus;
 }

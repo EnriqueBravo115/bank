@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.enrique.bank.dto.request.AccountYearRequest;
-import dev.enrique.bank.dto.response.HeaderResponse;
-import dev.enrique.bank.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.dto.request.AccountYearRequest;
+import dev.enrique.bank.commons.dto.response.HeaderResponse;
+import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
+import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.service.TransactionQueryService;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

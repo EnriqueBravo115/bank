@@ -1,4 +1,4 @@
-package dev.enrique.bank.dto.response;
+package dev.enrique.bank.commons.dto.response;
 
 import java.math.BigDecimal;
 
