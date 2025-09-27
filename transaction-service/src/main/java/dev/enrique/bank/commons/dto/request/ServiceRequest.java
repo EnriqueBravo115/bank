@@ -13,6 +13,5 @@ public record ServiceRequest(
         String sourceAccountNumber,
         String paymentReference,
         ServiceType serviceType,
-        Currency currency
-) {
+        Currency currency) {
 }

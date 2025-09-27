@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import dev.enrique.bank.commons.dto.request.AccountPurchaseRequest;
+import dev.enrique.bank.commons.dto.request.AccountServiceRequest;
 import dev.enrique.bank.commons.dto.request.AccountTransferRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
@@ -22,6 +23,10 @@ public interface AccountClient {
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
     @PostMapping("/purchase")
     MovementResultResponse processPurchase(@RequestBody AccountPurchaseRequest accountPurchaseRequest);
+
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
+    @PostMapping("/service")
+    MovementResultResponse processService(@RequestBody AccountServiceRequest accountServiceRequest);
 
     default MovementResultResponse transferFallback(AccountTransferRequest accountTransferRequest,
             Throwable throwable) {

@@ -3,19 +3,13 @@ package dev.enrique.bank.commons.dto.request;
 import java.math.BigDecimal;
 
 import dev.enrique.bank.commons.enums.Currency;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
-@Getter
-@Setter
-public class TransferRequest extends BaseRequest {
-    private final String sourceAccountNumber;
-    private final String targetAccountNumber;
-
-    public TransferRequest(BigDecimal amount, String description, Currency currency,
-            String sourceAccountNumber, String targetAccountNumber) {
-        super(amount, description, currency);
-        this.sourceAccountNumber = sourceAccountNumber;
-        this.targetAccountNumber = targetAccountNumber;
-    }
+public record TransferRequest(
+        @Positive BigDecimal amount,
+        @NotBlank String description,
+        @NotBlank Currency currency,
+        @NotBlank String sourceAccountNumber,
+        @NotBlank String targetAccountNumber) {
 }
