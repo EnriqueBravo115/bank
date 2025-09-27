@@ -1,3 +1,1 @@
-DELETE FROM transaction;
-DELETE FROM account;
-DELETE FROM users;
+DELETE FROM transactions;

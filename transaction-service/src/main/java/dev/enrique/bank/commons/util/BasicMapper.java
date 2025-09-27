@@ -13,7 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
-import dev.enrique.bank.dto.response.HeaderResponse;
+import dev.enrique.bank.commons.dto.response.HeaderResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -2,6 +2,7 @@ package dev.enrique.bank.service.impl;
 
 import static dev.enrique.bank.commons.constants.ErrorMessage.TRANSACTION_NOT_FOUND;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -10,17 +11,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.enrique.bank.client.AccountClient;
 import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.commons.util.BasicMapper;
+import dev.enrique.bank.commons.util.TransactionFactoryProvider;
 import dev.enrique.bank.commons.util.TransactionHelper;
 import dev.enrique.bank.dao.TransactionRepository;
-import dev.enrique.bank.dto.request.AccountPurchaseRequest;
-import dev.enrique.bank.dto.request.AccountTransferRequest;
-import dev.enrique.bank.dto.request.PurchaseRequest;
-import dev.enrique.bank.dto.request.ServiceRequest;
-import dev.enrique.bank.dto.request.TransferRequest;
-import dev.enrique.bank.dto.response.MovementResultResponse;
-import dev.enrique.bank.model.Transaction;
+import dev.enrique.bank.model.TransferTransaction;
+import dev.enrique.bank.commons.dto.request.AccountPurchaseRequest;
+import dev.enrique.bank.commons.dto.request.AccountTransferRequest;
+import dev.enrique.bank.commons.dto.request.PurchaseRequest;
+import dev.enrique.bank.commons.dto.request.ServiceRequest;
+import dev.enrique.bank.commons.dto.request.TransferRequest;
+import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.service.TransactionCreationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,12 +35,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TransactionCreationServiceImpl implements TransactionCreationService {
     private final AccountClient accountClient;
-    private final TransactionHelper transactionHelper;
     private final TransactionRepository transactionRepository;
+    private final TransactionHelper transactionHelper;
     private final BasicMapper basicMapper;
 
     @Override
-    public void transferBetweenAccounts(TransferRequest transferRequest) {
+    public void transfer(TransferRequest transferRequest) {
         String transactionCode = UUID.randomUUID().toString();
 
         try {
@@ -46,30 +49,28 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
             AccountTransferRequest request = basicMapper.mapTo(transferRequest, AccountTransferRequest.class);
             MovementResultResponse response = accountClient.processTransfer(request);
 
-            Transaction transaction = transactionHelper.buildTransfer(
-                    transferRequest,
-                    transactionCode,
-                    response.transactionStatus(),
-                    response.reason());
+            TransferTransaction transferTransaction = TransferTransaction.builder()
+                    .transactionCode(transactionCode)
+                    .amount(transferRequest.getAmount())
+                    .description(transferRequest.getDescription())
+                    .reason(response.reason())
+                    .transactionDate(LocalDateTime.now())
+                    .currency(transferRequest.getCurrency())
+                    .transactionType(TransactionType.TRANSFER)
+                    .transactionStatus(response.transactionStatus())
+                    .sourceAccountNumber(transferRequest.getSourceAccountNumber())
+                    .targetAccountNumber(transferRequest.getTargetAccountNumber())
+                    .build();
 
-            transactionRepository.save(transaction);
             log.debug("End transfer transaction: {}", transactionCode);
         } catch (Exception e) {
-            log.error("Unexpected error during transfer {}: {}", transactionCode, e.getMessage());
-
-            Transaction failedTransaction = transactionHelper.buildTransfer(
-                    transferRequest,
-                    transactionCode,
-                    TransactionStatus.FAILED,
-                    "Unexpected error: " + e.getMessage());
-
             transactionRepository.save(failedTransaction);
             throw new RuntimeException("Unexpected error processing transfer", e);
         }
     }
 
     @Override
-    public void purchaseWithCard(PurchaseRequest purchaseRequest) {
+    public void purchase(PurchaseRequest purchaseRequest) {
         String transactionCode = UUID.randomUUID().toString();
 
         try {
@@ -99,7 +100,7 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
     }
 
     @Override
-    public void servicePayment(ServiceRequest purchaseRequest) {
+    public void service(ServiceRequest purchaseRequest) {
 
     }
 

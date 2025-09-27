@@ -18,12 +18,4 @@ public class TransferRequest extends BaseRequest {
         this.sourceAccountNumber = sourceAccountNumber;
         this.targetAccountNumber = targetAccountNumber;
     }
-
-    public String sourceAccountNumber() {
-        return sourceAccountNumber;
-    }
-
-    public String targetAccountNumber() {
-        return targetAccountNumber;
-    }
 }
