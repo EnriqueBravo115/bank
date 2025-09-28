@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import dev.enrique.bank.commons.dto.request.AccountPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.AccountServiceRequest;
 import dev.enrique.bank.commons.dto.request.AccountTransferRequest;
+import dev.enrique.bank.commons.dto.request.AccountWithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.config.FeignConfiguration;
@@ -28,6 +29,10 @@ public interface AccountClient {
     @PostMapping("/service")
     MovementResultResponse processService(@RequestBody AccountServiceRequest accountServiceRequest);
 
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "withdrawalFallback")
+    @PostMapping("/withdrawal")
+    MovementResultResponse processWithdrawal(@RequestBody AccountWithdrawalRequest accountWithdrawalRequest);
+
     default MovementResultResponse transferFallback(AccountTransferRequest accountTransferRequest,
             Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
@@ -39,6 +44,11 @@ public interface AccountClient {
     }
 
     default MovementResultResponse serviceFallback(AccountServiceRequest accountServiceRequest,
+            Throwable throwable) {
+        return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
+    }
+
+    default MovementResultResponse withdrawalFallback(AccountWithdrawalRequest accountWithdrawalRequest,
             Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }

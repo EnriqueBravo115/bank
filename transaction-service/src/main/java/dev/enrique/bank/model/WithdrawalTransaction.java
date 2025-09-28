@@ -13,9 +13,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
+import lombok.Data;
 
 @Entity
 @Table(name = "withdrawal_transaction")
+@Builder
+@Data
 public class WithdrawalTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

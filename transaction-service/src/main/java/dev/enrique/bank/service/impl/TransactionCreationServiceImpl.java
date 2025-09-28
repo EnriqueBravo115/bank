@@ -5,9 +5,11 @@ import org.springframework.stereotype.Service;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
+import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
 import dev.enrique.bank.commons.util.PurchaseTransactionProcessor;
 import dev.enrique.bank.commons.util.ServiceTransactionProcessor;
 import dev.enrique.bank.commons.util.TransferTransactionProcessor;
+import dev.enrique.bank.commons.util.WithdrawalTransactionProcessor;
 import dev.enrique.bank.service.TransactionCreationService;
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +20,7 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
     private final TransferTransactionProcessor transferTransactionProcessor;
     private final PurchaseTransactionProcessor purchaseTransactionProcessor;
     private final ServiceTransactionProcessor serviceTransactionProcessor;
+    private final WithdrawalTransactionProcessor withdrawalTransactionProcessor;
 
     @Override
     public void transfer(TransferRequest transferRequest) {
@@ -35,7 +38,11 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
     }
 
     @Override
-    public void cancelTransaction(Long transactionId) {
+    public void withdrawal(WithdrawalRequest withdrawalRequest) {
+        withdrawalTransactionProcessor.process(withdrawalRequest);
+    }
 
+    @Override
+    public void cancelTransaction(Long transactionId) {
     }
 }
