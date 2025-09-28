@@ -1,8 +1,9 @@
 package dev.enrique.bank.commons.enums;
 
 public enum TransactionType {
-    TRANSFER, 
-    WITHDRAW, 
+    TRANSFER,
+    PURCHASE,
+    WITHDRAW,
     SERVICE,
     OTHER
 }
