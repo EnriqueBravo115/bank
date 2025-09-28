@@ -6,9 +6,9 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.dto.response.TransactionSummaryResponse;
+import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
+import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
 
 @Service

@@ -20,15 +20,25 @@ public interface AccountClient {
     @PostMapping("/transfer")
     MovementResultResponse processTransfer(@RequestBody AccountTransferRequest accountTransferRequest);
 
-    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "purchaseFallback")
     @PostMapping("/purchase")
     MovementResultResponse processPurchase(@RequestBody AccountPurchaseRequest accountPurchaseRequest);
 
-    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "serviceFallback")
     @PostMapping("/service")
     MovementResultResponse processService(@RequestBody AccountServiceRequest accountServiceRequest);
 
     default MovementResultResponse transferFallback(AccountTransferRequest accountTransferRequest,
+            Throwable throwable) {
+        return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
+    }
+
+    default MovementResultResponse purchaseFallback(AccountPurchaseRequest accountPurchaseRequest,
+            Throwable throwable) {
+        return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
+    }
+
+    default MovementResultResponse serviceFallback(AccountServiceRequest accountServiceRequest,
             Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }

@@ -5,9 +5,9 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 
-import dev.enrique.bank.dto.response.HeaderResponse;
-import dev.enrique.bank.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.dto.response.HeaderResponse;
+import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
+import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
 
 public interface TransactionQueryService {
     List<TransactionDetailedResponse> getTransactionHistory(Long accountId);
