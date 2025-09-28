@@ -10,6 +10,7 @@ public class PathConstants {
     public static final String TRANSACTION = API + "/transaction";
     public static final String TRANSACTION_QUERY = TRANSACTION + "/query";
     public static final String TRANSACTION_ANALYTICS = TRANSACTION + "/analytics";
+    public static final String TRANSACTION_CREATION= TRANSACTION + "/creation";
     public static final String ACCOUNT_ID = "/{accountId}";
 
     // Controller "QUERY"
@@ -35,7 +36,8 @@ public class PathConstants {
     public static final String GET_ALL_DESCRIPTIONS = ACCOUNT_ID + "/all-descriptions";
     public static final String GET_FORMATTED_AVERAGE_BALANCE = "/average-balance";
 
-    public static final String GET_TRANSFER_LIMIT = ACCOUNT_ID + "/transfer-limit";
-    public static final String CALCULATE_TRANSFER_FEE = "/transfer-fee";
-    public static final String CHECK_SUFFICIENT_FUNDS = ACCOUNT_ID + "/has-sufficient-funds";
+    // Controller "CREATION"
+    public static final String TRANSFER = "/transfer";
+    public static final String PURCHASE = "/purchase";
+    public static final String SERVICE_PAYMENT = "/service-payment";
 }
