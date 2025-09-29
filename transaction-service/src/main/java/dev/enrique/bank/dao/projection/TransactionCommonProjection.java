@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public interface TransactionCommonProjection {
     String getTransactionCode();
+    String getDescription();
     BigDecimal getAmount();
     LocalDateTime getTransactionDate();
 }

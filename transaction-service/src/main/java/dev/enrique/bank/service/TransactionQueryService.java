@@ -8,12 +8,13 @@ import org.springframework.data.domain.Pageable;
 import dev.enrique.bank.commons.dto.response.HeaderResponse;
 import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.enums.TransactionStatus;
 
 public interface TransactionQueryService {
-    List<TransactionDetailedResponse> getTransactionHistory(Long accountId);
-    HeaderResponse<TransactionCommonResponse> getAllTransactions(Long accountId, Pageable pageable);
-    List<TransactionDetailedResponse> getTransactionByYearAndAccount(Long accountId, Integer year);
-    List<TransactionCommonResponse> getAllTransactionsReversals(Long accountId);
-    List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<Long> accountIds);
-    Optional<TransactionCommonResponse> findMaxTransaction(Long accountId);
+    List<TransactionDetailedResponse> getTransactionHistory(String accountNumber, TransactionStatus status);
+    HeaderResponse<TransactionCommonResponse> getAllTransactions(String accountNumber, TransactionStatus status,
+            Pageable pageable);
+    List<TransactionDetailedResponse> getTransactionByYear(String accountNumber, Integer year);
+    List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<String> accountNumbers);
+    Optional<TransactionCommonResponse> findMaxTransaction(String accountNumber);
 }

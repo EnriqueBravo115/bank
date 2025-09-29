@@ -2,6 +2,7 @@ package dev.enrique.bank.service.impl;
 
 import static java.util.stream.Collectors.reducing;
 
+import java.lang.Thread.State;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +16,7 @@ import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.commons.dto.response.HeaderResponse;
 import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.service.TransactionQueryService;
 import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.RequiredArgsConstructor;
@@ -26,45 +28,46 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     private final BasicMapper basicMapper;
 
     @Override
-    public List<TransactionDetailedResponse> getTransactionHistory(Long accountId) {
+    public List<TransactionDetailedResponse> getTransactionHistory(String accountNumber, TransactionStatus status) {
         List<TransactionDetailedProjection> projections = transactionRepository
-                .findCompletedByAccountId(accountId, TransactionDetailedProjection.class);
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionDetailedProjection.class);
 
         return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
     }
 
     @Override
-    public HeaderResponse<TransactionCommonResponse> getAllTransactions(Long accountId, Pageable pageable) {
-        Page<TransactionCommonProjection> page = transactionRepository.findCompletedByAccountId(accountId, pageable);
+    public HeaderResponse<TransactionCommonResponse> getAllTransactions(String accountNumber, TransactionStatus status,
+            Pageable pageable) {
+        Page<TransactionCommonProjection> page = transactionRepository
+                .findAllPageableByAccountNumberAndStatus(accountNumber, status, pageable);
+
         return basicMapper.getHeaderResponse(page, TransactionCommonResponse.class);
     }
 
     @Override
-    public List<TransactionDetailedResponse> getTransactionByYearAndAccount(Long accountId, Integer year) {
-        List<TransactionDetailedProjection> projections = transactionRepository.findByAccountIdAndYear(accountId, year);
+    public List<TransactionDetailedResponse> getTransactionByYear(String accountNumber, Integer year) {
+        List<TransactionDetailedProjection> projections = transactionRepository
+                .findByAccountNumberAndYear(accountNumber, year);
+
         return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
     }
 
+    // This function must be executed with "ADMIN" credentials
     @Override
-    public List<TransactionCommonResponse> getAllTransactionsReversals(Long accountId) {
-        List<TransactionCommonProjection> projections = transactionRepository.findReversalsByAccountId(accountId);
-        return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
-    }
+    public List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<String> accountNumbers) {
+        List<TransactionCommonProjection> projections = transactionRepository
+                .findCompletedByAccountIdsIn(accountNumbers);
 
-    // Esta funcion tiene que ser ejecutadas con permisos de ADMIN
-    @Override
-    public List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<Long> accountIds) {
-        accountIds.forEach(accountHelper::validateAccountId);
-        List<TransactionCommonProjection> projections = transactionRepository.findCompletedByAccountIdsIn(accountIds);
         return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
     }
 
     @Override
-    public Optional<TransactionCommonResponse> findMaxTransaction(Long accountId) {
-        accountHelper.validateAccountId(accountId);
+    public Optional<TransactionCommonResponse> findMaxTransaction(String accountNumber) {
         Optional<TransactionCommonProjection> projection = transactionRepository
-                .findCompletedByAccountId(accountId, TransactionCommonProjection.class).stream()
+                .findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+                .stream()
                 .reduce((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2);
+
         return basicMapper.convertOptionalResponse(projection, TransactionCommonResponse.class);
     }
 }

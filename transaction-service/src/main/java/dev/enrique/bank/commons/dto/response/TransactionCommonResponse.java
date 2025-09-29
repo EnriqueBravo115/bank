@@ -14,6 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TransactionCommonResponse {
     private String transactionCode;
+    private String description;
     private BigDecimal amount;
     private LocalDateTime transactionDate;
 }

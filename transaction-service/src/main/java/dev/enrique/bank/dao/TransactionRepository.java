@@ -20,7 +20,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             AND (t.transactionStatus = :status)
             ORDER BY t.transactionDate DESC
             """)
-    <T> List<T> findAllCompletedByAccountNumberAndStatus(
+    <T> List<T> findAllByAccountNumberAndStatus(
             @Param("accountNumber") String accountNumber,
             @Param("status") TransactionStatus status,
             Class<T> type);
@@ -28,47 +28,37 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("""
             SELECT t FROM Transaction t
             WHERE t.accountNumber = :accountNumber
+            AND (t.transactionStatus = :status)
+            ORDER BY t.transactionDate DESC
+            """)
+    Page<TransactionCommonProjection> findAllPageableByAccountNumberAndStatus(
+            @Param("accountNumber") String accountNumber,
+            @Param("status") TransactionStatus status,
+            Pageable pageable);
+
+    @Query("""
+            SELECT t FROM Transaction t
+            WHERE t.accountNumber = :accountNumber
+            AND (t.transactionStatus = 'COMPLETED')
+            """)
+    <T> List<T> findAllCompletedByAccountNumber(
+            @Param("accountNumber") String accountNumber,
+            Class<T> type);
+
+    @Query("""
+            SELECT t FROM Transaction t
+            WHERE t.accountNumber = :accountNumber
+            AND (YEAR(t.transactionDate) = :year)
+            ORDER BY t.transactionDate DESC
+            """)
+    List<TransactionDetailedProjection> findByAccountNumberAndYear(
+            @Param("accountNumber") String accountNumber, @Param("year") Integer year);
+
+    @Query("""
+            SELECT t FROM Transaction t
+            WHERE t.accountNumber IN :accountNumbers
             AND (t.transactionStatus = 'COMPLETED')
             ORDER BY t.transactionDate DESC
             """)
-    <T> List<T> findAllCompletedByAccountNumber(@Param("accountNumber") String accountNumber, Class<T> type);
-
-    @Query("""
-            SELECT t FROM Transaction t
-            WHERE (t.sourceAccount.id IN :accountIds OR t.targetAccount.id IN :accountIds)
-            AND t.transactionStatus = 'COMPLETED'
-            ORDER BY t.transactionDate DESC
-            """)
-    List<TransactionCommonProjection> findCompletedByAccountIdsIn(@Param("accountIds") List<Long> accountIds);
-
-    @Query("""
-            SELECT t FROM Transaction t
-            WHERE t.sourceAccountNumber = :accountNumber OR t.targetAccountNumber = :accountNumber
-            ORDER BY t.transactionDate DESC
-            """)
-    <T> List<T> findAllByAccountNumber(@Param("accountId") String accountNumber, Class<T> type);
-
-    @Query("""
-            SELECT t FROM Transaction t
-            WHERE t.transactionStatus = 'COMPLETED'
-            AND (t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
-            ORDER BY t.transactionDate DESC
-            """)
-    Page<TransactionCommonProjection> findCompletedByAccountId(@Param("accountId") Long accountId, Pageable pageable);
-
-    @Query("""
-            SELECT t FROM Transaction t
-            WHERE t.transactionType = 'REVERSAL'
-            AND (t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
-            """)
-    List<TransactionCommonProjection> findReversalsByAccountId(@Param("accountId") Long accountId);
-
-    @Query("""
-            SELECT t FROM Transaction t
-            WHERE (:year IS NULL OR YEAR(t.transactionDate) = :year)
-            AND (:accountId IS NULL OR t.sourceAccount.id = :accountId OR t.targetAccount.id = :accountId)
-            ORDER BY t.transactionDate DESC
-            """)
-    List<TransactionDetailedProjection> findByAccountIdAndYear(
-            @Param("accountId") Long accountId, @Param("year") Integer year);
+    List<TransactionCommonProjection> findCompletedByAccountIdsIn(@Param("accountNumbers") List<String> accountNumbers);
 }

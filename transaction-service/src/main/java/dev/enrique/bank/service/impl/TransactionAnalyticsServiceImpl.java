@@ -35,14 +35,13 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     private final BasicMapper basicMapper;
 
     // FIX: potential problem calculating TransferTransactions
-    // Groups transactions by type and filter by TransactionStatus ordered by date
-    // 'DESC'
+    // Groups transactions by type and filter by status ordered by date 'DESC'
     @Override
     public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(
             String accountNumber,
             TransactionStatus status) {
         Map<TransactionType, List<TransactionDetailedProjection>> projections = transactionRepository
-                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionDetailedProjection.class)
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionDetailedProjection.class)
                 .stream()
                 .collect(groupingBy(TransactionDetailedProjection::getTransactionType));
 
@@ -54,7 +53,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     @Override
     public Map<TransactionType, BigDecimal> sumTransactionsByType(String accountNumber, TransactionStatus status) {
         return transactionRepository
-                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .collect(groupingBy(TransactionBasicProjection::getTransactionType,
                         reducing(BigDecimal.ZERO, TransactionBasicProjection::getAmount, BigDecimal::add)));
@@ -68,7 +67,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
             TransactionStatus status,
             BigDecimal amount) {
         Map<Boolean, List<TransactionBasicProjection>> projection = transactionRepository
-                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .collect(partitioningBy(t -> t.getAmount().compareTo(amount) > 0));
 
@@ -95,7 +94,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     @Override
     public BigDecimal calculateTotalTransactionAmount(String accountNumber, TransactionStatus status) {
         return transactionRepository
-                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .map(TransactionBasicProjection::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

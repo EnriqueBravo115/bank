@@ -17,7 +17,6 @@ public class PathConstants {
     public static final String GET_TRANSACTION_HISTORY = "/history" + ACCOUNT_ID;
     public static final String GET_ALL_TRANSACTIONS = ACCOUNT_ID;
     public static final String GET_TRANSACTIONS_BY_ACCOUNT_AND_YEAR = "/account-year";
-    public static final String GET_TRANSACTION_REVERSALS = "/reversals" + ACCOUNT_ID;
     public static final String GET_TRANSACTIONS_FOR_ACCOUNTS = "/accounts";
     public static final String FIND_MAX_TRANSACTION = ACCOUNT_ID + "/max-transaction";
 

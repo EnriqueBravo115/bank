@@ -10,9 +10,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class AccountYearRequest {
-    @NotBlank(message = "Account Id cannot be empty")
-    @Positive(message = "Account Id must be positive")
-    private Long accountId;
+    @NotBlank(message = "Account number cannot be empty")
+    @Positive(message = "Account number must be positive")
+    private String accountNumber;
 
     @NotBlank(message = "Year cannot be empty")
     private Integer year;
