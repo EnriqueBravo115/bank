@@ -28,7 +28,7 @@ public class WithdrawalTransactionProcessor
 
     @Override
     protected MovementResultResponse callAccountClient(WithdrawalRequest request) {
-        return accountClient.processWithdrawal(basicMapper.mapTo(request, AccountWithdrawalRequest.class));
+        return accountClient.processWithdrawal(basicMapper.convertToResponse(request, AccountWithdrawalRequest.class));
     }
 
     @Override

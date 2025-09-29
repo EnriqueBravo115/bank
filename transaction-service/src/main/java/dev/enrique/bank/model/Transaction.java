@@ -29,6 +29,9 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "account_number")
+    private String accountNumber;
+
     @Column(name = "transaction_code")
     private String transactionCode;
 

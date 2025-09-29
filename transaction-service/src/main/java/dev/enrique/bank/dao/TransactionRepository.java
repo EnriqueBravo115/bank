@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.model.Transaction;
@@ -15,18 +16,22 @@ import dev.enrique.bank.model.Transaction;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     @Query("""
             SELECT t FROM Transaction t
-            WHERE (t.sourceAccountNumber = :accountNumber OR t.targetAccountNumber = :accountNumber)
-            AND t.transactionStatus = 'COMPLETED'
+            WHERE t.accountNumber = :accountNumber
+            AND (t.transactionStatus = :status)
+            ORDER BY t.transactionDate DESC
             """)
-    List<Transaction> findAllCompletedByAccountNumber(@Param("accountNumber") String accountNumber);
+    <T> List<T> findAllCompletedByAccountNumberAndStatus(
+            @Param("accountNumber") String accountNumber,
+            @Param("status") TransactionStatus status,
+            Class<T> type);
 
     @Query("""
             SELECT t FROM Transaction t
-            WHERE t.sourceAccountNumber = :accountNumber OR t.targetAccountNumber = :accountNumber
+            WHERE t.accountNumber = :accountNumber
             AND (t.transactionStatus = 'COMPLETED')
             ORDER BY t.transactionDate DESC
             """)
-    <T> List<T> findAllCompletedByAccountNumber(@Param("accountId") String accountNumber, Class<T> type);
+    <T> List<T> findAllCompletedByAccountNumber(@Param("accountNumber") String accountNumber, Class<T> type);
 
     @Query("""
             SELECT t FROM Transaction t

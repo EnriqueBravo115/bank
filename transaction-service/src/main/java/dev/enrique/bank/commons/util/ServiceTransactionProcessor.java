@@ -27,7 +27,7 @@ public class ServiceTransactionProcessor extends AbstractTransactionProcessor<Se
 
     @Override
     protected MovementResultResponse callAccountClient(ServiceRequest request) {
-        return accountClient.processService(basicMapper.mapTo(request, AccountServiceRequest.class));
+        return accountClient.processService(basicMapper.convertToResponse(request, AccountServiceRequest.class));
     }
 
     @Override

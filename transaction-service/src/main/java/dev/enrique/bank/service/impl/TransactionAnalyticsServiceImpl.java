@@ -15,17 +15,17 @@ import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 
+import dev.enrique.bank.commons.dto.response.TransactionBasicResponse;
+import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
+import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.commons.util.BasicMapper;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
-import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
-import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionAnalyticsService;
-import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -34,36 +34,45 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     private final TransactionRepository transactionRepository;
     private final BasicMapper basicMapper;
 
-    // TODO: Implement polymorphism according to TransactionStatus
-    // Groups transactions by type and converts projections into DTO responses,
-    // ordered by date descending from the repository
+    // FIX: potential problem calculating TransferTransactions
+    // Groups transactions by type and filter by TransactionStatus ordered by date
+    // 'DESC'
     @Override
-    public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(String accountNumber) {
+    public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(
+            String accountNumber,
+            TransactionStatus status) {
         Map<TransactionType, List<TransactionDetailedProjection>> projections = transactionRepository
-                .findAllByAccountNumber(accountNumber, TransactionDetailedProjection.class).stream()
+                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionDetailedProjection.class)
+                .stream()
                 .collect(groupingBy(TransactionDetailedProjection::getTransactionType));
 
-        return basicMapper.convertToTypedResponseMap(projections, TransactionDetailedResponse.class);
+        return basicMapper.convertToResposeMap(projections, TransactionDetailedResponse.class);
     }
 
+    // Calculates the total sum of all completed transactions grouped by their
+    // transaction type, ordered by date 'DESC'
     @Override
-    public Map<TransactionType, BigDecimal> sumTransactionsByType(String accountNumber) {
-        return transactionRepository.findAllCompletedByAccountNumber(accountNumber).stream()
-                .collect(groupingBy(Transaction::getTransactionType,
-                        reducing(BigDecimal.ZERO, Transaction::getAmount, BigDecimal::add)));
+    public Map<TransactionType, BigDecimal> sumTransactionsByType(String accountNumber, TransactionStatus status) {
+        return transactionRepository
+                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
+                .stream()
+                .collect(groupingBy(TransactionBasicProjection::getTransactionType,
+                        reducing(BigDecimal.ZERO, TransactionBasicProjection::getAmount, BigDecimal::add)));
     }
 
-    // - TRUE: Transactions with amount greater than the specified amount
-    // - FALSE: Transactions with amount less than or equal to the specified threshold
+    // - TRUE: Transactions with amount greater
+    // - FALSE: Transactions with amount less or equal
     @Override
-    public Map<Boolean, List<TransactionCommonResponse>> partitionTransactionsByAmount(String accountNumber,
+    public Map<Boolean, List<TransactionBasicResponse>> partitionTransactionsByAmount(
+            String accountNumber,
+            TransactionStatus status,
             BigDecimal amount) {
-        Map<Boolean, List<TransactionCommonProjection>> projection = transactionRepository
-                .findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+        Map<Boolean, List<TransactionBasicProjection>> projection = transactionRepository
+                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .collect(partitioningBy(t -> t.getAmount().compareTo(amount) > 0));
 
-        return basicMapper.convertToBooleanKeyResponseMap(projection, TransactionCommonResponse.class);
+        return basicMapper.convertToResposeMap(projection, TransactionBasicResponse.class);
     }
 
     // Groups transactions by type and calculates a TransactionSummaryResponse with:
@@ -84,8 +93,9 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     }
 
     @Override
-    public BigDecimal calculateTotalTransactionAmount(String accountNumber) {
-        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionBasicProjection.class)
+    public BigDecimal calculateTotalTransactionAmount(String accountNumber, TransactionStatus status) {
+        return transactionRepository
+                .findAllCompletedByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .map(TransactionBasicProjection::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -104,9 +114,10 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // - Uses ChronosUnit.DAYS.between() for date difference calculation
     @Override
     public double getAverageDaysBetweenTransactions(String accountNumber) {
-        List<Transaction> sorted = transactionRepository.findAllCompletedByAccountNumber(accountNumber)
+        List<TransactionCommonProjection> sorted = transactionRepository
+                .findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
                 .stream()
-                .sorted(comparing(Transaction::getTransactionDate))
+                .sorted(comparing(TransactionCommonProjection::getTransactionDate))
                 .toList();
 
         if (sorted.size() < 2)

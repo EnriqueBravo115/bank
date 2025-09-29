@@ -7,7 +7,7 @@ import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
 
 public interface TransactionDetailedProjection {
-    String getTransactionNumber();
+    String getTransactionCode();
     BigDecimal getAmount();
     String getDescription();
     LocalDateTime getTransactionDate();

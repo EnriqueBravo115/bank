@@ -15,14 +15,12 @@ import org.springframework.stereotype.Service;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.TransactionSupportService;
-import dev.enrique.bank.service.util.AccountHelper;
 import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
 public class TransactionSupportServiceImpl implements TransactionSupportService {
     private final TransactionRepository transactionRepository;
-    private final AccountHelper accountHelper;
 
     @Override
     public Set<String> getAllUniqueTransactionDescriptions(Long accountId) {

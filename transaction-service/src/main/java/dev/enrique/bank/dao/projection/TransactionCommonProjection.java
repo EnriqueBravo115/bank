@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public interface TransactionCommonProjection {
-    String getTransactionNumber();
+    String getTransactionCode();
     BigDecimal getAmount();
     LocalDateTime getTransactionDate();
 }
