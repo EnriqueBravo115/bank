@@ -1,11 +1,8 @@
 package dev.enrique.bank.service.impl;
 
-import static java.util.stream.Collectors.averagingDouble;
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -13,7 +10,7 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.dao.TransactionRepository;
-import dev.enrique.bank.model.Transaction;
+import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.service.TransactionSupportService;
 import lombok.AllArgsConstructor;
 
@@ -23,9 +20,10 @@ public class TransactionSupportServiceImpl implements TransactionSupportService 
     private final TransactionRepository transactionRepository;
 
     @Override
-    public Set<String> getAllUniqueTransactionDescriptions(Long accountId) {
-        return transactionRepository.findAllByAccountId(accountId).stream()
-                .map(Transaction::getDescription)
+    public Set<String> getAllUniqueTransactionDescriptions(String accountNumber) {
+        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+                .stream()
+                .map(TransactionCommonProjection::getDescription)
                 .filter(Objects::nonNull)
                 .filter(desc -> !desc.isBlank())
                 .flatMap(desc -> Stream.of(desc.split(" ")))
@@ -34,18 +32,10 @@ public class TransactionSupportServiceImpl implements TransactionSupportService 
     }
 
     @Override
-    public String getAllTransactionDescriptions(Long accountId) {
-        return transactionRepository.findAllByAccountId(accountId).stream()
-                .map(Transaction::getDescription)
+    public String getAllTransactionDescriptions(String accountNumber) {
+        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+                .stream()
+                .map(TransactionCommonProjection::getDescription)
                 .collect(joining(", "));
-    }
-
-    @Override
-    public String getFormattedAverageBalance(List<Long> accountIds) {
-        return accountIds.stream()
-                .map(accountHelper::getAccountById)
-                .collect(collectingAndThen(
-                        averagingDouble(a -> a.getBalance().doubleValue()),
-                        avg -> String.format("$%,.2f", avg)));
     }
 }

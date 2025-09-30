@@ -37,7 +37,7 @@ public class TransactionCreationController {
     }
 
     @PostMapping(SERVICE_PAYMENT)
-    public ResponseEntity<Void> service(@Valid @RequestBody ServiceRequest serviceRequest) {
+    public ResponseEntity<Void> servicePayment(@Valid @RequestBody ServiceRequest serviceRequest) {
         transactionCreationService.service(serviceRequest);
         return ResponseEntity.ok().build();
     }

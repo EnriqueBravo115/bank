@@ -14,7 +14,7 @@ public interface TransactionQueryService {
     List<TransactionDetailedResponse> getTransactionHistory(String accountNumber, TransactionStatus status);
     HeaderResponse<TransactionCommonResponse> getAllTransactions(String accountNumber, TransactionStatus status,
             Pageable pageable);
-    List<TransactionDetailedResponse> getTransactionByYear(String accountNumber, Integer year);
+    List<TransactionDetailedResponse> getTransactionsByYear(String accountNumber, Integer year);
     List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<String> accountNumbers);
     Optional<TransactionCommonResponse> findMaxTransaction(String accountNumber);
 }

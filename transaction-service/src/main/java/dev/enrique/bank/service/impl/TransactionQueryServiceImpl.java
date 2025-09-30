@@ -1,8 +1,5 @@
 package dev.enrique.bank.service.impl;
 
-import static java.util.stream.Collectors.reducing;
-
-import java.lang.Thread.State;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,15 +7,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.dao.TransactionRepository;
-import dev.enrique.bank.dao.projection.TransactionCommonProjection;
-import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.commons.dto.response.HeaderResponse;
 import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
-import dev.enrique.bank.service.TransactionQueryService;
 import dev.enrique.bank.commons.util.BasicMapper;
+import dev.enrique.bank.dao.TransactionRepository;
+import dev.enrique.bank.dao.projection.TransactionCommonProjection;
+import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
+import dev.enrique.bank.service.TransactionQueryService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -45,9 +42,9 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     }
 
     @Override
-    public List<TransactionDetailedResponse> getTransactionByYear(String accountNumber, Integer year) {
+    public List<TransactionDetailedResponse> getTransactionsByYear(String accountNumber, Integer year) {
         List<TransactionDetailedProjection> projections = transactionRepository
-                .findByAccountNumberAndYear(accountNumber, year);
+                .findAllByAccountNumberAndYear(accountNumber, year);
 
         return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
     }
@@ -56,7 +53,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<String> accountNumbers) {
         List<TransactionCommonProjection> projections = transactionRepository
-                .findCompletedByAccountIdsIn(accountNumbers);
+                .findAllCompletedByAccountIdsIn(accountNumbers);
 
         return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
     }

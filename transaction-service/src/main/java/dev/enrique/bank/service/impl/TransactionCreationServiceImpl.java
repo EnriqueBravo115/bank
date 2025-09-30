@@ -33,7 +33,7 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
     }
 
     @Override
-    public void service(ServiceRequest serviceRequest) {
+    public void servicePayment(ServiceRequest serviceRequest) {
         serviceTransactionProcessor.process(serviceRequest);
     }
 

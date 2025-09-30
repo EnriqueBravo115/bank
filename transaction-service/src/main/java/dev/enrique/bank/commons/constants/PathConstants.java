@@ -33,7 +33,6 @@ public class PathConstants {
     // Controller "SUPPORT"
     public static final String GET_UNIQUE_DESCRIPTIONS = ACCOUNT_ID + "/unique-descriptions";
     public static final String GET_ALL_DESCRIPTIONS = ACCOUNT_ID + "/all-descriptions";
-    public static final String GET_FORMATTED_AVERAGE_BALANCE = "/average-balance";
 
     // Controller "CREATION"
     public static final String TRANSFER = "/transfer";

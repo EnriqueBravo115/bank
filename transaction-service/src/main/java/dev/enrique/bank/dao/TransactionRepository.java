@@ -49,10 +49,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             SELECT t FROM Transaction t
             WHERE t.accountNumber = :accountNumber
             AND (YEAR(t.transactionDate) = :year)
+            AND t.transactionStatus = :status
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionDetailedProjection> findByAccountNumberAndYear(
-            @Param("accountNumber") String accountNumber, @Param("year") Integer year);
+    List<TransactionDetailedProjection> findAllByAccountNumberAndYear(
+            @Param("accountNumber") String accountNumber,
+            @Param("year") Integer year,
+            @Param("status") TransactionStatus status);
 
     @Query("""
             SELECT t FROM Transaction t
@@ -60,5 +63,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             AND (t.transactionStatus = 'COMPLETED')
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionCommonProjection> findCompletedByAccountIdsIn(@Param("accountNumbers") List<String> accountNumbers);
+    List<TransactionCommonProjection> findAllCompletedByAccountIdsIn(
+            @Param("accountNumbers") List<String> accountNumbers);
 }

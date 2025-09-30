@@ -8,7 +8,7 @@ import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
 public interface TransactionCreationService {
     void transfer(TransferRequest accountTransferRequest);
     void purchase(PurchaseRequest purchaseRequest);
-    void service(ServiceRequest purchaseRequest);
+    void servicePayment(ServiceRequest purchaseRequest);
     void withdrawal(WithdrawalRequest withdrawalRequest);
     void cancelTransaction(Long transactionId);
 }
