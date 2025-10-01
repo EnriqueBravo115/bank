@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Component;
 
 import dev.enrique.bank.client.AccountClient;
-import dev.enrique.bank.commons.dto.request.AccountWithdrawalRequest;
+import dev.enrique.bank.commons.dto.request.ClientWithdrawalRequest;
 import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
@@ -28,7 +28,7 @@ public class WithdrawalTransactionProcessor
 
     @Override
     protected MovementResultResponse callAccountClient(WithdrawalRequest request) {
-        return accountClient.processWithdrawal(basicMapper.convertToResponse(request, AccountWithdrawalRequest.class));
+        return accountClient.processWithdrawal(basicMapper.convertToResponse(request, ClientWithdrawalRequest.class));
     }
 
     @Override

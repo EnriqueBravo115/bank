@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Component;
 
 import dev.enrique.bank.client.AccountClient;
-import dev.enrique.bank.commons.dto.request.AccountPurchaseRequest;
+import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
@@ -27,7 +27,7 @@ public class PurchaseTransactionProcessor extends AbstractTransactionProcessor<P
 
     @Override
     protected MovementResultResponse callAccountClient(PurchaseRequest request) {
-        return accountClient.processPurchase(basicMapper.convertToResponse(request, AccountPurchaseRequest.class));
+        return accountClient.processPurchase(basicMapper.convertToResponse(request, ClientPurchaseRequest.class));
     }
 
     @Override

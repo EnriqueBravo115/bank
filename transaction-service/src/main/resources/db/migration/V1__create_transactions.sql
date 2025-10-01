@@ -1,5 +1,6 @@
 CREATE TABLE transactions (
     id                       BIGSERIAL PRIMARY KEY,
+    account_number           VARCHAR(255),
     transaction_code         VARCHAR(255),
     amount                   NUMERIC(19,2),
     description              TEXT,

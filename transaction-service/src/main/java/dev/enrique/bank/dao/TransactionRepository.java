@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.model.Transaction;
@@ -17,12 +18,25 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("""
             SELECT t FROM Transaction t
             WHERE t.accountNumber = :accountNumber
-            AND (t.transactionStatus = :status)
+            AND t.transactionStatus = :status
             ORDER BY t.transactionDate DESC
             """)
     <T> List<T> findAllByAccountNumberAndStatus(
             @Param("accountNumber") String accountNumber,
             @Param("status") TransactionStatus status,
+            Class<T> type);
+
+    @Query("""
+            SELECT t FROM Transaction t
+            WHERE t.accountNumber = :accountNumber
+            AND t.transactionStatus = :status
+            AND t.transactionType = :type
+            ORDER BY t.transactionDate DESC
+            """)
+    <T> List<T> findAllByAccountNumberStatusAndType(
+            @Param("accountNumber") String accountNumber,
+            @Param("status") TransactionStatus status,
+            @Param("type") TransactionType transactionType,
             Class<T> type);
 
     @Query("""

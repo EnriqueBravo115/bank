@@ -6,10 +6,10 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import dev.enrique.bank.commons.dto.request.AccountPurchaseRequest;
-import dev.enrique.bank.commons.dto.request.AccountServiceRequest;
-import dev.enrique.bank.commons.dto.request.AccountTransferRequest;
-import dev.enrique.bank.commons.dto.request.AccountWithdrawalRequest;
+import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
+import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
+import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
+import dev.enrique.bank.commons.dto.request.ClientWithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.config.FeignConfiguration;
@@ -19,37 +19,37 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 public interface AccountClient {
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
     @PostMapping("/transfer")
-    MovementResultResponse processTransfer(@RequestBody AccountTransferRequest accountTransferRequest);
+    MovementResultResponse processTransfer(@RequestBody ClientTransferRequest clientTransferRequest);
 
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "purchaseFallback")
     @PostMapping("/purchase")
-    MovementResultResponse processPurchase(@RequestBody AccountPurchaseRequest accountPurchaseRequest);
+    MovementResultResponse processPurchase(@RequestBody ClientPurchaseRequest clientPurchaseRequest);
 
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "serviceFallback")
     @PostMapping("/service")
-    MovementResultResponse processService(@RequestBody AccountServiceRequest accountServiceRequest);
+    MovementResultResponse processService(@RequestBody ClientServiceRequest clientServiceRequest);
 
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "withdrawalFallback")
     @PostMapping("/withdrawal")
-    MovementResultResponse processWithdrawal(@RequestBody AccountWithdrawalRequest accountWithdrawalRequest);
+    MovementResultResponse processWithdrawal(@RequestBody ClientWithdrawalRequest clientWithdrawalRequest);
 
-    default MovementResultResponse transferFallback(AccountTransferRequest accountTransferRequest,
-            Throwable throwable) {
+    default MovementResultResponse transferFallback(ClientTransferRequest clientTransferRequest,
+                                                    Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }
 
-    default MovementResultResponse purchaseFallback(AccountPurchaseRequest accountPurchaseRequest,
-            Throwable throwable) {
+    default MovementResultResponse purchaseFallback(ClientPurchaseRequest clientPurchaseRequest,
+                                                    Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }
 
-    default MovementResultResponse serviceFallback(AccountServiceRequest accountServiceRequest,
-            Throwable throwable) {
+    default MovementResultResponse serviceFallback(ClientServiceRequest clientServiceRequest,
+                                                   Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }
 
-    default MovementResultResponse withdrawalFallback(AccountWithdrawalRequest accountWithdrawalRequest,
-            Throwable throwable) {
+    default MovementResultResponse withdrawalFallback(ClientWithdrawalRequest clientWithdrawalRequest,
+                                                      Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }
 }

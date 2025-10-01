@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Component;
 
 import dev.enrique.bank.client.AccountClient;
-import dev.enrique.bank.commons.dto.request.AccountTransferRequest;
+import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
@@ -27,7 +27,7 @@ public class TransferTransactionProcessor extends AbstractTransactionProcessor<T
 
     @Override
     protected MovementResultResponse callAccountClient(TransferRequest request) {
-        return accountClient.processTransfer(basicMapper.convertToResponse(request, AccountTransferRequest.class));
+        return accountClient.processTransfer(basicMapper.convertToResponse(request, ClientTransferRequest.class));
     }
 
     @Override

@@ -2,12 +2,17 @@ package dev.enrique.bank.service.impl;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.maxBy;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +42,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // FIX: potential problem calculating TransferTransactions
     // Groups transactions by type and filter by status ordered by date 'DESC'
     @Override
-    public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(
-            String accountNumber,
+    public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(String accountNumber,
             TransactionStatus status) {
         Map<TransactionType, List<TransactionDetailedProjection>> projections = transactionRepository
                 .findAllByAccountNumberAndStatus(accountNumber, status, TransactionDetailedProjection.class)
@@ -59,8 +63,8 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                         reducing(BigDecimal.ZERO, TransactionBasicProjection::getAmount, BigDecimal::add)));
     }
 
-    // - TRUE: Transactions with amount greater
-    // - FALSE: Transactions with amount less or equal
+    // TRUE: Transactions with amount greater
+    // FALSE: Transactions with amount less or equal
     @Override
     public Map<Boolean, List<TransactionBasicResponse>> partitionTransactionsByAmount(
             String accountNumber,
@@ -77,8 +81,10 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // Groups transactions by type and calculates a TransactionSummaryResponse with:
     // 1. The number of transactions
     // 2. The total amount
-    public Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String accountNumber) {
-        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionBasicProjection.class)
+    public Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String accountNumber,
+            TransactionStatus status) {
+        return transactionRepository
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .collect(groupingBy(
                         TransactionBasicProjection::getTransactionType,
@@ -91,20 +97,14 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                                                 .reduce(BigDecimal.ZERO, BigDecimal::add)))));
     }
 
+    // Calculates the total amount of transactions for an account
+    // filtered by status and type
     @Override
-    public BigDecimal calculateTotalTransactionAmount(String accountNumber, TransactionStatus status) {
+    public BigDecimal calculateTotalAmountByStatusAndType(String accountNumber, TransactionStatus status,
+            TransactionType type) {
         return transactionRepository
-                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
+                .findAllByAccountNumberStatusAndType(accountNumber, status, type, TransactionBasicProjection.class)
                 .stream()
-                .map(TransactionBasicProjection::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    @Override
-    public BigDecimal calculateTotalAmountByType(String accountNumber, TransactionType type) {
-        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionBasicProjection.class)
-                .stream()
-                .filter(t -> t.getTransactionType() == type)
                 .map(TransactionBasicProjection::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
@@ -112,9 +112,9 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // Calculates the average days between completed transactions for an account
     // - Uses ChronosUnit.DAYS.between() for date difference calculation
     @Override
-    public double getAverageDaysBetweenTransactions(String accountNumber) {
+    public double getAverageDaysBetweenTransactions(String accountNumber, TransactionStatus status) {
         List<TransactionCommonProjection> sorted = transactionRepository
-                .findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionCommonProjection.class)
                 .stream()
                 .sorted(comparing(TransactionCommonProjection::getTransactionDate))
                 .toList();
@@ -128,5 +128,50 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                         sorted.get(i + 1).getTransactionDate().toLocalDate()))
                 .average()
                 .orElseThrow(() -> new IllegalStateException("Cannot calculate average"));
+    }
+
+    // Returns the transaction with the highest amount for each transaction type
+    @Override
+    public Map<TransactionType, List<TransactionBasicResponse>> getMaxTransactionByType(String accountNumber,
+            TransactionStatus status) {
+        Map<TransactionType, List<TransactionBasicProjection>> projection = transactionRepository
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
+                .stream()
+                .collect(groupingBy(
+                        TransactionBasicProjection::getTransactionType,
+                        collectingAndThen(
+                                maxBy(comparing(TransactionBasicProjection::getAmount)),
+                                opt -> opt.map(List::of).orElseGet(List::of))));
+
+        return basicMapper.convertToResposeMap(projection, TransactionBasicResponse.class);
+    }
+
+    // Counts the number of transactions per month for a given account and status
+    @Override
+    public Map<Month, Long> countTransactionsByMonth(String accountNumber, TransactionStatus status) {
+        return transactionRepository
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionCommonProjection.class)
+                .stream()
+                .collect(groupingBy(
+                        t -> t.getTransactionDate().getMonth(),
+                        counting()));
+    }
+
+    // Calculates the average transaction amount grouped by transaction type
+    @Override
+    public Map<TransactionType, BigDecimal> getAverageAmountByType(String accountNumber, TransactionStatus status) {
+        Map<TransactionType, List<TransactionBasicProjection>> grouped = transactionRepository
+                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
+                .stream()
+                .collect(groupingBy(TransactionBasicProjection::getTransactionType));
+
+        return grouped.entrySet()
+                .stream()
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream()
+                                .map(TransactionBasicProjection::getAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                .divide(BigDecimal.valueOf(e.getValue().size()), RoundingMode.HALF_UP)));
     }
 }

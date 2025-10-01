@@ -1,4 +1,4 @@
 package dev.enrique.bank.commons.dto.request;
 
-public record AccountWithdrawalRequest() {
+public record ClientWithdrawalRequest() {
 }

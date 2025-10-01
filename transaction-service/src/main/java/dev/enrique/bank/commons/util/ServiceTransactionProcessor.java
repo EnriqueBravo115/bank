@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Component;
 
 import dev.enrique.bank.client.AccountClient;
-import dev.enrique.bank.commons.dto.request.AccountServiceRequest;
+import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
@@ -27,7 +27,7 @@ public class ServiceTransactionProcessor extends AbstractTransactionProcessor<Se
 
     @Override
     protected MovementResultResponse callAccountClient(ServiceRequest request) {
-        return accountClient.processService(basicMapper.convertToResponse(request, AccountServiceRequest.class));
+        return accountClient.processService(basicMapper.convertToResponse(request, ClientServiceRequest.class));
     }
 
     @Override

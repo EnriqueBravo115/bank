@@ -1,31 +1,26 @@
 package dev.enrique.bank.controller;
 
-import static dev.enrique.bank.commons.constants.PathConstants.GET_AVERAGE_DAYS_BETWEEN;
-import static dev.enrique.bank.commons.constants.PathConstants.GET_TOTAL_AMOUNT_BY_TYPE;
-import static dev.enrique.bank.commons.constants.PathConstants.GET_TOTAL_TRANSACTION_AMOUNT;
-import static dev.enrique.bank.commons.constants.PathConstants.GET_TRANSACTION_TYPE_SUMMARY;
-import static dev.enrique.bank.commons.constants.PathConstants.GROUP_TRANSACTIONS_BY_TYPE;
-import static dev.enrique.bank.commons.constants.PathConstants.PARTITION_TRANSACTIONS_BY_AMOUNT;
-import static dev.enrique.bank.commons.constants.PathConstants.SUM_TRANSACTIONS_BY_TYPE;
 import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_ANALYTICS;
 
 import java.math.BigDecimal;
+import java.time.Month;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.enrique.bank.commons.dto.request.FilterStatusAmountRequest;
+import dev.enrique.bank.commons.dto.request.FilterStatusRequest;
+import dev.enrique.bank.commons.dto.request.FilterStatusTypeRequest;
 import dev.enrique.bank.commons.dto.response.TransactionBasicResponse;
 import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
-import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.service.TransactionAnalyticsService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -34,51 +29,66 @@ import lombok.RequiredArgsConstructor;
 public class TransactionAnalyticsController {
     private final TransactionAnalyticsService transactionAnalyticsService;
 
-    @GetMapping(GROUP_TRANSACTIONS_BY_TYPE)
+    @GetMapping("/group-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionDetailedResponse>>> groupTransactionsByType(
-            @PathVariable String accountNumber,
-            @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.groupTransactionsByType(accountNumber, status));
+            @Valid FilterStatusRequest request) {
+        return ResponseEntity.ok(transactionAnalyticsService
+                .groupTransactionsByType(request.accountNumber(), request.status()));
     }
 
-    @GetMapping(SUM_TRANSACTIONS_BY_TYPE)
+    @GetMapping("/sum-by-type")
     public ResponseEntity<Map<TransactionType, BigDecimal>> sumTransactionsByType(
-            @PathVariable String accountNumber,
-            @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(accountNumber, status));
+            @Valid FilterStatusRequest request) {
+        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(request.accountNumber(),
+                request.status()));
     }
 
-    @GetMapping(PARTITION_TRANSACTIONS_BY_AMOUNT)
+    @GetMapping("/partition-by-amount")
     public ResponseEntity<Map<Boolean, List<TransactionBasicResponse>>> partitionTransactionsByAmount(
-            @PathVariable String accountNumber,
-            @RequestParam BigDecimal amount,
-            @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.partitionTransactionsByAmount(accountNumber, status, amount));
+            @Valid FilterStatusAmountRequest request) {
+        return ResponseEntity.ok(transactionAnalyticsService.partitionTransactionsByAmount(request.accountNumber(),
+                request.status(), request.amount()));
     }
 
-    @GetMapping(GET_TRANSACTION_TYPE_SUMMARY)
+    @GetMapping("/type-summary")
     public ResponseEntity<Map<TransactionType, TransactionSummaryResponse>> getTransactionTypeSummary(
-            @PathVariable String accountNumber) {
-        return ResponseEntity.ok(transactionAnalyticsService.getTransactionTypeSummary(accountNumber));
+            @Valid FilterStatusRequest request) {
+        return ResponseEntity
+                .ok(transactionAnalyticsService.getTransactionTypeSummary(request.accountNumber(), request.status()));
     }
 
-    @GetMapping(GET_TOTAL_TRANSACTION_AMOUNT)
+    @GetMapping("/total-amount")
     public ResponseEntity<BigDecimal> getTotalTransactionAmount(
-            @PathVariable String accountNumber,
-            @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.calculateTotalTransactionAmount(accountNumber, status));
+            @Valid FilterStatusTypeRequest request) {
+        return ResponseEntity.ok(transactionAnalyticsService
+                .calculateTotalAmountByStatusAndType(request.accountNumber(), request.status(), request.type()));
     }
 
-    @GetMapping(GET_TOTAL_AMOUNT_BY_TYPE)
-    public ResponseEntity<BigDecimal> getTotalAmountByType(
-            @PathVariable String accountNumber,
-            @RequestParam TransactionType type) {
-        return ResponseEntity.ok(transactionAnalyticsService.calculateTotalAmountByType(accountNumber, type));
-    }
-
-    @GetMapping(GET_AVERAGE_DAYS_BETWEEN)
+    @GetMapping("/average-days")
     public ResponseEntity<Double> getAverageDaysBetweenTransactions(
-            @PathVariable String accountNumber) {
-        return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(accountNumber));
+            @Valid FilterStatusRequest request) {
+        return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(request.accountNumber(),
+                request.status()));
+    }
+
+    @GetMapping("/max-by-type")
+    public ResponseEntity<Map<TransactionType, List<TransactionBasicResponse>>> getMaxByTransactionType(
+            @Valid FilterStatusRequest request) {
+        return ResponseEntity
+                .ok(transactionAnalyticsService.getMaxTransactionByType(request.accountNumber(), request.status()));
+    }
+
+    @GetMapping("/count-by-month")
+    public ResponseEntity<Map<Month, Long>> countTransactionsByMonth(
+            @Valid FilterStatusRequest accountStatusRequest) {
+        return ResponseEntity.ok(transactionAnalyticsService
+                .countTransactionsByMonth(accountStatusRequest.accountNumber(), accountStatusRequest.status()));
+    }
+
+    @GetMapping("/average-amount")
+    public ResponseEntity<Map<TransactionType, BigDecimal>> getAverageAmountByType(
+            @Valid FilterStatusRequest statusRequest) {
+        return ResponseEntity.ok(transactionAnalyticsService
+                .getAverageAmountByType(statusRequest.accountNumber(), statusRequest.status()));
     }
 }
