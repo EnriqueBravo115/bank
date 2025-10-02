@@ -20,12 +20,9 @@ import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.commons.dto.response.TransactionBasicResponse;
-import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
-import dev.enrique.bank.commons.util.BasicMapper;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
@@ -37,19 +34,16 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsService {
     private final TransactionRepository transactionRepository;
-    private final BasicMapper basicMapper;
 
     // FIX: potential problem calculating TransferTransactions
     // Groups transactions by type and filter by status ordered by date 'DESC'
     @Override
-    public Map<TransactionType, List<TransactionDetailedResponse>> groupTransactionsByType(String accountNumber,
+    public Map<TransactionType, List<TransactionDetailedProjection>> groupTransactionsByType(String accountNumber,
             TransactionStatus status) {
-        Map<TransactionType, List<TransactionDetailedProjection>> projections = transactionRepository
+        return transactionRepository
                 .findAllByAccountNumberAndStatus(accountNumber, status, TransactionDetailedProjection.class)
                 .stream()
                 .collect(groupingBy(TransactionDetailedProjection::getTransactionType));
-
-        return basicMapper.convertToResposeMap(projections, TransactionDetailedResponse.class);
     }
 
     // Calculates the total sum of all completed transactions grouped by their
@@ -66,16 +60,12 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // TRUE: Transactions with amount greater
     // FALSE: Transactions with amount less or equal
     @Override
-    public Map<Boolean, List<TransactionBasicResponse>> partitionTransactionsByAmount(
-            String accountNumber,
-            TransactionStatus status,
-            BigDecimal amount) {
-        Map<Boolean, List<TransactionBasicProjection>> projection = transactionRepository
+    public Map<Boolean, List<TransactionBasicProjection>> partitionTransactionsByAmount(String accountNumber,
+            TransactionStatus status, BigDecimal amount) {
+        return transactionRepository
                 .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .collect(partitioningBy(t -> t.getAmount().compareTo(amount) > 0));
-
-        return basicMapper.convertToResposeMap(projection, TransactionBasicResponse.class);
     }
 
     // Groups transactions by type and calculates a TransactionSummaryResponse with:
@@ -132,9 +122,9 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
 
     // Returns the transaction with the highest amount for each transaction type
     @Override
-    public Map<TransactionType, List<TransactionBasicResponse>> getMaxTransactionByType(String accountNumber,
+    public Map<TransactionType, List<TransactionBasicProjection>> getMaxTransactionByType(String accountNumber,
             TransactionStatus status) {
-        Map<TransactionType, List<TransactionBasicProjection>> projection = transactionRepository
+        return transactionRepository
                 .findAllByAccountNumberAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
                 .collect(groupingBy(
@@ -142,8 +132,6 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                         collectingAndThen(
                                 maxBy(comparing(TransactionBasicProjection::getAmount)),
                                 opt -> opt.map(List::of).orElseGet(List::of))));
-
-        return basicMapper.convertToResposeMap(projection, TransactionBasicResponse.class);
     }
 
     // Counts the number of transactions per month for a given account and status

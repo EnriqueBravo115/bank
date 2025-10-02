@@ -42,9 +42,9 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     }
 
     @Override
-    public List<TransactionDetailedResponse> getTransactionsByYear(String accountNumber, Integer year) {
+    public List<TransactionDetailedResponse> getTransactionsByYear(String accountNumber, TransactionStatus status, Integer year) {
         List<TransactionDetailedProjection> projections = transactionRepository
-                .findAllByAccountNumberAndYear(accountNumber, year);
+                .findAllByAccountNumberAndYear(accountNumber, year, status);
 
         return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
     }

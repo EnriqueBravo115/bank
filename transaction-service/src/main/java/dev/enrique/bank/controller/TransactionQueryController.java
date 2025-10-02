@@ -54,7 +54,7 @@ public class TransactionQueryController {
     public ResponseEntity<List<TransactionDetailedResponse>> getTransactionsByYear(
             @RequestBody AccountYearRequest request) {
         return ResponseEntity.ok(transactionQueryService
-                .getTransactionsByYear(request.getAccountNumber(), request.getYear()));
+                .getTransactionsByYear(request.getAccountNumber(), request.getStatus(), request.getYear()));
     }
 
     @PostMapping(GET_TRANSACTIONS_FOR_ACCOUNTS)

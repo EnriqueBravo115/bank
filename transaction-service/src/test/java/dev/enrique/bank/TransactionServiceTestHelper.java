@@ -12,8 +12,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 
-import dev.enrique.bank.enums.TransactionStatus;
-import dev.enrique.bank.enums.TransactionType;
+import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 
@@ -22,31 +22,31 @@ public class TransactionServiceTestHelper {
     private static final PageRequest pageable = PageRequest.of(0, 20);
 
     public static List<TransactionDetailedProjection> createTransactionDetailedProjection() {
-        TransactionDetailedProjection tProjection1 = factory.createProjection(TransactionDetailedProjection.class,
+        TransactionDetailedProjection projection1 = factory.createProjection(TransactionDetailedProjection.class,
                 new HashMap<>() {
                     {
-                        put("transactionNumber", "123");
+                        put("transactionCode", "f47ac10b-58cc-4372-a567-0e02b2c3d479");
                         put("amount", new BigDecimal("100.50"));
-                        put("transactionDate", LocalDateTime.now());
                         put("description", "test transaction 1");
-                        put("transactionType", TransactionType.TRANSFER);
+                        put("transactionDate", LocalDateTime.now());
+                        put("transactionType", TransactionType.PURCHASE);
                         put("transactionStatus", TransactionStatus.COMPLETED);
                     }
                 });
 
-        TransactionDetailedProjection tProjection2 = factory.createProjection(TransactionDetailedProjection.class,
+        TransactionDetailedProjection projection2 = factory.createProjection(TransactionDetailedProjection.class,
                 new HashMap<>() {
                     {
-                        put("transactionNumber", "456");
-                        put("amount", new BigDecimal("300.00"));
-                        put("transactionDate", LocalDateTime.now());
+                        put("transactionCode", "6ba7b810-9dad-11d1-80b4-00c04fd430c8");
+                        put("amount", new BigDecimal("200.00"));
                         put("description", "test transaction 2");
-                        put("transactionType", TransactionType.TRANSFER);
+                        put("transactionDate", LocalDateTime.now());
+                        put("transactionType", TransactionType.PURCHASE);
                         put("transactionStatus", TransactionStatus.COMPLETED);
                     }
                 });
 
-        return Arrays.asList(tProjection1, tProjection2);
+        return Arrays.asList(projection1, projection2);
     }
 
     public static Page<TransactionCommonProjection> createTransactionPageCommonProjections() {
@@ -108,7 +108,7 @@ public class TransactionServiceTestHelper {
         return Arrays.asList(
                 createTransaction(2L, TransactionType.TRANSFER),
                 createTransaction(2L, TransactionType.TRANSFER),
-                createTransaction(2L, TransactionType.WITHDRAW));
+                createTransaction(2L, TransactionType.WITHDRAWAL));
     }
 
     private static TransactionCommonProjection createTransaction(Long id, TransactionType type) {

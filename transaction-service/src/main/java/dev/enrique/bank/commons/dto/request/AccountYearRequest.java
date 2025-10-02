@@ -1,5 +1,6 @@
 package dev.enrique.bank.commons.dto.request;
 
+import dev.enrique.bank.commons.enums.TransactionStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -16,4 +17,6 @@ public class AccountYearRequest {
 
     @NotBlank(message = "Year cannot be empty")
     private Integer year;
+
+    private TransactionStatus status;
 }

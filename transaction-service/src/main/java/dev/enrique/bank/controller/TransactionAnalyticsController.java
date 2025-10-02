@@ -19,6 +19,7 @@ import dev.enrique.bank.commons.dto.response.TransactionBasicResponse;
 import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.commons.util.BasicMapper;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,12 +29,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TransactionAnalyticsController {
     private final TransactionAnalyticsService transactionAnalyticsService;
+    private final BasicMapper mapper;
 
     @GetMapping("/group-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionDetailedResponse>>> groupTransactionsByType(
             @Valid FilterStatusRequest request) {
-        return ResponseEntity.ok(transactionAnalyticsService
-                .groupTransactionsByType(request.accountNumber(), request.status()));
+        return ResponseEntity.ok(mapper.convertToResposeMap(
+                transactionAnalyticsService.groupTransactionsByType(
+                        request.accountNumber(),
+                        request.status()),
+                TransactionDetailedResponse.class));
     }
 
     @GetMapping("/sum-by-type")
@@ -46,8 +51,12 @@ public class TransactionAnalyticsController {
     @GetMapping("/partition-by-amount")
     public ResponseEntity<Map<Boolean, List<TransactionBasicResponse>>> partitionTransactionsByAmount(
             @Valid FilterStatusAmountRequest request) {
-        return ResponseEntity.ok(transactionAnalyticsService.partitionTransactionsByAmount(request.accountNumber(),
-                request.status(), request.amount()));
+        return ResponseEntity.ok(mapper.convertToResposeMap(
+                transactionAnalyticsService.partitionTransactionsByAmount(
+                        request.accountNumber(),
+                        request.status(),
+                        request.amount()),
+                TransactionBasicResponse.class));
     }
 
     @GetMapping("/type-summary")
@@ -74,8 +83,11 @@ public class TransactionAnalyticsController {
     @GetMapping("/max-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionBasicResponse>>> getMaxByTransactionType(
             @Valid FilterStatusRequest request) {
-        return ResponseEntity
-                .ok(transactionAnalyticsService.getMaxTransactionByType(request.accountNumber(), request.status()));
+        return ResponseEntity.ok(mapper.convertToResposeMap(
+                transactionAnalyticsService.getMaxTransactionByType(
+                        request.accountNumber(),
+                        request.status()),
+                TransactionBasicResponse.class));
     }
 
     @GetMapping("/count-by-month")
