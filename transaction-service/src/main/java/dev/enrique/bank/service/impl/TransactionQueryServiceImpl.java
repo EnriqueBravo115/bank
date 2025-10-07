@@ -27,7 +27,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionDetailedResponse> getTransactionHistory(String accountNumber, TransactionStatus status) {
         List<TransactionDetailedProjection> projections = transactionRepository
-                .findAllByAccountNumberAndStatus(accountNumber, status, TransactionDetailedProjection.class);
+                .findAllBySourceIdentifierAndStatus(accountNumber, status, TransactionDetailedProjection.class);
 
         return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
     }
@@ -36,7 +36,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     public HeaderResponse<TransactionCommonResponse> getAllTransactions(String accountNumber, TransactionStatus status,
             Pageable pageable) {
         Page<TransactionCommonProjection> page = transactionRepository
-                .findAllPageableByAccountNumberAndStatus(accountNumber, status, pageable);
+                .findAllPageableBySourceIdentifierAndStatus(accountNumber, status, pageable);
 
         return basicMapper.getHeaderResponse(page, TransactionCommonResponse.class);
     }
@@ -44,7 +44,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionDetailedResponse> getTransactionsByYear(String accountNumber, TransactionStatus status, Integer year) {
         List<TransactionDetailedProjection> projections = transactionRepository
-                .findAllByAccountNumberAndYear(accountNumber, year, status);
+                .findAllBySourceIdentifierAndYear(accountNumber, year, status);
 
         return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
     }
@@ -53,7 +53,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<String> accountNumbers) {
         List<TransactionCommonProjection> projections = transactionRepository
-                .findAllCompletedByAccountIdsIn(accountNumbers);
+                .findAllCompletedBySourceIdentifiersIn(accountNumbers);
 
         return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
     }
@@ -61,7 +61,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public Optional<TransactionCommonResponse> findMaxTransaction(String accountNumber) {
         Optional<TransactionCommonProjection> projection = transactionRepository
-                .findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+                .findAllCompletedBySourceIdentifier(accountNumber, TransactionCommonProjection.class)
                 .stream()
                 .reduce((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2);
 

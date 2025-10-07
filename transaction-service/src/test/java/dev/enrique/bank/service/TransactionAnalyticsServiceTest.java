@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import static dev.enrique.bank.commons.constants.TestConstants.*;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,76 +37,110 @@ public class TransactionAnalyticsServiceTest {
 
     @Test
     void groupTransactionsByType_shouldReturnGroupedTransactions() {
-        String accountNumber = "123456";
-        TransactionStatus status = TransactionStatus.COMPLETED;
+        List<TransactionDetailedProjection> projections = List.of(
+                TransactionServiceTestHelper.createTransactionDetailedProjection("f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                        new BigDecimal("100.00"), "Test transaction 1", TransactionType.SERVICE, STATUS_COMPLETED),
+                TransactionServiceTestHelper.createTransactionDetailedProjection("a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+                        new BigDecimal("200.00"), "Test transaction 2", TransactionType.SERVICE, STATUS_COMPLETED),
+                TransactionServiceTestHelper.createTransactionDetailedProjection("9f4e8a2b-1c3d-4e5f-a6b7-8c9d0e1f2a3b",
+                        new BigDecimal("100.00"), "Test transaction 3", TransactionType.TRANSFER, STATUS_COMPLETED),
+                TransactionServiceTestHelper.createTransactionDetailedProjection("6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+                        new BigDecimal("200.00"), "Test transaction 4", TransactionType.TRANSFER, STATUS_COMPLETED));
 
-        List<TransactionDetailedProjection> projections = TransactionServiceTestHelper
-                .createTransactionDetailedProjection();
-
-        when(transactionRepository.findAllByAccountNumberAndStatus(accountNumber, status,
+        when(transactionRepository.findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED,
                 TransactionDetailedProjection.class)).thenReturn(projections);
 
         Map<TransactionType, List<TransactionDetailedProjection>> result = transactionAnalyticsServiceImpl
-                .groupTransactionsByType(accountNumber, status);
+                .groupTransactionsByType(CLABE, STATUS_COMPLETED);
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(TransactionType.TRANSFER)).hasSize(1);
-        assertThat(result.get(TransactionType.SERVICE).get(0).getTransactionCode())
-                .isEqualTo(projections.get(0).getTransactionCode());
+        assertThat(result.get(TransactionType.TRANSFER)).hasSize(2);
+        assertThat(result.get(TransactionType.SERVICE).get(0).getTransactionCode()).isEqualTo(projections.get(0).getTransactionCode());
+        assertThat(result.get(TransactionType.TRANSFER).get(0).getTransactionCode()).isEqualTo(projections.get(2).getTransactionCode());
     }
 
     @Test
     void sumTransactionByTypeShouldReturn() {
-        String accountNumber = "123456";
-        TransactionStatus status = TransactionStatus.COMPLETED;
+        List<TransactionBasicProjection> projections = List.of(
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.PURCHASE, new BigDecimal("100.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.PURCHASE, new BigDecimal("100.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER, new BigDecimal("200.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER, new BigDecimal("200.00")));
 
-        List<TransactionBasicProjection> projections = TransactionServiceTestHelper
-                .createTransactionBasicProjectionList();
-
-        when(transactionRepository.findAllByAccountNumberAndStatus(accountNumber, status,
+        when(transactionRepository.findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED,
                 TransactionBasicProjection.class)).thenReturn(projections);
 
-        Map<TransactionType, BigDecimal> result = transactionAnalyticsServiceImpl.sumTransactionsByType(accountNumber,
-                status);
+        Map<TransactionType, BigDecimal> result = transactionAnalyticsServiceImpl
+                .sumTransactionsByType(CLABE, STATUS_COMPLETED);
 
         assertThat(result).hasSize(2);
         assertEquals(new BigDecimal("400.00"), result.get(TransactionType.TRANSFER));
-        assertEquals(new BigDecimal("100.50"), result.get(TransactionType.PURCHASE));
+        assertEquals(new BigDecimal("200.00"), result.get(TransactionType.PURCHASE));
+    }
+
+    @Test
+    void partitionTransactionByAmountShouldReturn() {
+        List<TransactionBasicProjection> projections = List.of(
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.PURCHASE, new BigDecimal("100.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.PURCHASE, new BigDecimal("100.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER, new BigDecimal("200.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER, new BigDecimal("200.00")));
+
+        when(transactionRepository.findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED,
+                TransactionBasicProjection.class)).thenReturn(projections);
+
+        Map<Boolean, List<TransactionBasicProjection>> result = transactionAnalyticsServiceImpl
+                .partitionTransactionsByAmount(CLABE, STATUS_COMPLETED, new BigDecimal("150.00"));
+
+        assertThat(result.get(true)).hasSize(2);
+        assertThat(result.get(false)).hasSize(2);
     }
 
     @Test
     void getTransactionTypeSummary_ShouldReturnTransactionTypeSummary() {
-        String accountNumber = "123456";
-        TransactionStatus status = TransactionStatus.COMPLETED;
+        List<TransactionBasicProjection> projections = List.of(
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.PURCHASE, new BigDecimal("100.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.PURCHASE, new BigDecimal("100.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER, new BigDecimal("200.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER, new BigDecimal("200.00")));
 
-        List<TransactionBasicProjection> projections = TransactionServiceTestHelper
-                .createTransactionBasicProjectionList();
-
-        when(transactionRepository.findAllByAccountNumberAndStatus(
-                accountNumber, status, TransactionBasicProjection.class))
-                .thenReturn(projections);
+        when(transactionRepository.findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED,
+                TransactionBasicProjection.class)).thenReturn(projections);
 
         Map<TransactionType, TransactionSummaryResponse> result = transactionAnalyticsServiceImpl
-                .getTransactionTypeSummary(accountNumber, status);
+                .getTransactionTypeSummary(CLABE, STATUS_COMPLETED);
 
-        assertNotNull(result, "The result must not be null");
-        assertEquals(2, result.size(), "There should be 2 types of transactions on the map");
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        verify(transactionRepository).findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED, TransactionBasicProjection.class);
 
         // TRANSFER
         TransactionSummaryResponse transferSummary = result.get(TransactionType.TRANSFER);
-        assertNotNull(transferSummary, "The summary TRANSFER must not be null");
-        assertEquals(2, transferSummary.getCount(), "There should be 2 transactions TRANSFER");
-        assertEquals(new BigDecimal("400.00"), transferSummary.getTotal(),
-                "The total of DEPOSIT must be 400");
+        assertNotNull(transferSummary);
+        assertEquals(2, transferSummary.getCount());
+        assertEquals(new BigDecimal("400.00"), transferSummary.getTotal());
 
         // PURCHASE
         TransactionSummaryResponse purchaseSummary = result.get(TransactionType.PURCHASE);
-        assertNotNull(purchaseSummary, "The summary PURCHASE must not be null");
-        assertEquals(1, purchaseSummary.getCount(), "There should be 1 transaction PURCHASE");
-        assertEquals(new BigDecimal("100.50"), purchaseSummary.getTotal(),
-                "The total of PURCHASE must be 100.50");
+        assertNotNull(purchaseSummary);
+        assertEquals(2, purchaseSummary.getCount());
+        assertEquals(new BigDecimal("200.00"), purchaseSummary.getTotal());
+    }
 
-        verify(transactionRepository).findAllByAccountNumberAndStatus(
-                accountNumber, status, TransactionBasicProjection.class);
+    @Test
+    void calculateTotalAmountByStatusAndType() {
+        List<TransactionBasicProjection> projections = List.of(
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER,
+                        new BigDecimal("200.00")),
+                TransactionServiceTestHelper.createTransactionBasicProjection(TransactionType.TRANSFER,
+                        new BigDecimal("100.00")));
+
+        when(transactionRepository.findAllBySourceIdentifierStatusAndType(CLABE, STATUS_COMPLETED,
+                TransactionType.TRANSFER, TransactionBasicProjection.class)).thenReturn(projections);
+
+        BigDecimal result = transactionAnalyticsServiceImpl
+                .calculateTotalAmountByStatusAndType(CLABE, STATUS_COMPLETED, TransactionType.TRANSFER);
+
+        assertEquals(new BigDecimal("300.00"), result);
     }
 }

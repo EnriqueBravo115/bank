@@ -33,8 +33,8 @@ public class TransferTransactionProcessor extends AbstractTransactionProcessor<T
     @Override
     protected TransferTransaction buildSubTransaction(TransferRequest request) {
         return TransferTransaction.builder()
-                .sourceAccountNumber(request.sourceAccountNumber())
-                .targetAccountNumber(request.targetAccountNumber())
+                .targetIdentifier(request.targetIdentifier())
+                .targetIdentifierType(request.targetIdentifierType())
                 .build();
     }
 
@@ -42,11 +42,13 @@ public class TransferTransactionProcessor extends AbstractTransactionProcessor<T
     protected Transaction buildTransaction(String code, TransferRequest request, MovementResultResponse response) {
         return Transaction.builder()
                 .transactionCode(code)
+                .sourceIdentifier(request.sourceIdentifier())
                 .amount(request.amount())
                 .description(request.description())
                 .reason(response.reason())
                 .transactionDate(LocalDateTime.now())
                 .currency(request.currency())
+                .identifierType(request.sourceIdentifierType())
                 .transactionType(TransactionType.TRANSFER)
                 .transactionStatus(response.transactionStatus())
                 .build();

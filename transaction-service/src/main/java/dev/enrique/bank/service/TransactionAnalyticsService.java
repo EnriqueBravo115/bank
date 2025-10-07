@@ -15,26 +15,26 @@ import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 
 @Service
 public interface TransactionAnalyticsService {
-    Map<TransactionType, List<TransactionDetailedProjection>> groupTransactionsByType(String accountNumber,
+    Map<TransactionType, List<TransactionDetailedProjection>> groupTransactionsByType(String sourceIdentifier,
             TransactionStatus transactionStatus);
 
-    Map<TransactionType, BigDecimal> sumTransactionsByType(String accountNumber, TransactionStatus status);
+    Map<TransactionType, BigDecimal> sumTransactionsByType(String sourceIdentifier, TransactionStatus status);
 
-    Map<Boolean, List<TransactionBasicProjection>> partitionTransactionsByAmount(String accountNumber,
+    Map<Boolean, List<TransactionBasicProjection>> partitionTransactionsByAmount(String sourceIdentifier,
             TransactionStatus status, BigDecimal amount);
 
-    Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String accountNumber,
+    Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String sourceIdentifier,
             TransactionStatus status);
 
-    BigDecimal calculateTotalAmountByStatusAndType(String accountNumber, TransactionStatus status,
+    BigDecimal calculateTotalAmountByStatusAndType(String sourceIdentifier, TransactionStatus status,
             TransactionType type);
 
-    double getAverageDaysBetweenTransactions(String accountNumber, TransactionStatus status);
+    double getAverageDaysBetweenTransactions(String sourceIdentifier, TransactionStatus status);
 
-    Map<TransactionType, List<TransactionBasicProjection>> getMaxTransactionByType(String accountNumber,
+    Map<TransactionType, List<TransactionBasicProjection>> getMaxTransactionByType(String sourceIdentifier,
             TransactionStatus status);
 
-    Map<Month, Long> countTransactionsByMonth(String accountNumber, TransactionStatus status);
+    Map<Month, Long> countTransactionsByMonth(String sourceIdentifier, TransactionStatus status);
 
-    Map<TransactionType, BigDecimal> getAverageAmountByType(String accountNumber, TransactionStatus status);
+    Map<TransactionType, BigDecimal> getAverageAmountByType(String sourceIdentifier, TransactionStatus status);
 }

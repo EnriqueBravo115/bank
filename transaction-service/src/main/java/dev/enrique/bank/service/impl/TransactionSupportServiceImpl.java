@@ -7,10 +7,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.dao.TransactionRepository;
-import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.service.TransactionSupportService;
 import lombok.AllArgsConstructor;
 
@@ -21,9 +21,9 @@ public class TransactionSupportServiceImpl implements TransactionSupportService 
 
     @Override
     public Set<String> getAllUniqueTransactionDescriptions(String accountNumber) {
-        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+        return transactionRepository.findAllCompletedBySourceIdentifier(accountNumber, TransactionDetailedProjection.class)
                 .stream()
-                .map(TransactionCommonProjection::getDescription)
+                .map(TransactionDetailedProjection::getDescription)
                 .filter(Objects::nonNull)
                 .filter(desc -> !desc.isBlank())
                 .flatMap(desc -> Stream.of(desc.split(" ")))
@@ -33,9 +33,9 @@ public class TransactionSupportServiceImpl implements TransactionSupportService 
 
     @Override
     public String getAllTransactionDescriptions(String accountNumber) {
-        return transactionRepository.findAllCompletedByAccountNumber(accountNumber, TransactionCommonProjection.class)
+        return transactionRepository.findAllCompletedBySourceIdentifier(accountNumber, TransactionDetailedProjection.class)
                 .stream()
-                .map(TransactionCommonProjection::getDescription)
+                .map(TransactionDetailedProjection::getDescription)
                 .collect(joining(", "));
     }
 }
