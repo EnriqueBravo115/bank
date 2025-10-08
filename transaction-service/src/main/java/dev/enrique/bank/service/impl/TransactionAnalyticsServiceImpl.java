@@ -1,25 +1,5 @@
 package dev.enrique.bank.service.impl;
 
-import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.maxBy;
-import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.reducing;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Month;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
-
-import org.springframework.stereotype.Service;
-
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
@@ -29,6 +9,18 @@ import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Month;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.*;
 
 @Service
 @AllArgsConstructor
@@ -39,7 +31,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // Groups transactions by type and filter by status ordered by date 'DESC'
     @Override
     public Map<TransactionType, List<TransactionDetailedProjection>> groupTransactionsByType(String sourceIdentifier,
-            TransactionStatus status) {
+                                                                                             TransactionStatus status) {
         return transactionRepository
                 .findAllBySourceIdentifierAndStatus(sourceIdentifier, status, TransactionDetailedProjection.class)
                 .stream()
@@ -61,7 +53,8 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // FALSE: Transactions with amount less or equal
     @Override
     public Map<Boolean, List<TransactionBasicProjection>> partitionTransactionsByAmount(String accountNumber,
-            TransactionStatus status, BigDecimal amount) {
+                                                                                        TransactionStatus status,
+                                                                                        BigDecimal amount) {
         return transactionRepository
                 .findAllBySourceIdentifierAndStatus(accountNumber, status, TransactionBasicProjection.class)
                 .stream()
@@ -72,7 +65,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // 1. The number of transactions
     // 2. The total amount
     public Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String sourceIdentifier,
-            TransactionStatus status) {
+                                                                                      TransactionStatus status) {
         return transactionRepository
                 .findAllBySourceIdentifierAndStatus(sourceIdentifier, status, TransactionBasicProjection.class)
                 .stream()
@@ -123,7 +116,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     // Returns the transaction with the highest amount for each transaction type
     @Override
     public Map<TransactionType, List<TransactionBasicProjection>> getMaxTransactionByType(String sourceIdentifier,
-            TransactionStatus status) {
+                                                                                          TransactionStatus status) {
         return transactionRepository
                 .findAllBySourceIdentifierAndStatus(sourceIdentifier, status, TransactionBasicProjection.class)
                 .stream()
@@ -140,9 +133,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
         return transactionRepository
                 .findAllBySourceIdentifierAndStatus(sourceIdentifier, status, TransactionCommonProjection.class)
                 .stream()
-                .collect(groupingBy(
-                        t -> t.getTransactionDate().getMonth(),
-                        counting()));
+                .collect(groupingBy(t -> t.getTransactionDate().getMonth(), counting()));
     }
 
     // Calculates the average transaction amount grouped by transaction type
