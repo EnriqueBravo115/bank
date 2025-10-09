@@ -1,21 +1,20 @@
 package dev.enrique.bank.commons.util;
 
-import static dev.enrique.bank.commons.constants.PathConstants.PAGE_TOTAL_COUNT;
-import static java.util.stream.Collectors.toMap;
+import dev.enrique.bank.commons.dto.response.HeaderResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpHeaders;
-import org.springframework.stereotype.Component;
-
-import dev.enrique.bank.commons.dto.response.HeaderResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static dev.enrique.bank.commons.constants.PathConstants.PAGE_TOTAL_COUNT;
+import static java.util.stream.Collectors.toMap;
 
 @Component
 @RequiredArgsConstructor
@@ -30,8 +29,8 @@ public class BasicMapper {
     public <T, S> List<S> convertToResponseList(List<T> lists, Class<S> type) {
         return lists.contains(null) ? new ArrayList<>()
                 : lists.stream()
-                        .map(list -> convertToResponse(list, type))
-                        .toList();
+                .map(list -> convertToResponse(list, type))
+                .toList();
     }
 
     public <T, S> HeaderResponse<S> getHeaderResponse(Page<T> pageableItems, Class<S> type) {

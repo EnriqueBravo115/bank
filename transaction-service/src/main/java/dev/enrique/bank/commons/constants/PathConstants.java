@@ -11,7 +11,7 @@ public class PathConstants {
     public static final String TRANSACTION_QUERY = TRANSACTION + "/query";
     public static final String TRANSACTION_ANALYTICS = TRANSACTION + "/analytics";
     public static final String TRANSACTION_CREATION= TRANSACTION + "/creation";
-    public static final String ACCOUNT_NUMBER = "/{accountNumber}";
+    public static final String ACCOUNT_NUMBER = "/{sourceIdentifier}";
 
     // Controller "QUERY"
     public static final String GET_TRANSACTION_HISTORY = "/history" + ACCOUNT_NUMBER;

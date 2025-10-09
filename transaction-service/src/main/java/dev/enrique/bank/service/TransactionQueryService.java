@@ -1,20 +1,23 @@
 package dev.enrique.bank.service;
 
+import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.dao.projection.TransactionCommonProjection;
+import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Pageable;
-
-import dev.enrique.bank.commons.dto.response.HeaderResponse;
-import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.commons.enums.TransactionStatus;
-
 public interface TransactionQueryService {
-    List<TransactionDetailedResponse> getTransactionHistory(String accountNumber, TransactionStatus status);
-    HeaderResponse<TransactionCommonResponse> getAllTransactions(String accountNumber, TransactionStatus status,
-            Pageable pageable);
-    List<TransactionDetailedResponse> getTransactionsByYear(String accountNumber, TransactionStatus status, Integer year);
-    List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<String> accountNumbers);
-    Optional<TransactionCommonResponse> findMaxTransaction(String accountNumber);
+    List<TransactionDetailedProjection> getTransactionHistory(String sourceIdentifier, TransactionStatus status);
+
+    Page<TransactionCommonProjection> getAllTransactions(String sourceIdentifier, TransactionStatus status,
+                                                         Pageable pageable);
+
+    List<TransactionDetailedProjection> getTransactionsByYear(String sourceIdentifier, TransactionStatus status, Integer year);
+
+    List<TransactionCommonProjection> getAllTransactionsBySourceIdentifiers(List<String> sourceIdentifiers);
+
+    Optional<TransactionCommonProjection> getMaxTransaction(String sourceIdentifier, TransactionStatus status);
 }

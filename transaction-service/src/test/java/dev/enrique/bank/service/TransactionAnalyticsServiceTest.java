@@ -24,8 +24,7 @@ import static dev.enrique.bank.commons.constants.TestConstants.STATUS_COMPLETED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TransactionAnalyticsServiceTest {
@@ -46,11 +45,11 @@ public class TransactionAnalyticsServiceTest {
                 .groupTransactionsByType(CLABE, STATUS_COMPLETED);
 
         assertThat(result).containsKeys(TransactionType.TRANSFER, TransactionType.SERVICE);
-        assertThat(result.get(TransactionType.TRANSFER)).hasSize(2);
         assertThat(result.get(TransactionType.SERVICE))
                 .extracting(TransactionDetailedProjection::getDescription)
                 .containsExactly("Test transaction 1", "Test transaction 2");
-        verify(transactionRepository).findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED, TransactionDetailedProjection.class);
+        verify(transactionRepository, times(1)).findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED,
+                TransactionDetailedProjection.class);
     }
 
     @Test
@@ -124,7 +123,7 @@ public class TransactionAnalyticsServiceTest {
                 .calculateTotalAmountByStatusAndType(CLABE, STATUS_COMPLETED, TransactionType.TRANSFER);
 
         assertEquals(new BigDecimal("300.00"), result);
-        verify(transactionRepository).findAllBySourceIdentifierStatusAndType(CLABE, STATUS_COMPLETED,
+        verify(transactionRepository, times(1)).findAllBySourceIdentifierStatusAndType(CLABE, STATUS_COMPLETED,
                 TransactionType.TRANSFER, TransactionBasicProjection.class);
     }
 

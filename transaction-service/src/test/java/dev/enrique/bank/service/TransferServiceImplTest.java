@@ -47,13 +47,13 @@
 //    void setUp() {
 //        sourceAccount = Account.builder()
 //                .id(1L)
-//                .accountNumber("123")
+//                .sourceIdentifier("123")
 //                .balance(new BigDecimal("200.00"))
 //                .build();
 //
 //        targetAccount = Account.builder()
 //                .id(2L)
-//                .accountNumber("456")
+//                .sourceIdentifier("456")
 //                .balance(new BigDecimal("100.00"))
 //                .build();
 //    }

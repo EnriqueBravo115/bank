@@ -1,70 +1,55 @@
 package dev.enrique.bank.service.impl;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import dev.enrique.bank.commons.dto.response.HeaderResponse;
-import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
-import dev.enrique.bank.commons.util.BasicMapper;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 import dev.enrique.bank.service.TransactionQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class TransactionQueryServiceImpl implements TransactionQueryService {
     private final TransactionRepository transactionRepository;
-    private final BasicMapper basicMapper;
 
     @Override
-    public List<TransactionDetailedResponse> getTransactionHistory(String accountNumber, TransactionStatus status) {
-        List<TransactionDetailedProjection> projections = transactionRepository
-                .findAllBySourceIdentifierAndStatus(accountNumber, status, TransactionDetailedProjection.class);
-
-        return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
+    public List<TransactionDetailedProjection> getTransactionHistory(String sourceIdentifier, TransactionStatus status) {
+        return transactionRepository
+                .findAllBySourceIdentifierAndStatus(sourceIdentifier, status, TransactionDetailedProjection.class);
     }
 
     @Override
-    public HeaderResponse<TransactionCommonResponse> getAllTransactions(String accountNumber, TransactionStatus status,
-            Pageable pageable) {
-        Page<TransactionCommonProjection> page = transactionRepository
-                .findAllPageableBySourceIdentifierAndStatus(accountNumber, status, pageable);
-
-        return basicMapper.getHeaderResponse(page, TransactionCommonResponse.class);
+    public Page<TransactionCommonProjection> getAllTransactions(String sourceIdentifier, TransactionStatus status,
+                                                                Pageable pageable) {
+        return transactionRepository
+                .findAllPageableBySourceIdentifierAndStatus(sourceIdentifier, status, pageable);
     }
 
     @Override
-    public List<TransactionDetailedResponse> getTransactionsByYear(String accountNumber, TransactionStatus status, Integer year) {
-        List<TransactionDetailedProjection> projections = transactionRepository
-                .findAllBySourceIdentifierAndYear(accountNumber, year, status);
-
-        return basicMapper.convertToResponseList(projections, TransactionDetailedResponse.class);
+    public List<TransactionDetailedProjection> getTransactionsByYear(String sourceIdentifier, TransactionStatus status,
+                                                                     Integer year) {
+        return transactionRepository
+                .findAllBySourceIdentifierAndYear(sourceIdentifier, year, status);
     }
 
-    // This function must be executed with "ADMIN" credentials
+    // This function must be executed with "ADMIN" authorities
     @Override
-    public List<TransactionCommonResponse> getAllTransactionsFromAccounts(List<String> accountNumbers) {
-        List<TransactionCommonProjection> projections = transactionRepository
-                .findAllCompletedBySourceIdentifiersIn(accountNumbers);
-
-        return basicMapper.convertToResponseList(projections, TransactionCommonResponse.class);
+    public List<TransactionCommonProjection> getAllTransactionsBySourceIdentifiers(List<String> sourceIdentifiers) {
+        return transactionRepository
+                .findAllCompletedBySourceIdentifiersIn(sourceIdentifiers);
     }
 
     @Override
-    public Optional<TransactionCommonResponse> findMaxTransaction(String accountNumber) {
-        Optional<TransactionCommonProjection> projection = transactionRepository
-                .findAllCompletedBySourceIdentifier(accountNumber, TransactionCommonProjection.class)
+    public Optional<TransactionCommonProjection> getMaxTransaction(String sourceIdentifier, TransactionStatus status) {
+        return transactionRepository
+                .findAllCompletedBySourceIdentifier(sourceIdentifier, TransactionCommonProjection.class)
                 .stream()
                 .reduce((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2);
-
-        return basicMapper.convertOptionalResponse(projection, TransactionCommonResponse.class);
     }
 }

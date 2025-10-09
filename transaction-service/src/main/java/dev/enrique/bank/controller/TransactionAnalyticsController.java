@@ -1,17 +1,5 @@
 package dev.enrique.bank.controller;
 
-import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_ANALYTICS;
-
-import java.math.BigDecimal;
-import java.time.Month;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import dev.enrique.bank.commons.dto.request.FilterStatusAmountRequest;
 import dev.enrique.bank.commons.dto.request.FilterStatusRequest;
 import dev.enrique.bank.commons.dto.request.FilterStatusTypeRequest;
@@ -23,6 +11,17 @@ import dev.enrique.bank.commons.util.BasicMapper;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.math.BigDecimal;
+import java.time.Month;
+import java.util.List;
+import java.util.Map;
+
+import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_ANALYTICS;
 
 @RestController
 @RequestMapping(TRANSACTION_ANALYTICS)
@@ -36,7 +35,7 @@ public class TransactionAnalyticsController {
             @Valid FilterStatusRequest request) {
         return ResponseEntity.ok(mapper.convertToResposeMap(
                 transactionAnalyticsService.groupTransactionsByType(
-                        request.accountNumber(),
+                        request.sourceIdentifier(),
                         request.status()),
                 TransactionDetailedResponse.class));
     }
@@ -44,7 +43,8 @@ public class TransactionAnalyticsController {
     @GetMapping("/sum-by-type")
     public ResponseEntity<Map<TransactionType, BigDecimal>> sumTransactionsByType(
             @Valid FilterStatusRequest request) {
-        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(request.accountNumber(),
+        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(
+                request.sourceIdentifier(),
                 request.status()));
     }
 
@@ -53,7 +53,7 @@ public class TransactionAnalyticsController {
             @Valid FilterStatusAmountRequest request) {
         return ResponseEntity.ok(mapper.convertToResposeMap(
                 transactionAnalyticsService.partitionTransactionsByAmount(
-                        request.accountNumber(),
+                        request.sourceIdentifier(),
                         request.status(),
                         request.amount()),
                 TransactionBasicResponse.class));
@@ -63,20 +63,20 @@ public class TransactionAnalyticsController {
     public ResponseEntity<Map<TransactionType, TransactionSummaryResponse>> getTransactionTypeSummary(
             @Valid FilterStatusRequest request) {
         return ResponseEntity
-                .ok(transactionAnalyticsService.getTransactionTypeSummary(request.accountNumber(), request.status()));
+                .ok(transactionAnalyticsService.getTransactionTypeSummary(request.sourceIdentifier(), request.status()));
     }
 
     @GetMapping("/total-amount")
     public ResponseEntity<BigDecimal> getTotalTransactionAmount(
             @Valid FilterStatusTypeRequest request) {
         return ResponseEntity.ok(transactionAnalyticsService
-                .calculateTotalAmountByStatusAndType(request.accountNumber(), request.status(), request.type()));
+                .calculateTotalAmountByStatusAndType(request.sourceIdentifier(), request.status(), request.type()));
     }
 
     @GetMapping("/average-days")
     public ResponseEntity<Double> getAverageDaysBetweenTransactions(
             @Valid FilterStatusRequest request) {
-        return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(request.accountNumber(),
+        return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(request.sourceIdentifier(),
                 request.status()));
     }
 
@@ -85,7 +85,7 @@ public class TransactionAnalyticsController {
             @Valid FilterStatusRequest request) {
         return ResponseEntity.ok(mapper.convertToResposeMap(
                 transactionAnalyticsService.getMaxTransactionByType(
-                        request.accountNumber(),
+                        request.sourceIdentifier(),
                         request.status()),
                 TransactionBasicResponse.class));
     }
@@ -94,13 +94,13 @@ public class TransactionAnalyticsController {
     public ResponseEntity<Map<Month, Long>> countTransactionsByMonth(
             @Valid FilterStatusRequest accountStatusRequest) {
         return ResponseEntity.ok(transactionAnalyticsService
-                .countTransactionsByMonth(accountStatusRequest.accountNumber(), accountStatusRequest.status()));
+                .countTransactionsByMonth(accountStatusRequest.sourceIdentifier(), accountStatusRequest.status()));
     }
 
     @GetMapping("/average-amount")
     public ResponseEntity<Map<TransactionType, BigDecimal>> getAverageAmountByType(
             @Valid FilterStatusRequest statusRequest) {
         return ResponseEntity.ok(transactionAnalyticsService
-                .getAverageAmountByType(statusRequest.accountNumber(), statusRequest.status()));
+                .getAverageAmountByType(statusRequest.sourceIdentifier(), statusRequest.status()));
     }
 }

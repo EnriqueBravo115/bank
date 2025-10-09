@@ -1,65 +1,74 @@
 package dev.enrique.bank.controller;
 
-import static dev.enrique.bank.commons.constants.PathConstants.GET_ALL_TRANSACTIONS;
-import static dev.enrique.bank.commons.constants.PathConstants.GET_TRANSACTIONS_BY_ACCOUNT_AND_YEAR;
-import static dev.enrique.bank.commons.constants.PathConstants.GET_TRANSACTIONS_FOR_ACCOUNTS;
-import static dev.enrique.bank.commons.constants.PathConstants.GET_TRANSACTION_HISTORY;
-import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_QUERY;
-
-import java.util.List;
-
+import dev.enrique.bank.commons.dto.request.FilterStatusRequest;
+import dev.enrique.bank.commons.dto.request.FilterStatusYearRequest;
+import dev.enrique.bank.commons.dto.response.HeaderResponse;
+import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
+import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.util.BasicMapper;
+import dev.enrique.bank.service.TransactionQueryService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.enrique.bank.commons.dto.request.AccountYearRequest;
-import dev.enrique.bank.commons.dto.response.HeaderResponse;
-import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
-import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.commons.enums.TransactionStatus;
-import dev.enrique.bank.service.TransactionQueryService;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
+
+import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_QUERY;
 
 @RestController
 @RequestMapping(TRANSACTION_QUERY)
 @RequiredArgsConstructor
 public class TransactionQueryController {
     private final TransactionQueryService transactionQueryService;
+    private final BasicMapper basicMapper;
 
-    @GetMapping(GET_TRANSACTION_HISTORY)
+    @GetMapping("/history")
     public ResponseEntity<List<TransactionDetailedResponse>> getTransactionHistory(
-            @PathVariable String accountNumber,
-            @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionQueryService.getTransactionHistory(accountNumber, status));
+            @Valid FilterStatusRequest request) {
+        return ResponseEntity.ok(basicMapper.convertToResponseList(transactionQueryService.getTransactionHistory(
+                request.sourceIdentifier(),
+                request.status()), TransactionDetailedResponse.class));
     }
 
-    @GetMapping(GET_ALL_TRANSACTIONS)
+    @GetMapping("/all")
     public ResponseEntity<HeaderResponse<TransactionCommonResponse>> getAllTransactions(
-            @PathVariable @NotNull @Positive String accountNumber,
-            @RequestParam TransactionStatus status,
+            @Valid FilterStatusRequest request,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(transactionQueryService.getAllTransactions(accountNumber, status, pageable));
+        return ResponseEntity.ok(basicMapper.getHeaderResponse(transactionQueryService.getAllTransactions(
+                request.sourceIdentifier(),
+                request.status(),
+                pageable), TransactionCommonResponse.class));
     }
 
-    @GetMapping(GET_TRANSACTIONS_BY_ACCOUNT_AND_YEAR)
+    @GetMapping("/status-year")
     public ResponseEntity<List<TransactionDetailedResponse>> getTransactionsByYear(
-            @RequestBody AccountYearRequest request) {
-        return ResponseEntity.ok(transactionQueryService
-                .getTransactionsByYear(request.getAccountNumber(), request.getStatus(), request.getYear()));
+            @Valid FilterStatusYearRequest request) {
+        return ResponseEntity.ok(basicMapper.convertToResponseList(transactionQueryService.getTransactionsByYear(
+                request.sourceIdentifier(),
+                request.status(),
+                request.year()), TransactionDetailedResponse.class));
     }
 
-    @PostMapping(GET_TRANSACTIONS_FOR_ACCOUNTS)
-    public ResponseEntity<List<TransactionCommonResponse>> getTransactionsForAccounts(
-            @RequestBody List<String> accountNumbers) {
-        return ResponseEntity.ok(transactionQueryService.getAllTransactionsFromAccounts(accountNumbers));
+    // This controller must be executed with "ADMIN" authorities
+    @GetMapping("/by-sources")
+    public ResponseEntity<List<TransactionCommonResponse>> getTransactionsBySourceIdentifiers(
+            @RequestBody List<String> sourceIdentifiers) {
+        return ResponseEntity.ok(basicMapper.convertToResponseList(transactionQueryService.getAllTransactionsBySourceIdentifiers(
+                sourceIdentifiers), TransactionCommonResponse.class));
+    }
+
+    @GetMapping("/max")
+    public ResponseEntity<Optional<TransactionCommonResponse>> getMaxTransaction(
+            @Valid FilterStatusRequest request) {
+        return ResponseEntity.ok(basicMapper.convertOptionalResponse(transactionQueryService.getMaxTransaction(
+                request.sourceIdentifier(),
+                request.status()), TransactionCommonResponse.class));
     }
 }
