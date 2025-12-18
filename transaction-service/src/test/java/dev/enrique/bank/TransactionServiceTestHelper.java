@@ -26,24 +26,31 @@ public class TransactionServiceTestHelper {
 
     public static List<TransactionDetailedProjection> generateDetailedProjections() {
         return List.of(
-                createTransactionDetailedProjection(CLABE, new BigDecimal("100.00"),
-                        "Test transaction 1", TransactionType.SERVICE, STATUS_COMPLETED),
-                createTransactionDetailedProjection(CLABE, new BigDecimal("200.00"),
-                        "Test transaction 2", TransactionType.SERVICE, STATUS_COMPLETED),
-                createTransactionDetailedProjection(CLABE, new BigDecimal("100.00"),
-                        "Test transaction 3", TransactionType.TRANSFER, STATUS_COMPLETED),
-                createTransactionDetailedProjection(CLABE, new BigDecimal("200.00"),
-                        "Test transaction 4", TransactionType.TRANSFER, STATUS_COMPLETED));
+                createTransactionDetailedProjection(
+                        CLABE, new BigDecimal("100.00"), "Test transaction 1", TransactionType.SERVICE, STATUS_COMPLETED,
+                        LocalDateTime.of(2023, 10, 6, 5, 5)),
+                createTransactionDetailedProjection(
+                        CLABE, new BigDecimal("200.00"), "Test transaction 2", TransactionType.SERVICE, STATUS_COMPLETED,
+                        LocalDateTime.of(2023, 10, 6, 5, 5)),
+                createTransactionDetailedProjection(
+                        CLABE, new BigDecimal("100.00"), "Test transaction 3", TransactionType.TRANSFER, STATUS_COMPLETED,
+                        LocalDateTime.of(2024, 10, 6, 5, 5)),
+                createTransactionDetailedProjection(
+                        CLABE, new BigDecimal("200.00"), "Test transaction 4", TransactionType.TRANSFER, STATUS_COMPLETED,
+                        LocalDateTime.of(2025, 10, 6, 5, 5)));
     }
 
     public static List<TransactionCommonProjection> generateCommonProjections() {
         return List.of(
-                createTransactionCommonProjection(new BigDecimal("200"),
-                        TransactionType.TRANSFER, STATUS_COMPLETED, LocalDateTime.of(2025, 10, 6, 5, 5)),
-                createTransactionCommonProjection(new BigDecimal("200"),
-                        TransactionType.TRANSFER, STATUS_COMPLETED, LocalDateTime.of(2025, 10, 8, 5, 5)),
-                createTransactionCommonProjection(new BigDecimal("200"),
-                        TransactionType.TRANSFER, STATUS_COMPLETED, LocalDateTime.of(2025, 10, 10, 5, 5))
+                createTransactionCommonProjection(
+                        new BigDecimal("300.00"), TransactionType.TRANSFER, STATUS_COMPLETED,
+                        LocalDateTime.of(2025, 10, 6, 5, 5)),
+                createTransactionCommonProjection(
+                        new BigDecimal("200.00"), TransactionType.TRANSFER, STATUS_COMPLETED,
+                        LocalDateTime.of(2025, 10, 8, 5, 5)),
+                createTransactionCommonProjection(
+                        new BigDecimal("200.00"), TransactionType.TRANSFER, STATUS_COMPLETED,
+                        LocalDateTime.of(2025, 10, 10, 5, 5))
         );
     }
 
@@ -55,36 +62,20 @@ public class TransactionServiceTestHelper {
                 createTransactionBasicProjection(TransactionType.PURCHASE, new BigDecimal("100.00")));
     }
 
-    public static Page<TransactionCommonProjection> createTransactionPageCommonProjections() {
-        TransactionCommonProjection tProjection1 = factory.createProjection(TransactionCommonProjection.class,
-                new HashMap<>() {
-                    {
-                        put("id", 1L);
-                        put("amount", new BigDecimal("150.75"));
-                        put("description", "transaction");
-                        put("transactionDate", LocalDateTime.now());
-                        put("transactionType", TransactionType.TRANSFER);
-                        put("transactionStatus", TransactionStatus.COMPLETED);
-                    }
-                });
-
-        TransactionCommonProjection tProjection2 = factory.createProjection(TransactionCommonProjection.class,
-                new HashMap<>() {
-                    {
-                        put("id", 2L);
-                        put("amount", new BigDecimal("150.75"));
-                        put("description", "transaction");
-                        put("transactionDate", LocalDateTime.now());
-                        put("transactionType", TransactionType.TRANSFER);
-                        put("transactionStatus", TransactionStatus.COMPLETED);
-                    }
-                });
-        return new PageImpl<>(Arrays.asList(tProjection1, tProjection2), pageable, 20);
+    public static Page<TransactionCommonProjection> generatePageCommonProjections() {
+        return new PageImpl<>(Arrays.asList(
+                createTransactionCommonProjection(new BigDecimal("200.00"),
+                        TransactionType.TRANSFER, STATUS_COMPLETED, LocalDateTime.of(2025, 10, 6, 5, 5)),
+                createTransactionCommonProjection(new BigDecimal("200.00"),
+                        TransactionType.TRANSFER, STATUS_COMPLETED, LocalDateTime.of(2025, 10, 8, 5, 5)),
+                createTransactionCommonProjection(new BigDecimal("400.00"),
+                        TransactionType.TRANSFER, STATUS_COMPLETED, LocalDateTime.of(2025, 10, 10, 5, 5))
+        ), pageable, 20);
     }
 
-    public static TransactionDetailedProjection createTransactionDetailedProjection(String transactionCode, BigDecimal amount,
-                                                                                    String description, TransactionType type,
-                                                                                    TransactionStatus status) {
+    public static TransactionDetailedProjection createTransactionDetailedProjection(
+            String transactionCode, BigDecimal amount, String description, TransactionType type,
+            TransactionStatus status, LocalDateTime date) {
         return factory.createProjection(TransactionDetailedProjection.class, new HashMap<String, Object>() {
             {
                 put("transactionCode", transactionCode);
@@ -92,12 +83,13 @@ public class TransactionServiceTestHelper {
                 put("description", description);
                 put("transactionType", type);
                 put("transactionStatus", status);
-                put("transactionDate", LocalDateTime.now());
+                put("transactionDate", date);
             }
         });
     }
 
-    public static TransactionCommonProjection createTransactionCommonProjection(BigDecimal amount, TransactionType type, TransactionStatus status, LocalDateTime localDateTime) {
+    public static TransactionCommonProjection createTransactionCommonProjection(
+            BigDecimal amount, TransactionType type, TransactionStatus status, LocalDateTime localDateTime) {
         return factory.createProjection(TransactionCommonProjection.class, new HashMap<String, Object>() {
             {
                 put("amount", amount);

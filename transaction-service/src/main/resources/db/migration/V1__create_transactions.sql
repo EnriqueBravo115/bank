@@ -15,9 +15,9 @@ CREATE TABLE transactions
     purchase_id        BIGINT UNIQUE,
     service_id         BIGINT UNIQUE,
     withdrawal_id      BIGINT UNIQUE,
-    CONSTRAINT fk_transfer FOREIGN KEY (transfer_id) REFERENCES transfer_transaction (id),
-    CONSTRAINT fk_purchase FOREIGN KEY (purchase_id) REFERENCES purchase_transaction (id),
-    CONSTRAINT fk_service FOREIGN KEY (service_id) REFERENCES service_transaction (id),
+    CONSTRAINT fk_transfer   FOREIGN KEY (transfer_id)   REFERENCES transfer_transaction (id),
+    CONSTRAINT fk_purchase   FOREIGN KEY (purchase_id)   REFERENCES purchase_transaction (id),
+    CONSTRAINT fk_service    FOREIGN KEY (service_id)    REFERENCES service_transaction (id),
     CONSTRAINT fk_withdrawal FOREIGN KEY (withdrawal_id) REFERENCES withdrawal_transaction (id)
 );
 

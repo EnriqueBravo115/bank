@@ -69,14 +69,17 @@ public class TransactionAnalyticsController {
     @GetMapping("/total-amount")
     public ResponseEntity<BigDecimal> getTotalTransactionAmount(
             @Valid FilterStatusTypeRequest request) {
-        return ResponseEntity.ok(transactionAnalyticsService
-                .calculateTotalAmountByStatusAndType(request.sourceIdentifier(), request.status(), request.type()));
+        return ResponseEntity.ok(transactionAnalyticsService.calculateTotalAmountByStatusAndType(
+                request.sourceIdentifier(),
+                request.status(),
+                request.type()));
     }
 
     @GetMapping("/average-days")
     public ResponseEntity<Double> getAverageDaysBetweenTransactions(
             @Valid FilterStatusRequest request) {
-        return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(request.sourceIdentifier(),
+        return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(
+                request.sourceIdentifier(),
                 request.status()));
     }
 
@@ -86,21 +89,22 @@ public class TransactionAnalyticsController {
         return ResponseEntity.ok(mapper.convertToResposeMap(
                 transactionAnalyticsService.getMaxTransactionByType(
                         request.sourceIdentifier(),
-                        request.status()),
-                TransactionBasicResponse.class));
+                        request.status()), TransactionBasicResponse.class));
     }
 
     @GetMapping("/count-by-month")
     public ResponseEntity<Map<Month, Long>> countTransactionsByMonth(
             @Valid FilterStatusRequest accountStatusRequest) {
-        return ResponseEntity.ok(transactionAnalyticsService
-                .countTransactionsByMonth(accountStatusRequest.sourceIdentifier(), accountStatusRequest.status()));
+        return ResponseEntity.ok(transactionAnalyticsService.countTransactionsByMonth(
+                accountStatusRequest.sourceIdentifier(),
+                accountStatusRequest.status()));
     }
 
     @GetMapping("/average-amount")
     public ResponseEntity<Map<TransactionType, BigDecimal>> getAverageAmountByType(
             @Valid FilterStatusRequest statusRequest) {
-        return ResponseEntity.ok(transactionAnalyticsService
-                .getAverageAmountByType(statusRequest.sourceIdentifier(), statusRequest.status()));
+        return ResponseEntity.ok(transactionAnalyticsService.getAverageAmountByType(
+                statusRequest.sourceIdentifier(),
+                statusRequest.status()));
     }
 }

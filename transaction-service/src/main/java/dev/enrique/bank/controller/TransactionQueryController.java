@@ -1,7 +1,6 @@
 package dev.enrique.bank.controller;
 
-import dev.enrique.bank.commons.dto.request.FilterStatusRequest;
-import dev.enrique.bank.commons.dto.request.FilterStatusYearRequest;
+import dev.enrique.bank.commons.dto.request.*;
 import dev.enrique.bank.commons.dto.response.HeaderResponse;
 import dev.enrique.bank.commons.dto.response.TransactionCommonResponse;
 import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
@@ -12,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -70,5 +66,50 @@ public class TransactionQueryController {
         return ResponseEntity.ok(basicMapper.convertOptionalResponse(transactionQueryService.getMaxTransaction(
                 request.sourceIdentifier(),
                 request.status()), TransactionCommonResponse.class));
+    }
+
+    @GetMapping("/date-range")
+    public ResponseEntity<List<TransactionCommonResponse>> getTransactionInDateRange(
+            @Valid FilterStatusBetweenDateRequest request) {
+        return ResponseEntity.ok(basicMapper.convertToResponseList(transactionQueryService.getTransactionsInDateRange(
+                request.sourceIdentifier(),
+                request.status(),
+                request.startDate(),
+                request.endDate()), TransactionCommonResponse.class));
+    }
+
+    @GetMapping("/amount-range")
+    public ResponseEntity<List<TransactionCommonResponse>> getAllByAmountRangeAndStatus(
+            @Valid FilterStatusMinMaxAmountRequest request) {
+        return ResponseEntity.ok(basicMapper.convertToResponseList(transactionQueryService.getAllTransactionByAmountRangeAndStatus(
+                request.sourceIdentifier(),
+                request.status(),
+                request.minAmount(),
+                request.maxAmount()), TransactionCommonResponse.class));
+    }
+
+    @GetMapping("/{transactionCode}")
+    public ResponseEntity<Optional<TransactionDetailedResponse>> getTransactionByTransactionCode(
+            @PathVariable String transactionCode) {
+        return ResponseEntity.ok(basicMapper.convertOptionalResponse(transactionQueryService.getTransactionByCode(
+                transactionCode), TransactionDetailedResponse.class));
+    }
+
+    @GetMapping("/identifier-type")
+    public ResponseEntity<List<TransactionCommonResponse>> getAllByIdentifierTypeAndStatus(
+            @Valid FilterStatusIdentifierTypeRequest request) {
+        return ResponseEntity.ok(basicMapper.convertToResponseList(transactionQueryService.getAllByIdentifierTypeAndStatus(
+                request.sourceIdentifier(),
+                request.identifierType(),
+                request.status()), TransactionCommonResponse.class));
+    }
+
+    @GetMapping("/keyword")
+    public ResponseEntity<List<TransactionDetailedResponse>> getTransactionByKeyword(
+            @Valid FilterStatusKeywordRequest request) {
+        return ResponseEntity.ok(basicMapper.convertToResponseList(transactionQueryService.getTransactionByKeyword(
+                request.sourceIdentifier(),
+                request.status(),
+                request.keyword()), TransactionDetailedResponse.class));
     }
 }

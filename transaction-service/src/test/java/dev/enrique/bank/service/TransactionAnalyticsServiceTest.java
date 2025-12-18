@@ -65,7 +65,8 @@ public class TransactionAnalyticsServiceTest {
         assertThat(result)
                 .containsEntry(TransactionType.TRANSFER, new BigDecimal("300.00"))
                 .containsEntry(TransactionType.PURCHASE, new BigDecimal("300.00"));
-        verify(transactionRepository).findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED, TransactionBasicProjection.class);
+        verify(transactionRepository).findAllBySourceIdentifierAndStatus(CLABE, STATUS_COMPLETED,
+                TransactionBasicProjection.class);
     }
 
     @Test
@@ -154,6 +155,7 @@ public class TransactionAnalyticsServiceTest {
                 .isEqualByComparingTo(new BigDecimal("200.00"));
     }
 
+    // Possible error with year and month
     @Test
     void countTransactionsByMonth_shouldReturnCorrectTransactionCountGroupedByMonth() {
         List<TransactionCommonProjection> projections = TransactionServiceTestHelper.generateCommonProjections();
