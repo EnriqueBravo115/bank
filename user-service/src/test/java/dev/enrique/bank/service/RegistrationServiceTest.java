@@ -1,7 +1,12 @@
 package dev.enrique.bank.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -13,11 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 
+import dev.enrique.bank.commons.enums.Country;
+import dev.enrique.bank.commons.enums.Gender;
+import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dto.request.RegistrationRequest;
-import dev.enrique.bank.enums.Country;
-import dev.enrique.bank.enums.Gender;
-import dev.enrique.bank.exception.ApiRequestException;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.impl.RegistrationServiceImpl;
 import dev.enrique.bank.service.util.UserHelper;
