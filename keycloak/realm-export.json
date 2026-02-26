@@ -1,0 +1,38 @@
+{
+  "realm": "myrealm",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "kong",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kong-client-secret",
+      "redirectUris": ["http://localhost:8000/*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "testuser",
+      "email": "test@gmail.com",
+      "firstName": "Test",
+      "lastName": "User",
+      "createdTimestamp": 1708905600000,
+      "enabled": true,
+      "requiredActions": [],
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testpassword",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
