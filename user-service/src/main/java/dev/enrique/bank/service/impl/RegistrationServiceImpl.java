@@ -1,10 +1,8 @@
 package dev.enrique.bank.service.impl;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,7 +12,6 @@ import org.springframework.validation.BindingResult;
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.dao.UserRepository;
-import dev.enrique.bank.dao.projection.UserCommonProjection;
 import dev.enrique.bank.dto.request.RegistrationRequest;
 import dev.enrique.bank.dto.response.AuthenticationResponse;
 import dev.enrique.bank.model.User;
@@ -79,33 +76,6 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
-    public String sendRegistrationCode(String email, BindingResult bindingResult) {
-        userHelper.processInputErrors(bindingResult);
-
-        UserCommonProjection user = userRepository.getUserByEmail(email, UserCommonProjection.class)
-                .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.NOT_FOUND));
-
-        String activationCode = UUID.randomUUID().toString().substring(0, 7);
-        userRepository.updateActivationCode(activationCode, user.getId());
-
-        String subject = "Register verification";
-        String body = "Verification code: " + activationCode;
-
-        emailService.sendEmail(email, subject, body);
-        return "Verification code send!";
-    }
-
-    @Override
-    @Transactional
-    public String checkRegistrationCode(String code) {
-        UserCommonProjection user = userRepository.getCommonUserByActivationCode(code)
-                .orElseThrow(() -> new ApiRequestException("Activation code not found", HttpStatus.NOT_FOUND));
-        userRepository.updateActivationCode(null, user.getId());
-        return "User succesfully updated";
-    }
-
-    @Override
-    @Transactional
     public AuthenticationResponse endRegistration(String email, String password, BindingResult bindingResult) {
         userHelper.processInputErrors(bindingResult);
         if (password.length() < 8)
@@ -114,11 +84,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         User user = userRepository.getUserByEmail(email, User.class)
                 .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.NOT_FOUND));
 
-        userRepository.updatePassword(passwordEncoder.encode(password), user.getId());
-        userRepository.updateActiveUserProfile(user.getId());
+        //userRepository.updatePassword(passwordEncoder.encode(password), user.getId());
+        //userRepository.updateActiveUserProfile(user.getId());
 
-        CredentialRepresentation credential = new CredentialRepresentation();
-        credential.setType(CredentialRepresentation.PASSWORD);
+        //CredentialRepresentation credential = new CredentialRepresentation();
+        //credential.setType(CredentialRepresentation.PASSWORD);
 
         // Map<String, Object> result = Map.of("user", user, "token", token);
 

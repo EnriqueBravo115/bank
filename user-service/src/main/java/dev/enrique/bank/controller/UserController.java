@@ -14,7 +14,7 @@ public class UserController {
     private final UserRepository userRepository;
 
     @GetMapping("/test")
-    public String holaMundo() {
+    public String helloWorld() {
         return "Hello, the time is: " + java.time.LocalDateTime.now();
     }
 }
