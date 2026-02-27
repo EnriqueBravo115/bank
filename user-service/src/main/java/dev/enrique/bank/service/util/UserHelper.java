@@ -14,7 +14,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import dev.enrique.bank.dao.UserRepository;
-import dev.enrique.bank.dto.request.RegistrationRequest;
+import dev.enrique.bank.dto.request.RegisterRequest;
 import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.commons.exception.InputFieldException;
 import dev.enrique.bank.commons.exception.UniqueFieldValidationException;
@@ -62,7 +62,7 @@ public class UserHelper {
         return (Long) Long.parseLong(userIdHeader);
     }
 
-    public void ensureUserIdentifierAreUnique(RegistrationRequest request) {
+    public void ensureUserIdentifierAreUnique(RegisterRequest request) {
         userRepository.findActiveByAnyIdentifier(request.getEmail(), request.getRfc(), request.getCurp()).ifPresent(
                 user -> {
                     List<String> errors = new ArrayList<>();

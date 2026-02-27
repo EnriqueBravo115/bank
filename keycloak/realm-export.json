@@ -1,5 +1,5 @@
 {
-  "realm": "myrealm",
+  "realm": "bank",
   "enabled": true,
   "clients": [
     {
@@ -13,10 +13,19 @@
       "publicClient": false,
       "bearerOnly": false,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true
     }
   ],
   "users": [
+    {
+      "username": "service-account-kong",
+      "enabled": true,
+      "serviceAccountClientId": "kong",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "query-users"]
+      }
+    },
     {
       "username": "testuser",
       "email": "test@gmail.com",

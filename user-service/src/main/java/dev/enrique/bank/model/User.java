@@ -29,14 +29,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "keycloak_id", nullable = false, unique = true)
+    private String keycloakId;
+
     @Column(name = "email", nullable = false, unique = true)
     @Email(message = "Invalid email")
     private String email;
 
-    @Column(name = "phone_code", nullable = false)
+    @Column(name = "phone_code", length = 10)
     private String phoneCode;
 
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = false, unique = true, length = 20)
     private String phoneNumber;
 
     @Column(name = "names", nullable = false)
@@ -48,28 +51,28 @@ public class User {
     @Column(name = "second_surname", nullable = false)
     private String secondSurname;
 
-    @Column(name = "gender", nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(name = "gender", nullable = false, length = 50)
     private Gender gender;
 
-    @Column(name = "birthday", nullable = false)
+    @Column(name = "birthday", nullable = false, length = 10)
     private String birthday;
 
-    @Column(name = "curp", nullable = false)
+    @Column(name = "curp", nullable = false, unique = true, length = 18)
     private String curp;
 
-    @Column(name = "rfc", nullable = false)
+    @Column(name = "rfc", nullable = false, unique = true, length = 13)
     private String rfc;
 
-    @Column(name = "country_of_birth", length = 2, nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(name = "country_of_birth", nullable = false, length = 2)
     private Country countryOfBirth;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @Column(name = "role", nullable = false, length = 50)
     private UserRole role;
 
-    @Column(name = "active", nullable = false, columnDefinition = "boolean default false")
+    @Column(name = "active", nullable = false)
     private boolean active = false;
 
     @Column(name = "password_reset_code")
@@ -79,7 +82,7 @@ public class User {
     private String activationCode;
 
     @CreationTimestamp
-    @Column(name = "registration_date")
+    @Column(name = "registration_date", updatable = false)
     private LocalDateTime registrationDate;
 
     @UpdateTimestamp

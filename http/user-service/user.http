@@ -1,0 +1,28 @@
+### POST register user(keycloak & user_db)
+POST http://localhost:8000/api/v1/user/register/create
+Content-Type: application/json
+
+{
+  "email": "ana.martinez92@gmail.com",
+  "password": "secure1!",
+  "names": "Ana María",
+  "firstSurname": "Martínez",
+  "secondSurname": "García",
+  "phoneCode": "+52",
+  "phoneNumber": "6649876543",
+  "gender": "FEMALE",
+  "birthday": "22/08/1992",
+  "curp": "MAGA920822MDFRNA05",
+  "rfc": "MAGA920822ABC",
+  "countryOfBirth": "MX"
+}
+
+### POST get access token
+POST http://localhost:9090/realms/bank/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+&client_id=kong
+&client_secret=kong-client-secret
+&username=ana.martinez92@gmail.com
+&password=secure1!

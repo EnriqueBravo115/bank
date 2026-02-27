@@ -10,7 +10,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9090/realms/bank-realm
+          issuer-uri: http://localhost:9090/realms/bank
   jpa:
     hibernate:
       ddl-auto: validate
@@ -31,6 +31,12 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+
+keycloak:
+  auth-server-url: http://localhost:9090
+  realm: bank
+  client-id: kong
+  client-secret: kong-client-secret
 
 resilience4j:
   circuitbreaker:

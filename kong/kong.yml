@@ -2,18 +2,21 @@ _format_version: "3.0"
 
 services:
   - name: user-service
-    url: http://user-service:3000
+    url: http://host.docker.internal:8080
     routes:
+      - name: user-register-route
+        paths:
+          - /api/v1/user/register
+        methods:
+          - POST
+        strip_path: false
       - name: user-route
         paths:
           - /api/v1/user
         strip_path: false
-    plugins:
-      - name: oidc
-        config:
-          client_id: kong
-          client_secret: kong-client-secret
-          discovery: http://keycloak:8080/realms/myrealm/.well-known/openid-configuration
-          introspection_endpoint: http://keycloak:8080/realms/myrealm/protocol/openid-connect/token/introspect
-          bearer_only: "yes"
-          realm: myrealm
+        plugins:
+          - name: jwt
+            config:
+              secret_is_base64: false
+              claims_to_verify:
+                - exp
