@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import dev.enrique.bank.commons.enums.RegisterStatus;
 import dev.enrique.bank.commons.enums.UserRole;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -43,11 +44,12 @@ public class User {
     @Column(name = "phone_code", length = 10)
     private String phoneCode;
 
-    @Column(name = "activation_code")
-    private String activationCode;
-
     @Column(name = "active", nullable = false)
     private boolean active = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "register_status", nullable = false)
+    private RegisterStatus registerStatus;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)

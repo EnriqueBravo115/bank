@@ -6,8 +6,6 @@ import dev.enrique.bank.dto.request.RegisterRequest;
 import dev.enrique.bank.dto.response.RegisterResponse;
 
 public interface UserService {
-    RegisterResponse register(RegisterRequest request);
-
     UserBasicProjection getUserById(Long userId);
 
     // Page<UserProjection> getUsers(Pageable pageable);

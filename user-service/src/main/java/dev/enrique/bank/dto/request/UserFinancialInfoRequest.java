@@ -13,7 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PatchFinancialProfileRequest {
+public class UserFinancialInfoRequest {
     private OccupationType occupationType;
 
     @Size(max = 200)

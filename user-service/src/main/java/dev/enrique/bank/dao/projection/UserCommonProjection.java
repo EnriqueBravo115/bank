@@ -5,6 +5,4 @@ public interface UserCommonProjection {
     String getEmail();
     String getFirstSurname();
     String getSecondSurname();
-    String getActivationCode();
-    String getPasswordCode();
 }

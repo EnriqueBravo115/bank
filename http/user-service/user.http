@@ -5,16 +5,8 @@ Content-Type: application/json
 {
   "email": "ana.martinez92@gmail.com",
   "password": "secure1!",
-  "names": "Ana María",
-  "firstSurname": "Martínez",
-  "secondSurname": "García",
   "phoneCode": "+52",
-  "phoneNumber": "6649876543",
-  "gender": "FEMALE",
-  "birthday": "22/08/1992",
-  "curp": "MAGA920822MDFRNA05",
-  "rfc": "MAGA920822ABC",
-  "countryOfBirth": "MX"
+  "phoneNumber": "6649876543"
 }
 
 ### POST get access token

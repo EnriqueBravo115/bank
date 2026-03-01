@@ -2,7 +2,9 @@ package dev.enrique.bank.dto.request;
 
 import dev.enrique.bank.commons.enums.Country;
 import dev.enrique.bank.commons.enums.Gender;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,20 +12,22 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PatchPersonalInfoRequest {
-    @Size(max = 100, message = "Names to large")
+public class UserProfileRequest {
+    @NotBlank
     private String names;
 
-    @Size(max = 100)
+    @NotBlank
     private String firstSurname;
 
-    @Size(max = 100)
+    @NotBlank
     private String secondSurname;
 
-    @Size(max = 10)
-    private String birthday;
-
+    @NotNull
     private Gender gender;
 
+    @Pattern(regexp = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(19[2-9][0-9]|20[0-9]{2})$")
+    private String birthday;
+
+    @NotNull
     private Country countryOfBirth;
 }

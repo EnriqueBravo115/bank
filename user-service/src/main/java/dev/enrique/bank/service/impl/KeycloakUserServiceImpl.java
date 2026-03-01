@@ -9,7 +9,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import dev.enrique.bank.dto.request.RegisterRequest;
+import dev.enrique.bank.dto.request.UserRegisterRequest;
 import dev.enrique.bank.service.KeycloakUserService;
 import jakarta.ws.rs.core.Response;
 
@@ -25,12 +25,10 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         this.realm = realm;
     }
 
-    public String createUser(RegisterRequest request) {
+    public String createUser(UserRegisterRequest request) {
         UserRepresentation user = new UserRepresentation();
 
         user.setUsername(request.getEmail());
-        user.setFirstName(request.getNames());
-        user.setLastName(request.getFirstSurname());
         user.setEmail(request.getEmail());
         user.setEmailVerified(true);
         user.setEnabled(true);

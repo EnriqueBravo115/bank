@@ -1,7 +1,10 @@
 package dev.enrique.bank.model;
 
+import dev.enrique.bank.commons.enums.DocumentType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
@@ -28,6 +31,10 @@ public class UserKyc {
 
     @Column(name = "curp", nullable = false, unique = true, length = 18)
     private String curp;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "document_type", length = 2)
+    private DocumentType documentType;
 
     // @Enumerated(EnumType.STRING)
     // private KycStatus status = KycStatus.PENDING;
