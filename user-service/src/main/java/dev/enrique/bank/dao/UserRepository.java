@@ -12,6 +12,8 @@ import dev.enrique.bank.model.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByKeycloakId(String keycloakId);
+
     //@Query("""
     //        SELECT u FROM User u
     //        WHERE u.active = true

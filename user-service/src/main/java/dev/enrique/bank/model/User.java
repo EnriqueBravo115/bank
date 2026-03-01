@@ -71,4 +71,9 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public boolean isRegistrationComplete() {
+        return registerStatus == RegisterStatus.KYC ||
+                registerStatus == RegisterStatus.COMPLETE;
+    }
 }
