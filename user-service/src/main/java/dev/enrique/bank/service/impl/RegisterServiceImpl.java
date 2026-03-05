@@ -61,6 +61,8 @@ public class RegisterServiceImpl implements RegisterService {
 
         validateStep(user, RegisterStatus.REGISTER);
 
+        keycloakUserService.updateUser(user.getKeycloakId(), request);
+
         UserProfile userProfile = new UserProfile();
         userProfile.setUser(user);
         userProfile.setNames(request.getNames());

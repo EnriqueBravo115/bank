@@ -9,6 +9,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import dev.enrique.bank.dto.request.UserProfileRequest;
 import dev.enrique.bank.dto.request.UserRegisterRequest;
 import dev.enrique.bank.service.KeycloakUserService;
 import jakarta.ws.rs.core.Response;
@@ -58,5 +59,17 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         }
 
         throw new RuntimeException("Error user creation in Keycloak: " + response.getStatus());
+    }
+
+    @Override
+    public void updateUser(String keycloakId, UserProfileRequest request) {
+        UserRepresentation user = new UserRepresentation();
+        user.setFirstName(request.getNames());
+        user.setLastName(request.getFirstSurname() + " " + request.getSecondSurname());
+
+        keycloak.realm(realm)
+                .users()
+                .get(keycloakId)
+                .update(user);
     }
 }
