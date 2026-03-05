@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterResponse {
+public class UserRegisterResponse {
     private Long id;
     private String keycloakId;
     private String email;

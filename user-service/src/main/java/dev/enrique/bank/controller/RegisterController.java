@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.enrique.bank.dto.request.UserRegisterRequest;
-import dev.enrique.bank.dto.response.RegisterResponse;
+import dev.enrique.bank.dto.response.UserRegisterResponse;
 import dev.enrique.bank.service.RegisterService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class RegisterController {
     private final RegisterService registerService;
 
     @PostMapping("/create")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody UserRegisterRequest request) {
+    public ResponseEntity<UserRegisterResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         return ResponseEntity.ok(registerService.register(request));
     }
 

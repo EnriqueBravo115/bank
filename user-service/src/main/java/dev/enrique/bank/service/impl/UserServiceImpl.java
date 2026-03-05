@@ -1,19 +1,14 @@
 package dev.enrique.bank.service.impl;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import dev.enrique.bank.commons.exception.UserNotFoundException;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserBasicProjection;
-import dev.enrique.bank.dto.request.RegisterRequest;
-import dev.enrique.bank.dto.response.RegisterResponse;
-import dev.enrique.bank.commons.enums.UserRole;
-import dev.enrique.bank.commons.exception.ApiRequestException;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.service.UserService;
 import dev.enrique.bank.service.util.BasicMapper;
-import dev.enrique.bank.service.util.UserHelper;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,7 +21,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserBasicProjection getUserById(Long userId) {
         return userRepository.getUserById(userId, UserBasicProjection.class)
-                .orElseThrow(() -> new ApiRequestException("USER NOT FOUND", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     @Override
@@ -36,6 +31,6 @@ public class UserServiceImpl implements UserService {
 
     private <T> T getUserById(Long userId, Class<T> type) {
         return userRepository.getUserById(userId, type)
-                .orElseThrow(() -> new ApiRequestException("User not found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 }

@@ -10,18 +10,20 @@ import org.springframework.data.repository.query.Param;
 import dev.enrique.bank.model.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findById(Long id);
+
     Optional<User> findByEmail(String email);
 
     Optional<User> findByKeycloakId(String keycloakId);
 
-    //@Query("""
-    //        SELECT u FROM User u
-    //        WHERE u.active = true
-    //        AND (u.email = :email OR u.rfc = :rfc OR u.curp = :curp)
-    //        """)
-    //Optional<User> findActiveByAnyIdentifier(@Param("email") String email,
-    //        @Param("rfc") String rfc,
-    //        @Param("curp") String curp);
+    // @Query("""
+    // SELECT u FROM User u
+    // WHERE u.active = true
+    // AND (u.email = :email OR u.rfc = :rfc OR u.curp = :curp)
+    // """)
+    // Optional<User> findActiveByAnyIdentifier(@Param("email") String email,
+    // @Param("rfc") String rfc,
+    // @Param("curp") String curp);
 
     @Query("SELECT u FROM User u WHERE u.id = :userId")
     <T> Optional<T> getUserById(@Param("userId") Long userId, Class<T> type);

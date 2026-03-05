@@ -24,9 +24,7 @@ public class RegisterStatusFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     private static final List<String> REGISTRATION_WHITELIST = List.of(
-            "/api/v1/user/register",
-            "/api/v1/user/profile",
-            "/api/v1/user/kyc");
+            "/api/v1/user/register");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
