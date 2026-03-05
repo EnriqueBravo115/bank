@@ -9,7 +9,9 @@ services:
           - /api/v1/user/register
         methods:
           - POST
+          - PUT
         strip_path: false
+
       - name: user-route
         paths:
           - /api/v1/user

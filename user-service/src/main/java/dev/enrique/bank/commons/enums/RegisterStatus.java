@@ -1,7 +1,7 @@
 package dev.enrique.bank.commons.enums;
 
 public enum RegisterStatus {
-    CREDENTIALS,
+    REGISTER,
     PROFILE,
     KYC,
     COMPLETE

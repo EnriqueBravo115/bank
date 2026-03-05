@@ -1,5 +1,5 @@
 ### POST register user(keycloak & user_db)
-POST http://localhost:8000/api/v1/user/register/create
+POST http://localhost:8000/api/v1/user/register
 Content-Type: application/json
 
 {
@@ -7,6 +7,41 @@ Content-Type: application/json
   "password": "secure1!",
   "phoneCode": "+52",
   "phoneNumber": "6649876543"
+}
+
+### PUT update profile
+PUT http://localhost:8000/api/v1/user/register/1/profile
+Content-Type: application/json
+
+{
+  "names": "Ana",
+  "firstSurname": "Martinez",
+  "secondSurname": "Lopez",
+  "gender": "FEMALE",
+  "birthday": "15/06/1992",
+  "countryOfBirth": "MX"
+}
+
+### PUT update kyc
+PUT http://localhost:8000/api/v1/user/register/1/kyc
+Content-Type: application/json
+
+{
+  "curp": "MALA920615MSLRPN09",
+  "rfc": "MALA920615AB3",
+  "documentType": "NATIONAL_ID_CARD"
+}
+
+### PUT update financial info (optional)
+PUT http://localhost:8000/api/v1/user/register/1/financial
+Content-Type: application/json
+
+{
+  "occupationType": "EMPLOYEE",
+  "employerName": "Tech Company SA de CV",
+  "incomeSource": "SALARY",
+  "monthlyIncome": 25000.00,
+  "maritalStatus": "SINGLE"
 }
 
 ### POST get access token
