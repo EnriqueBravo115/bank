@@ -85,13 +85,14 @@ public class RegisterServiceImpl implements RegisterService {
 
         validateStep(user, RegisterStatus.PROFILE);
 
-        UserKyc kyc = new UserKyc();
-        kyc.setUser(user);
-        kyc.setCurp(request.getCurp());
-        kyc.setRfc(request.getRfc());
-        kyc.setDocumentType(request.getDocumentType());
+        UserKyc userKyc = new UserKyc();
+        userKyc.setUser(user);
+        userKyc.setCurp(request.getCurp());
+        userKyc.setRfc(request.getRfc());
+        userKyc.setDocumentType(request.getDocumentType());
 
-        userKycRepository.save(kyc);
+        userKycRepository.save(userKyc);
+        keycloakUserService.assignRole(user.getKeycloakId(), UserRole.CUSTOMER_BASIC);
 
         user.setRegisterStatus(RegisterStatus.KYC);
         user.setUpdatedAt(LocalDateTime.now());
@@ -105,15 +106,15 @@ public class RegisterServiceImpl implements RegisterService {
 
         validateStep(user, RegisterStatus.KYC);
 
-        UserFinancialInfo info = new UserFinancialInfo();
-        info.setUser(user);
-        info.setOccupationType(request.getOccupationType());
-        info.setEmployerName(request.getEmployerName());
-        info.setIncomeSource(request.getIncomeSource());
-        info.setMonthlyIncome(request.getMonthlyIncome());
-        info.setMaritalStatus(request.getMaritalStatus());
+        UserFinancialInfo userFinancialInfo = new UserFinancialInfo();
+        userFinancialInfo.setUser(user);
+        userFinancialInfo.setOccupationType(request.getOccupationType());
+        userFinancialInfo.setEmployerName(request.getEmployerName());
+        userFinancialInfo.setIncomeSource(request.getIncomeSource());
+        userFinancialInfo.setMonthlyIncome(request.getMonthlyIncome());
+        userFinancialInfo.setMaritalStatus(request.getMaritalStatus());
 
-        userFinancialInfoRepository.save(info);
+        userFinancialInfoRepository.save(userFinancialInfo);
 
         user.setRegisterStatus(RegisterStatus.COMPLETE);
         user.setUpdatedAt(LocalDateTime.now());
@@ -123,8 +124,8 @@ public class RegisterServiceImpl implements RegisterService {
     private void validateStep(User user, RegisterStatus expectedStatus) {
         if (user.getRegisterStatus() != expectedStatus) {
             throw new InvalidRegistrationStepException(
-                    expectedStatus,
-                    user.getRegisterStatus());
+                    user.getRegisterStatus(),
+                    expectedStatus);
         }
     }
 }

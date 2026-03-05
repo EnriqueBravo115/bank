@@ -1,7 +1,6 @@
 package dev.enrique.bank.config;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,18 +22,15 @@ public class RegisterStatusFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
-    private static final List<String> REGISTRATION_WHITELIST = List.of(
-            "/api/v1/user/register");
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (auth == null || !auth.isAuthenticated() || isWhitelisted(path)) {
+        // If there's no auth or it's not authenticated, let Spring Security handle it
+        if (auth == null || !auth.isAuthenticated()) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -42,18 +38,16 @@ public class RegisterStatusFilter extends OncePerRequestFilter {
         String keycloakId = extractKeycloakId(auth);
         User user = userRepository.findByKeycloakId(keycloakId).orElse(null);
 
+        // Check if the user has a valid registration phase (KYC or COMPLETED)
         if (user != null && !user.isRegistrationComplete()) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
             response.getWriter().write("{\"error\": \"Registration incomplete\"}");
             return;
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private boolean isWhitelisted(String path) {
-        return REGISTRATION_WHITELIST.stream()
-                .anyMatch(path::startsWith);
     }
 
     private String extractKeycloakId(Authentication auth) {

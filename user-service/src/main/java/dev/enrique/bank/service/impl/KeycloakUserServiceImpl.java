@@ -5,10 +5,12 @@ import java.util.List;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.dto.request.UserProfileRequest;
 import dev.enrique.bank.dto.request.UserRegisterRequest;
 import dev.enrique.bank.service.KeycloakUserService;
@@ -71,5 +73,23 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                 .users()
                 .get(keycloakId)
                 .update(user);
+    }
+
+    @Override
+    public void assignRole(String keycloakId, UserRole roleName) {
+        RealmResource realmResource = keycloak.realm(realm);
+ 
+        RoleRepresentation role = realmResource.roles()
+            .list()
+            .stream()
+            .filter(r -> r.getName().equals(roleName.toString()))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+
+        realmResource.users()
+                .get(keycloakId)
+                .roles()
+                .realmLevel()
+                .add(List.of(role));
     }
 }

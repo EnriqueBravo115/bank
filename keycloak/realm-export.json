@@ -1,6 +1,18 @@
 {
   "realm": "bank",
   "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "CUSTOMER_BASIC",
+        "description": "Standard registered user with completed registration"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administrator with full access"
+      }
+    ]
+  },
   "clients": [
     {
       "clientId": "kong",
@@ -41,7 +53,8 @@
           "value": "testpassword",
           "temporary": false
         }
-      ]
+      ],
+      "realmRoles": ["CUSTOMER_BASIC"]
     }
   ]
 }
