@@ -3,7 +3,6 @@ package dev.enrique.bank.dao;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,22 +15,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByKeycloakId(String keycloakId);
 
-    // @Query("""
-    // SELECT u FROM User u
-    // WHERE u.active = true
-    // AND (u.email = :email OR u.rfc = :rfc OR u.curp = :curp)
-    // """)
-    // Optional<User> findActiveByAnyIdentifier(@Param("email") String email,
-    // @Param("rfc") String rfc,
-    // @Param("curp") String curp);
-
-    @Query("SELECT u FROM User u WHERE u.id = :userId")
-    <T> Optional<T> getUserById(@Param("userId") Long userId, Class<T> type);
+    <T> Optional<T> getUserById(Long id, Class<T> type);
 
     @Query("SELECT u FROM User u WHERE u.email = :email")
     <T> Optional<T> getUserByEmail(@Param("email") String email, Class<T> type);
-
-    @Modifying
-    @Query("UPDATE User u SET u.active = true WHERE u.id = :userId")
-    void updateActiveUserProfile(@Param("userId") Long userId);
 }

@@ -1,0 +1,12 @@
+package dev.enrique.bank.commons.exception;
+
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.http.HttpStatus;
+
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class UserNotFoundEmailExcepction extends RuntimeException {
+
+    public UserNotFoundEmailExcepction(String email) {
+        super("User not found with email: " + email);
+    }
+}
