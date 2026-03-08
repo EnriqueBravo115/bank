@@ -4,21 +4,7 @@ services:
   - name: user-service
     url: http://host.docker.internal:8080
     routes:
-      - name: user-register-route
-        paths:
-          - /api/v1/user/register
-        methods:
-          - POST
-          - PUT
-        strip_path: false
-
       - name: user-route
         paths:
           - /api/v1/user
         strip_path: false
-        plugins:
-          - name: jwt
-            config:
-              secret_is_base64: false
-              claims_to_verify:
-                - exp

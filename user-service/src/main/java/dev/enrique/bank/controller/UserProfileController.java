@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping(PROFILE)
 @RequiredArgsConstructor
 public class UserProfileController {
-    private final UserProfileService userProfileService;
 
     //@PatchMapping("/personal-info")
     //public ResponseEntity<PersonalInfoResponse> updatePersonalInfo(
