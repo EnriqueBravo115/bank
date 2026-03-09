@@ -1,8 +1,8 @@
 spring:
   application:
-    name: user-service
+    name: transaction-service
   datasource:
-    url: jdbc:postgresql://${DATASOURCE_HOST:localhost}:5432/user_db
+    url: jdbc:postgresql://${DATASOURCE_HOST:localhost}:5435/transaction_db
     username: user
     password: password
     driverClassName: org.postgresql.Driver
@@ -10,7 +10,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9090/realms/bank-realm
+          issuer-uri: http://localhost:9090/realms/bank
   jpa:
     hibernate:
       ddl-auto: validate
@@ -40,9 +40,3 @@ eureka:
         register-with-eureka: true
     instance:
         hostname: ${EUREKA_HOST:localhost}
-
-#server:
-#  ssl:
-#    key-store-type: PKCS12
-#    key-store: classpath:certificate.p12
-#    key-store-password: password
