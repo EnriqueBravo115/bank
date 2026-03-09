@@ -51,6 +51,7 @@ public class RegisterServiceImpl implements RegisterService {
 
         userRepository.save(user);
 
+        keycloakUserService.updateRegistrationStatus(keycloakId, RegisterStatus.REGISTER.name());
         return basicMapper.convertToResponse(user, UserRegisterResponse.class);
     }
 
@@ -76,6 +77,8 @@ public class RegisterServiceImpl implements RegisterService {
         user.setRegisterStatus(RegisterStatus.PROFILE);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
+
+        keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.PROFILE.name());
     }
 
     @Override
@@ -97,6 +100,7 @@ public class RegisterServiceImpl implements RegisterService {
         user.setRegisterStatus(RegisterStatus.KYC);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
+        keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.KYC.name());
     }
 
     @Override
@@ -119,6 +123,7 @@ public class RegisterServiceImpl implements RegisterService {
         user.setRegisterStatus(RegisterStatus.COMPLETE);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
+        keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.COMPLETE.name());
     }
 
     private void validateStep(User user, RegisterStatus expectedStatus) {

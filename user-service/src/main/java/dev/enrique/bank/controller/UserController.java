@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import dev.enrique.bank.dao.projection.UserPrincipalProjection;
 import dev.enrique.bank.service.UserService;
@@ -21,7 +22,8 @@ public class UserController {
     @PreAuthorize("hasRole('CUSTOMER_BASIC')")
     @GetMapping("/access")
     public ResponseEntity<?> getNothing(Authentication auth) {
-        return ResponseEntity.ok(auth.getAuthorities());
+        Jwt jwt = (Jwt) auth.getPrincipal();
+        return ResponseEntity.ok(jwt.getClaims());
     }
 
     @GetMapping("/get-by-id/{userId}")

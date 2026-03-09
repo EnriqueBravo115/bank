@@ -1,9 +1,12 @@
 package dev.enrique.bank.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -78,18 +81,32 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     @Override
     public void assignRole(String keycloakId, UserRole roleName) {
         RealmResource realmResource = keycloak.realm(realm);
- 
+
         RoleRepresentation role = realmResource.roles()
-            .list()
-            .stream()
-            .filter(r -> r.getName().equals(roleName.toString()))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                .list()
+                .stream()
+                .filter(r -> r.getName().equals(roleName.toString()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
 
         realmResource.users()
                 .get(keycloakId)
                 .roles()
                 .realmLevel()
                 .add(List.of(role));
+    }
+
+    @Override
+    public void updateRegistrationStatus(String keycloakId, String status) {
+        UserResource userResource = keycloak.realm(realm).users().get(keycloakId);
+        UserRepresentation user = userResource.toRepresentation();
+        Map<String, List<String>> attributes = user.getAttributes();
+
+        if (attributes == null)
+            attributes = new HashMap<>();
+
+        attributes.put("registration_status", List.of(status));
+        user.setAttributes(attributes);
+        userResource.update(user);
     }
 }
