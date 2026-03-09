@@ -1,6 +1,7 @@
 package dev.enrique.bank.config;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -8,8 +9,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import dev.enrique.bank.dao.UserRepository;
-import dev.enrique.bank.model.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class RegisterStatusFilter extends OncePerRequestFilter {
-    private final UserRepository userRepository;
+    private static final Set<String> COMPLETE_STATUSES = Set.of("KYC", "COMPLETE");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -28,29 +27,30 @@ public class RegisterStatusFilter extends OncePerRequestFilter {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        // If there's no auth or it's not authenticated, let Spring Security handle it
         if (auth == null || !auth.isAuthenticated()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String keycloakId = extractKeycloakId(auth);
-        User user = userRepository.findByKeycloakId(keycloakId).orElse(null);
+        Jwt jwt = (Jwt) auth.getPrincipal();
+        String registrationStatus = jwt.getClaimAsString("registration_status");
 
-        // Check if the user has a valid registration phase (KYC or COMPLETED)
-        if (user != null && !user.isRegistrationComplete()) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write("{\"error\": \"Registration incomplete\"}");
+        if (registrationStatus == null || !COMPLETE_STATUSES.contains(registrationStatus)) {
+            sendForbiddenResponse(response, registrationStatus);
             return;
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private String extractKeycloakId(Authentication auth) {
-        Jwt jwt = (Jwt) auth.getPrincipal();
-        return jwt.getSubject();
+    private void sendForbiddenResponse(HttpServletResponse response, String status)
+            throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        response.getWriter().write(
+                String.format("{\"error\": \"Registration incomplete\", \"status\": \"%s\"}",
+                        status != null ? status : "UNKNOWN"));
     }
 }
