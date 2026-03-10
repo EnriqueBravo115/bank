@@ -64,7 +64,7 @@
       "enabled": true,
       "serviceAccountClientId": "kong",
       "clientRoles": {
-        "realm-management": ["manage-users", "view-users", "query-users"]
+        "realm-management": ["realm-admin", "manage-users", "view-users", "query-users"]
       }
     }
   ]

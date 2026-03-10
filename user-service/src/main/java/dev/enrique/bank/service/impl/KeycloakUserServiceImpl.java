@@ -46,17 +46,11 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         credential.setType(CredentialRepresentation.PASSWORD);
         credential.setValue(request.getPassword());
         credential.setTemporary(false);
-        credential.setCredentialData("{\"hashIterations\":275000,\"algorithm\":\"pbkdf2-sha256\"}");
-        credential.setSecretData("{\"value\":\"" + request.getPassword() + "\",\"additionalParameters\":{}}");
 
         user.setCredentials(List.of(credential));
 
         RealmResource realmResource = keycloak.realm(realm);
         Response response = realmResource.users().create(user);
-
-        String responseBody = response.readEntity(String.class);
-        System.out.println(">>> Keycloak response status: " + response.getStatus());
-        System.out.println(">>> Keycloak response body: " + responseBody);
 
         if (response.getStatus() == 201) {
             String location = response.getHeaderString("Location");
@@ -83,11 +77,8 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         RealmResource realmResource = keycloak.realm(realm);
 
         RoleRepresentation role = realmResource.roles()
-                .list()
-                .stream()
-                .filter(r -> r.getName().equals(roleName.toString()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                .get(roleName.toString())
+                .toRepresentation();
 
         realmResource.users()
                 .get(keycloakId)
