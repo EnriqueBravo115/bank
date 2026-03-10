@@ -1,8 +1,8 @@
 package dev.enrique.bank.service;
 
 import dev.enrique.bank.commons.enums.UserRole;
-import dev.enrique.bank.dto.request.UserProfileRequest;
-import dev.enrique.bank.dto.request.UserRegisterRequest;
+import dev.enrique.bank.commons.dto.request.UserProfileRequest;
+import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
 
 public interface KeycloakUserService {
     String createUser(UserRegisterRequest request);

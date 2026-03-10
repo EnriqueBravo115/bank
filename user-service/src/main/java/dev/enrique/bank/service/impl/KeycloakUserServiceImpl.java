@@ -14,8 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.commons.enums.UserRole;
-import dev.enrique.bank.dto.request.UserProfileRequest;
-import dev.enrique.bank.dto.request.UserRegisterRequest;
+import dev.enrique.bank.commons.dto.request.UserProfileRequest;
+import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
 import dev.enrique.bank.service.KeycloakUserService;
 import jakarta.ws.rs.core.Response;
 

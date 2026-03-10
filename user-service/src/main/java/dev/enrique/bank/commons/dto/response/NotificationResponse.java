@@ -1,4 +1,4 @@
-package dev.enrique.bank.dto.response;
+package dev.enrique.bank.commons.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Setter;

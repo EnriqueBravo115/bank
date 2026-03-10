@@ -1,4 +1,4 @@
-package dev.enrique.bank.dto.request;
+package dev.enrique.bank.commons.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

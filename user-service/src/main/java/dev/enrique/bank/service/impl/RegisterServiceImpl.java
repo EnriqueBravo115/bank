@@ -12,18 +12,18 @@ import dev.enrique.bank.dao.UserFinancialInfoRepository;
 import dev.enrique.bank.dao.UserKycRepository;
 import dev.enrique.bank.dao.UserProfileRepository;
 import dev.enrique.bank.dao.UserRepository;
-import dev.enrique.bank.dto.request.UserFinancialInfoRequest;
-import dev.enrique.bank.dto.request.UserKycDataRequest;
-import dev.enrique.bank.dto.request.UserProfileRequest;
-import dev.enrique.bank.dto.request.UserRegisterRequest;
-import dev.enrique.bank.dto.response.UserRegisterResponse;
+import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
+import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
+import dev.enrique.bank.commons.dto.request.UserProfileRequest;
+import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
+import dev.enrique.bank.commons.dto.response.UserRegisterResponse;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.model.UserFinancialInfo;
 import dev.enrique.bank.model.UserKyc;
 import dev.enrique.bank.model.UserProfile;
 import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.service.RegisterService;
-import dev.enrique.bank.service.util.BasicMapper;
+import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.RequiredArgsConstructor;
 
 @Service

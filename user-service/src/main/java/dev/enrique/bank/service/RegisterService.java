@@ -1,10 +1,10 @@
 package dev.enrique.bank.service;
 
-import dev.enrique.bank.dto.request.UserFinancialInfoRequest;
-import dev.enrique.bank.dto.request.UserKycDataRequest;
-import dev.enrique.bank.dto.request.UserProfileRequest;
-import dev.enrique.bank.dto.request.UserRegisterRequest;
-import dev.enrique.bank.dto.response.UserRegisterResponse;
+import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
+import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
+import dev.enrique.bank.commons.dto.request.UserProfileRequest;
+import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
+import dev.enrique.bank.commons.dto.response.UserRegisterResponse;
 
 public interface RegisterService {
     UserRegisterResponse register(UserRegisterRequest request);

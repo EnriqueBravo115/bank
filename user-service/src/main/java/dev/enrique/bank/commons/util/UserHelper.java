@@ -1,4 +1,4 @@
-package dev.enrique.bank.service.util;
+package dev.enrique.bank.commons.util;
 
 import static dev.enrique.bank.commons.constants.PathConstants.AUTH_USER_ID_HEADER;
 

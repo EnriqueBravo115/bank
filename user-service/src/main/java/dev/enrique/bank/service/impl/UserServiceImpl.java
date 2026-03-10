@@ -5,9 +5,9 @@ import org.springframework.stereotype.Service;
 import dev.enrique.bank.commons.exception.UserNotFoundException;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.dao.projection.UserPrincipalProjection;
-import dev.enrique.bank.dto.response.UserPrincipalResponse;
+import dev.enrique.bank.commons.dto.response.UserPrincipalResponse;
 import dev.enrique.bank.service.UserService;
-import dev.enrique.bank.service.util.BasicMapper;
+import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.RequiredArgsConstructor;
 
 @Service

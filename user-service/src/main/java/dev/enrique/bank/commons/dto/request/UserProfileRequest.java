@@ -1,4 +1,4 @@
-package dev.enrique.bank.dto.request;
+package dev.enrique.bank.commons.dto.request;
 
 import dev.enrique.bank.commons.enums.Country;
 import dev.enrique.bank.commons.enums.Gender;
