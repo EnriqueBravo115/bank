@@ -26,6 +26,7 @@ public class UserController {
         return ResponseEntity.ok(jwt.getClaims());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/get-by-id/{userId}")
     public ResponseEntity<UserPrincipalProjection> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
