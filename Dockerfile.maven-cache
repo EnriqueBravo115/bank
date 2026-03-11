@@ -1,0 +1,12 @@
+FROM maven:3.9.5-eclipse-temurin-17
+
+WORKDIR /build
+
+COPY pom.xml .
+COPY eureka-server/pom.xml eureka-server/
+COPY config-server/pom.xml config-server/
+COPY user-service/pom.xml user-service/
+COPY transaction-service/pom.xml transaction-service/
+COPY account-service/pom.xml account-service/
+
+RUN mvn -B -q dependency:go-offline

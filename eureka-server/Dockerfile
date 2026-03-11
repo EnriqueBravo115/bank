@@ -1,14 +1,14 @@
-FROM maven:3.9.5-eclipse-temurin-17 AS build
+FROM bank-maven-cache AS build
+
+WORKDIR /build
+
+COPY eureka-server/src eureka-server/src
+
+RUN mvn -pl eureka-server clean package -DskipTests
+
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-COPY . .
-WORKDIR /app/eureka-server
-
-RUN mvn dependency:go-offline
-RUN mvn clean package -DskipTests
-
-FROM eclipse-temurin:17-jdk
-WORKDIR /app
-
-COPY --from=build /app/eureka-server/target/*.jar eureka-server.jar
-ENTRYPOINT ["java", "-jar", "eureka-server.jar"]
+COPY --from=build /build/eureka-server/target/*.jar app.jar
+EXPOSE 8761
+ENTRYPOINT ["java","-jar","app.jar"]

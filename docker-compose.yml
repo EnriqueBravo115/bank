@@ -77,8 +77,11 @@ services:
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak_db
       KC_DB_USERNAME: user
       KC_DB_PASSWORD: password
+      KC_HEALTH_ENABLED: "true"
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: keycloak
+      KC_HTTP_PORT: 8080
     ports:
       - "9090:8080"
     volumes:
@@ -86,6 +89,12 @@ services:
     depends_on:
       keycloak-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
 
   kong-migration:
     image: kong:3.6
@@ -125,6 +134,8 @@ services:
     depends_on:
       kong-migration:
         condition: service_completed_successfully
+      user-service:
+        condition: service_healthy
 
   kong-deck:
     image: kong/deck:latest
@@ -139,6 +150,83 @@ services:
     depends_on:
       kong:
         condition: service_healthy
+
+  eureka-server:
+    container_name: eureka_server
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    environment:
+      EUREKA_HOST: eureka-server
+    restart: on-failure
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  config-server:
+    container_name: config_server
+    build:
+      context: .
+      dockerfile: config-server/Dockerfile
+    environment:
+      EUREKA_HOST: eureka-server
+    restart: on-failure
+    ports:
+      - "8888:8888"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  user-service:
+    container_name: user_service
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    environment:
+      EUREKA_HOST: eureka-server
+      DATASOURCE_HOST: user-db
+      KEYCLOAK_HOST: keycloak
+      CONFIG_SERVER_HOST: config-server
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      user-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+  
+  #user-service:
+  #  container_name: user_service
+  #  build:
+  #    context: ./user-service
+  #    dockerfile: Dockerfile
+  #  restart: on-failure
+  #  environment:
+  #    SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/user_db
+  #    SPRING_DATASOURCE_USERNAME: user
+  #    SPRING_DATASOURCE_PASSWORD: password
+  #  ports:
+  #    - "8080:8080"
+  #  depends_on:
+  #    user-db:
+  #      condition: service_healthy
 
 #  zipkin:
 #    image: openzipkin/zipkin

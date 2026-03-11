@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
     private final UserService userService;
 
-    @PreAuthorize("hasRole('CUSTOMER_BASIC')")
     @GetMapping("/access")
     public ResponseEntity<?> getNothing(Authentication auth) {
         Jwt jwt = (Jwt) auth.getPrincipal();
