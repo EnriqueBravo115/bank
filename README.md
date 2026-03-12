@@ -4,14 +4,6 @@ The project simulates core banking operations such as account management, transa
 
 It integrates authentication, API gateway, service discovery, and resilience patterns.
 
-## Architecture
-The system follows a microservices architecture with the following infrastructure components:
-- Service Discovery using ***Netflix Eureka***
-- Centralized configuration using ***Spring Cloud Config***
-- Authentication and authorization using ***Keycloak***
-- API Gateway using ***Kong***
-- Event streaming using ***Apache Kafka***
-
 ## Tech Stack
 - Java 17
 - Spring Boot 3.2.4
@@ -35,6 +27,14 @@ Finally, run the docker-compose:
 docker compose up --build
 ```
 
+## Architecture
+The system follows a microservices architecture with the following infrastructure components:
+- Service Discovery using ***Netflix Eureka***
+- Centralized configuration using ***Spring Cloud Config***
+- Authentication and authorization using ***Keycloak***
+- API Gateway using ***Kong***
+- Event streaming using ***Apache Kafka***
+
 ## Services
 The system currently includes the following services:
 - Eureka Server: Service discovery
@@ -44,7 +44,6 @@ The system currently includes the following services:
 - Transaction Service: Handles all financial transactions
 
 ## Features
-
 ### User Registration Flow
 User registration is implemented using a custom Keycloak authentication flow composed of four steps:
 1. Basic Info
