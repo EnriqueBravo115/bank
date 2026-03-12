@@ -6,11 +6,11 @@ It integrates authentication, API gateway, service discovery, and resilience pat
 
 ## Architecture
 The system follows a microservices architecture with the following infrastructure components:
-- Service Discovery using *Netflix Eureka*
-- Centralized configuration using Spring Cloud Config
-- Authentication and authorization using Keycloak
-- API Gateway using Kong
-- Event streaming using Apache Kafka
+- Service Discovery using ***Netflix Eureka***
+- Centralized configuration using ***Spring Cloud Config***
+- Authentication and authorization using ***Keycloak***
+- API Gateway using ***Kong***
+- Event streaming using ***Apache Kafka***
 
 ## Tech Stack
 - Java 17
