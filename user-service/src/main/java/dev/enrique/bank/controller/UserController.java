@@ -3,11 +3,11 @@ package dev.enrique.bank.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 import dev.enrique.bank.dao.projection.UserPrincipalProjection;
 import dev.enrique.bank.service.UserService;
@@ -29,5 +29,11 @@ public class UserController {
     @GetMapping("/get-by-id/{userId}")
     public ResponseEntity<UserPrincipalProjection> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER_BASIC')")
+    @GetMapping("/get-by-email/{email}")
+    public ResponseEntity<UserPrincipalProjection> getByEmail(@PathVariable String email) {
+        return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 }

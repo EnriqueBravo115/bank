@@ -5,5 +5,5 @@ import dev.enrique.bank.commons.dto.response.UserPrincipalResponse;
 
 public interface UserService {
     UserPrincipalProjection getUserById(Long userId);
-    UserPrincipalResponse getUserByEmail(String email);
+    UserPrincipalProjection getUserByEmail(String email);
 }
