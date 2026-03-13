@@ -9,31 +9,31 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.enrique.bank.dao.projection.UserPrincipalProjection;
+import dev.enrique.bank.commons.dto.response.UserPrincipalResponse;
 import dev.enrique.bank.service.UserService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/user/test")
+@RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
 
-    @GetMapping("/access")
+    @GetMapping("/test-jwt")
     public ResponseEntity<?> getNothing(Authentication auth) {
         Jwt jwt = (Jwt) auth.getPrincipal();
         return ResponseEntity.ok(jwt.getClaims());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CUSTOMER_BASIC')")
     @GetMapping("/get-by-id/{userId}")
-    public ResponseEntity<UserPrincipalProjection> getUserById(@PathVariable Long userId) {
+    public ResponseEntity<UserPrincipalResponse> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @PreAuthorize("hasRole('CUSTOMER_BASIC')")
     @GetMapping("/get-by-email/{email}")
-    public ResponseEntity<UserPrincipalProjection> getByEmail(@PathVariable String email) {
+    public ResponseEntity<UserPrincipalResponse> getUserByEmail(@PathVariable String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 }
