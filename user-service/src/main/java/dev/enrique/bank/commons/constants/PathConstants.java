@@ -8,4 +8,5 @@ public class PathConstants {
     public static final String USER = "/user";
     public static final String REGISTER = API + USER + "/register";
     public static final String PROFILE = API + USER + "/profile";
+    public static final String KYC = API + USER + "/kyc";
 }

@@ -35,7 +35,4 @@ public class UserKyc {
     @Enumerated(EnumType.STRING)
     @Column(name = "document_type", length = 2)
     private DocumentType documentType;
-
-    // @Enumerated(EnumType.STRING)
-    // private KycStatus status = KycStatus.PENDING;
 }
