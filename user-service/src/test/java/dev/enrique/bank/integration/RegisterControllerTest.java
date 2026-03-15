@@ -15,6 +15,8 @@ import dev.enrique.bank.dao.UserFinancialInfoRepository;
 import dev.enrique.bank.dao.UserKycRepository;
 import dev.enrique.bank.dao.UserProfileRepository;
 import dev.enrique.bank.dao.UserRepository;
+import dev.enrique.bank.util.FullContainerConfig;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -23,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -34,7 +37,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-public class RegisterControllerTest extends ContainersConfig {
+@ActiveProfiles("test-keycloak")
+public class RegisterControllerTest extends FullContainerConfig {
     @Autowired
     private MockMvc mockMvc;
     @Autowired

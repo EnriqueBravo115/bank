@@ -1,9 +1,11 @@
 package dev.enrique.bank.config;
 
-import java.util.List;
-import java.util.Map;
-
+import lombok.RequiredArgsConstructor;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -17,14 +19,15 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
 
+@Profile("test-keycloak")
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-@Profile({"!test-postgres & !test-keycloak"})
-public class SecurityConfig {
+public class TestKeycloakConfig {
     private final RegisterStatusFilter registerStatusFilter;
 
     @Bean
@@ -63,5 +66,20 @@ public class SecurityConfig {
     @Bean
     public ModelMapper modelMapper() {
         return new ModelMapper();
+    }
+
+    @Bean
+    public Keycloak keycloak(
+            @Value("${keycloak.auth-server-url}") String authServerUrl,
+            @Value("${keycloak.realm}") String realm,
+            @Value("${keycloak.client-id}") String clientId,
+            @Value("${keycloak.client-secret}") String clientSecret) {
+        return KeycloakBuilder.builder()
+                .serverUrl(authServerUrl)
+                .realm(realm)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .build();
     }
 }

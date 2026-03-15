@@ -8,10 +8,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
-@Profile("test")
+@Profile("test-postgres")
 @Configuration
 @EnableWebSecurity
-public class TestSecurityConfig {
+public class TestPostgresConfig {
     @Bean
     public ModelMapper modelMapper() {
         return new ModelMapper();

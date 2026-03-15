@@ -34,8 +34,7 @@ keycloak:
   realm: bank
   client-id: kong
   client-secret: kong-client-secret
-  auth-server-url: http://localhost:9090
+  auth-server-url: http://localhost:9090/placeholder
 
 eureka:
   client:
-    enabled: false
