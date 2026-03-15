@@ -1,5 +1,7 @@
 package dev.enrique.bank.controller;
 
+import static dev.enrique.bank.commons.constants.PathConstants.FINANCIAL;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -20,7 +22,7 @@ import dev.enrique.bank.service.UserFinancialInfoService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/user/financial-info")
+@RequestMapping(FINANCIAL)
 @RequiredArgsConstructor
 public class UserFinancialInfoController {
     private final UserFinancialInfoService userFinancialInfoService;

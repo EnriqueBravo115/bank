@@ -1,5 +1,7 @@
 package dev.enrique.bank.controller;
 
+import static dev.enrique.bank.commons.constants.PathConstants.USER;
+
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,7 @@ import dev.enrique.bank.service.UserService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping(USER)
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
