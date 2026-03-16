@@ -1,27 +1,26 @@
 package dev.enrique.bank.controller;
 
-import dev.enrique.bank.commons.dto.request.FilterStatusAmountRequest;
-import dev.enrique.bank.commons.dto.request.FilterStatusRequest;
-import dev.enrique.bank.commons.dto.request.FilterStatusTypeRequest;
-import dev.enrique.bank.commons.dto.response.TransactionBasicResponse;
-import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
-import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
-import dev.enrique.bank.commons.enums.TransactionType;
-import dev.enrique.bank.commons.util.BasicMapper;
-import dev.enrique.bank.service.TransactionAnalyticsService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_ANALYTICS;
 
 import java.math.BigDecimal;
 import java.time.Month;
 import java.util.List;
 import java.util.Map;
 
-import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_ANALYTICS;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import dev.enrique.bank.commons.dto.response.TransactionBasicResponse;
+import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
+import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.commons.util.BasicMapper;
+import dev.enrique.bank.service.TransactionAnalyticsService;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping(TRANSACTION_ANALYTICS)
@@ -32,79 +31,75 @@ public class TransactionAnalyticsController {
 
     @GetMapping("/group-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionDetailedResponse>>> groupTransactionsByType(
-            @Valid FilterStatusRequest request) {
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status) {
         return ResponseEntity.ok(mapper.convertToResposeMap(
-                transactionAnalyticsService.groupTransactionsByType(
-                        request.sourceIdentifier(),
-                        request.status()),
+                transactionAnalyticsService.groupTransactionsByType(sourceIdentifier, status),
                 TransactionDetailedResponse.class));
     }
 
     @GetMapping("/sum-by-type")
     public ResponseEntity<Map<TransactionType, BigDecimal>> sumTransactionsByType(
-            @Valid FilterStatusRequest request) {
-        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(
-                request.sourceIdentifier(),
-                request.status()));
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status) {
+        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(sourceIdentifier, status));
     }
 
     @GetMapping("/partition-by-amount")
     public ResponseEntity<Map<Boolean, List<TransactionBasicResponse>>> partitionTransactionsByAmount(
-            @Valid FilterStatusAmountRequest request) {
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status,
+            @RequestParam BigDecimal amount) {
         return ResponseEntity.ok(mapper.convertToResposeMap(
-                transactionAnalyticsService.partitionTransactionsByAmount(
-                        request.sourceIdentifier(),
-                        request.status(),
-                        request.amount()),
+                transactionAnalyticsService.partitionTransactionsByAmount(sourceIdentifier, status, amount),
                 TransactionBasicResponse.class));
     }
 
     @GetMapping("/type-summary")
     public ResponseEntity<Map<TransactionType, TransactionSummaryResponse>> getTransactionTypeSummary(
-            @Valid FilterStatusRequest request) {
-        return ResponseEntity
-                .ok(transactionAnalyticsService.getTransactionTypeSummary(request.sourceIdentifier(), request.status()));
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status) {
+        return ResponseEntity.ok(transactionAnalyticsService.getTransactionTypeSummary(sourceIdentifier, status));
     }
 
     @GetMapping("/total-amount")
     public ResponseEntity<BigDecimal> getTotalTransactionAmount(
-            @Valid FilterStatusTypeRequest request) {
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status,
+            @RequestParam TransactionType type) {
         return ResponseEntity.ok(transactionAnalyticsService.calculateTotalAmountByStatusAndType(
-                request.sourceIdentifier(),
-                request.status(),
-                request.type()));
+                sourceIdentifier, status, type));
     }
 
     @GetMapping("/average-days")
     public ResponseEntity<Double> getAverageDaysBetweenTransactions(
-            @Valid FilterStatusRequest request) {
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status) {
         return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(
-                request.sourceIdentifier(),
-                request.status()));
+                sourceIdentifier, status));
     }
 
+    // FIX: Internal Server Error
     @GetMapping("/max-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionBasicResponse>>> getMaxByTransactionType(
-            @Valid FilterStatusRequest request) {
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status) {
         return ResponseEntity.ok(mapper.convertToResposeMap(
-                transactionAnalyticsService.getMaxTransactionByType(
-                        request.sourceIdentifier(),
-                        request.status()), TransactionBasicResponse.class));
+                transactionAnalyticsService.getMaxTransactionByType(sourceIdentifier, status),
+                TransactionBasicResponse.class));
     }
 
     @GetMapping("/count-by-month")
     public ResponseEntity<Map<Month, Long>> countTransactionsByMonth(
-            @Valid FilterStatusRequest accountStatusRequest) {
-        return ResponseEntity.ok(transactionAnalyticsService.countTransactionsByMonth(
-                accountStatusRequest.sourceIdentifier(),
-                accountStatusRequest.status()));
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status) {
+        return ResponseEntity.ok(transactionAnalyticsService.countTransactionsByMonth(sourceIdentifier, status));
     }
 
     @GetMapping("/average-amount")
     public ResponseEntity<Map<TransactionType, BigDecimal>> getAverageAmountByType(
-            @Valid FilterStatusRequest statusRequest) {
-        return ResponseEntity.ok(transactionAnalyticsService.getAverageAmountByType(
-                statusRequest.sourceIdentifier(),
-                statusRequest.status()));
+            @RequestParam String sourceIdentifier,
+            @RequestParam TransactionStatus status) {
+        return ResponseEntity.ok(transactionAnalyticsService.getAverageAmountByType(sourceIdentifier, status));
     }
 }
