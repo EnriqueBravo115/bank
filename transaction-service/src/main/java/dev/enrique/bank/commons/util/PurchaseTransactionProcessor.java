@@ -27,7 +27,11 @@ public class PurchaseTransactionProcessor extends AbstractTransactionProcessor<P
 
     @Override
     protected MovementResultResponse callAccountClient(PurchaseRequest request) {
-        return accountClient.processPurchase(basicMapper.convertToResponse(request, ClientPurchaseRequest.class));
+        ClientPurchaseRequest clientRequest = new ClientPurchaseRequest(
+                request.amount(),
+                request.sourceCardNumber(),
+                request.cvv());
+        return accountClient.processPurchase(clientRequest);
     }
 
     @Override

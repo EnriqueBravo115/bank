@@ -28,7 +28,11 @@ public class WithdrawalTransactionProcessor
 
     @Override
     protected MovementResultResponse callAccountClient(WithdrawalRequest request) {
-        return accountClient.processWithdrawal(basicMapper.convertToResponse(request, ClientWithdrawalRequest.class));
+        ClientWithdrawalRequest clientRequest = new ClientWithdrawalRequest(
+                request.amount(),
+                request.securityVerificationMethod(),
+                request.transactionFee());
+        return accountClient.processWithdrawal(clientRequest);
     }
 
     @Override
@@ -47,7 +51,7 @@ public class WithdrawalTransactionProcessor
 
     @Override
     protected Transaction buildTransaction(String code, WithdrawalRequest request, MovementResultResponse response) {
-                return Transaction.builder()
+        return Transaction.builder()
                 .transactionCode(code)
                 .amount(request.amount())
                 .description(request.description())

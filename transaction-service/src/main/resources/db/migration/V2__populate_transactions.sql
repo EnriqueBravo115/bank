@@ -21,3 +21,5 @@ VALUES (4, '4532015112830366', 'CARD', 'TXN-2024-004', 2000.00, 'Retiro en cajer
 
 INSERT INTO withdrawal_transaction (id, atm_location, atm_session_id, receipt_number, branch_code, teller_id, transaction_fee, security_verification_method, withdrawal_method)
 VALUES (4, 'Av. Insurgentes Sur 1234, CDMX', 'ATM-SESSION-20240118-4521', 'RCP-20240118-0056', 'BNX-SUC-007', NULL, 18.00, 'PIN', 'DEBIT_CARD');
+
+SELECT setval('transactions_id_seq', (SELECT MAX(id) FROM transactions));

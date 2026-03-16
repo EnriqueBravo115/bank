@@ -27,7 +27,11 @@ public class TransferTransactionProcessor extends AbstractTransactionProcessor<T
 
     @Override
     protected MovementResultResponse callAccountClient(TransferRequest request) {
-        return accountClient.processTransfer(basicMapper.convertToResponse(request, ClientTransferRequest.class));
+        ClientTransferRequest clientRequest = new ClientTransferRequest(
+                request.amount(),
+                request.sourceIdentifier(),
+                request.targetIdentifier());
+        return accountClient.processTransfer(clientRequest);
     }
 
     @Override

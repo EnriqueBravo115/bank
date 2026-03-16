@@ -1,9 +1,6 @@
 package dev.enrique.bank.controller;
 
-import static dev.enrique.bank.commons.constants.PathConstants.PURCHASE;
-import static dev.enrique.bank.commons.constants.PathConstants.SERVICE_PAYMENT;
-import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_CREATION;
-import static dev.enrique.bank.commons.constants.PathConstants.TRANSFER;
+import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_CREATE;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,24 +16,24 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping(TRANSACTION_CREATION)
+@RequestMapping(TRANSACTION_CREATE)
 @RequiredArgsConstructor
 public class TransactionCreationController {
     private final TransactionCreationService transactionCreationService;
 
-    @PostMapping(TRANSFER)
+    @PostMapping("/transfer")
     public ResponseEntity<Void> transfer(@Valid @RequestBody TransferRequest transferRequest) {
         transactionCreationService.transfer(transferRequest);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping(PURCHASE)
+    @PostMapping("/purchase")
     public ResponseEntity<Void> purchase(@Valid @RequestBody PurchaseRequest purchaseRequest) {
         transactionCreationService.purchase(purchaseRequest);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping(SERVICE_PAYMENT)
+    @PostMapping("/service-payment")
     public ResponseEntity<Void> servicePayment(@Valid @RequestBody ServiceRequest serviceRequest) {
         transactionCreationService.servicePayment(serviceRequest);
         return ResponseEntity.ok().build();

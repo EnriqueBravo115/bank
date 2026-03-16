@@ -1,7 +1,6 @@
 package dev.enrique.bank.controller;
 
-import static dev.enrique.bank.commons.constants.PathConstants.GET_ALL_DESCRIPTIONS;
-import static dev.enrique.bank.commons.constants.PathConstants.GET_UNIQUE_DESCRIPTIONS;
+import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_SUPPORT;
 
 import java.util.Set;
 
@@ -15,18 +14,18 @@ import dev.enrique.bank.service.TransactionSupportService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping
+@RequestMapping(TRANSACTION_SUPPORT)
 @RequiredArgsConstructor
 public class TransactionSupportController {
     private final TransactionSupportService transactionSupportService;
 
-    @GetMapping(GET_UNIQUE_DESCRIPTIONS)
+    @GetMapping("/unique-descriptions/{sourceIdentifier}")
     public ResponseEntity<Set<String>> getUniqueTransactionDescriptions(
             @PathVariable String accountNumber) {
         return ResponseEntity.ok(transactionSupportService.getAllUniqueTransactionDescriptions(accountNumber));
     }
 
-    @GetMapping(GET_ALL_DESCRIPTIONS)
+    @GetMapping("/all-descriptions/{sourceIdentifier}")
     public ResponseEntity<String> getAllTransactionDescriptions(
             @PathVariable String accountNumber) {
         return ResponseEntity.ok(transactionSupportService.getAllTransactionDescriptions(accountNumber));

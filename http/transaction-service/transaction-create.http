@@ -1,0 +1,50 @@
+@baseUrl = http://localhost:8000/api/v1/transaction/create
+@token = Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ2bks3VUQ1TlVqRTR0cVdYcUZhN3VZSzJTSjZ3SzNhM3NQZVdBQk54UWpFIn0.eyJleHAiOjE3NzM2OTExMTIsImlhdCI6MTc3MzY5MDgxMiwianRpIjoiMDdiYmZjNmItNjYwOS00OGY0LWI1OWItMjUwNTQ0ODA5ODNjIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjkyMjQ0N2UxLTNmMGItNGY0ZS05YmNlLTdkMjUwNjM0OTg1YiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImtvbmciLCJzaWQiOiI2NGI2NGQyYy1mN2ZiLTRjM2ItODA0Yi05ZGYyZmFmZmY2MjAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIkNVU1RPTUVSX0JBU0lDIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtYmFuayJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyZWdpc3RyYXRpb25fc3RhdHVzIjoiQ09NUExFVEUiLCJuYW1lIjoiQW5hIE1hcnRpbmV6IExvcGV6IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYW5hLm1hcnRpbmV6OTJAZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6IkFuYSIsImZhbWlseV9uYW1lIjoiTWFydGluZXogTG9wZXoiLCJlbWFpbCI6ImFuYS5tYXJ0aW5lejkyQGdtYWlsLmNvbSJ9.Fyr7SgB4_m-4ZQkL_V5q0V65vm0tnJkjuyRSFdCM7sw-0YOrWh27hIBqGzzPYISAvjv74Vxx-yT3eF7acgjLPwSjUYBeZT5RSfozY86M90CIB50_EUNh2aY_cA4uWfbvvBE8bystIweS_hiEYMKxuCSJFzpIP9zDAQA49FXYWWhVSI3t-bcLvHUurjhitVIflLmg3lzqhgNCfwxKiS2mqHJVGnWkOKA0wsU6Hbc1GPn5-Dd1VUS5z5IQQuJcIsbSS0WtlLP8EPNLpN7hRczi1FRRDeRBPSudLrUiVURKEdYUw6U6BBrQ0IHOijNH7yr5VNvyCYK-Gkgp_NcBevyzTQ
+
+### Transfer - CLABE a CLABE
+POST {{baseUrl}}/transfer
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "amount": 1500.00,
+  "description": "Pago de renta febrero",
+  "currency": "MX",
+  "sourceIdentifier": "646180110400000001",
+  "sourceIdentifierType": "CLABE",
+  "targetIdentifier": "002180700148685530",
+  "targetIdentifierType": "CLABE"
+}
+
+### Purchase - card Liverpool
+POST {{baseUrl}}/purchase
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "amount": 349.99,
+  "description": "Compra en Liverpool",
+  "transactionType": "PURCHASE",
+  "sourceCardNumber": "4111111111111111",
+  "merchantCode": "MERC-LIV-001",
+  "merchantCategory": "RETAIL_CLOTHING",
+  "posId": "POS-00234",
+  "cvv": "123",
+  "currency": "MX"
+}
+
+### Service payment - CFE
+POST {{baseUrl}}/service-payment
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "amount": 875.50,
+  "description": "Pago de CFE marzo",
+  "transactionType": "SERVICE",
+  "sourceAccountNumber": "646180110400000003",
+  "paymentReference": "CFE-RPT-20240317-0100",
+  "serviceType": "ELECTRICITY",
+  "currency": "MX"
+}
+
