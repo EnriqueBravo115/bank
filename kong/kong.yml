@@ -8,3 +8,10 @@ services:
         paths:
           - /api/v1/user
         strip_path: false
+  - name: transaction-service
+    url: http://host.docker.internal:8081
+    routes:
+      - name: transaction-route
+        paths:
+          - /api/v1/transaction
+        strip_path: false

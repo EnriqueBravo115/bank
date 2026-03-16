@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-@Profile("test-postgres")
 @Configuration
 public class KeycloakConfig {
     @Value("${keycloak.auth-server-url}")
