@@ -2,7 +2,7 @@ CREATE TABLE transactions
 (
     id                 BIGSERIAL PRIMARY KEY,
     source_identifier  VARCHAR(255),
-    identifier_type    VARCHAR(255),
+    identifier_type    VARCHAR(50),
     transaction_code   VARCHAR(255),
     amount             NUMERIC(19, 2),
     description        TEXT,
@@ -15,27 +15,26 @@ CREATE TABLE transactions
 
 CREATE TABLE transfer_transaction
 (
-    id                    BIGINT PRIMARY KEY REFERENCES transactions (id),
-    source_account_number VARCHAR(255),
-    target_account_number VARCHAR(255)
+    id                     BIGINT PRIMARY KEY REFERENCES transactions (id),
+    target_identifier      VARCHAR(255),
+    target_identifier_type VARCHAR(50)
 );
 
 CREATE TABLE purchase_transaction
 (
-    id                BIGINT PRIMARY KEY REFERENCES transactions (id),
+    id                 BIGINT PRIMARY KEY REFERENCES transactions (id),
     source_card_number VARCHAR(255),
-    cvv               VARCHAR(10),
-    merchant_code     VARCHAR(50),
-    merchant_category VARCHAR(100),
-    pos_id            VARCHAR(50)
+    cvv                VARCHAR(10),
+    merchant_code      VARCHAR(50),
+    merchant_category  VARCHAR(100),
+    pos_id             VARCHAR(50)
 );
 
 CREATE TABLE service_transaction
 (
-    id                    BIGINT PRIMARY KEY REFERENCES transactions (id),
-    source_account_number VARCHAR(255),
-    payment_reference     VARCHAR(255),
-    service_type          VARCHAR(50)
+    id                BIGINT PRIMARY KEY REFERENCES transactions (id),
+    payment_reference VARCHAR(255),
+    service_type      VARCHAR(50)
 );
 
 CREATE TABLE withdrawal_transaction
