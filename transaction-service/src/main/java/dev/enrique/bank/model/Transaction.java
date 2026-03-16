@@ -15,7 +15,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -37,6 +36,10 @@ public class Transaction {
     @Column(name = "source_identifier")
     private String sourceIdentifier;
 
+    @Column(name = "identifier_type")
+    @Enumerated(EnumType.STRING)
+    private IdentifierType identifierType;
+
     @Column(name = "transaction_code")
     private String transactionCode;
 
@@ -52,10 +55,6 @@ public class Transaction {
     @Column(name = "transaction_date")
     private LocalDateTime transactionDate;
 
-    @Column(name = "identifier_type")
-    @Enumerated(EnumType.STRING)
-    private IdentifierType identifierType;
-
     @Column(name = "currency")
     @Enumerated(EnumType.STRING)
     private Currency currency;
@@ -68,19 +67,15 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "transfer_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
     private TransferTransaction transferTransaction;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "purchase_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
     private PurchaseTransaction purchaseTransaction;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "service_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
     private ServiceTransaction serviceTransaction;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "withdrawal_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
     private WithdrawalTransaction withdrawalTransaction;
 }

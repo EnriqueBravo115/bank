@@ -5,9 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -23,11 +23,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ServiceTransaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "source_account_number")
-    private String sourceAccountNumber;
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
+    private Transaction transaction;
 
     @Column(name = "payment_reference")
     private String paymentReference;
@@ -35,7 +36,4 @@ public class ServiceTransaction {
     @Column(name = "service_type")
     @Enumerated(EnumType.STRING)
     private ServiceType serviceType;
-
-    @OneToOne(mappedBy = "serviceTransaction")
-    private Transaction transaction;
 }

@@ -2,9 +2,9 @@ package dev.enrique.bank.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -20,8 +20,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PurchaseTransaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
+    private Transaction transaction;
 
     @Column(name = "source_card_number")
     private String sourceCardNumber;
@@ -37,7 +41,4 @@ public class PurchaseTransaction {
 
     @Column(name = "pos_id")
     private String posId;
-
-    @OneToOne(mappedBy = "purchaseTransaction")
-    private Transaction transaction;
 }

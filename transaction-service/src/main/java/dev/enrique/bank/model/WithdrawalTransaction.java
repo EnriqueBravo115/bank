@@ -8,22 +8,30 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "withdrawal_transaction")
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class WithdrawalTransaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
+    private Transaction transaction;
 
     @Column(name = "atm_location")
     private String atmLocation;
@@ -50,7 +58,4 @@ public class WithdrawalTransaction {
     @Column(name = "withdrawal_method")
     @Enumerated(EnumType.STRING)
     private WithdrawalMethod withdrawalMethod;
-
-    @OneToOne(mappedBy = "withdrawalTransaction")
-    private Transaction transaction;
 }

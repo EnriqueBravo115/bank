@@ -33,7 +33,6 @@ public class ServiceTransactionProcessor extends AbstractTransactionProcessor<Se
     @Override
     protected ServiceTransaction buildSubTransaction(ServiceRequest request) {
         return ServiceTransaction.builder()
-                .sourceAccountNumber(request.sourceAccountNumber())
                 .paymentReference(request.paymentReference())
                 .serviceType(request.serviceType())
                 .build();
