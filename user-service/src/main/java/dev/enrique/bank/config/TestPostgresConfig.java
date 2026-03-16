@@ -1,6 +1,7 @@
 package dev.enrique.bank.config;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -20,5 +21,14 @@ public class TestPostgresConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable()).authorizeHttpRequests(auth -> auth.anyRequest().permitAll()).build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<RegisterStatusFilter> disableRegisterStatusFilter(
+            RegisterStatusFilter registerStatusFilter) {
+        FilterRegistrationBean<RegisterStatusFilter> registration =
+                new FilterRegistrationBean<>(registerStatusFilter);
+        registration.setEnabled(false);
+        return registration;
     }
 }

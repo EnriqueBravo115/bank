@@ -75,8 +75,8 @@ public class RegisterControllerTest extends FullContainerConfig {
     @Test
     void shouldRegisterUser() throws Exception {
         mockMvc.perform(post("/api/v1/user/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildRegisterRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildRegisterRequest())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.email").value("test@test.com"))
@@ -92,8 +92,8 @@ public class RegisterControllerTest extends FullContainerConfig {
         Long userId = stepRegister();
 
         mockMvc.perform(put("/api/v1/user/register/{userId}/profile", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildProfileRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildProfileRequest())))
                 .andExpect(status().isNoContent());
     }
 
@@ -103,8 +103,8 @@ public class RegisterControllerTest extends FullContainerConfig {
         stepUpdateProfile(userId);
 
         mockMvc.perform(put("/api/v1/user/register/{userId}/kyc", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildKycRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildKycRequest())))
                 .andExpect(status().isNoContent());
     }
 
@@ -115,8 +115,8 @@ public class RegisterControllerTest extends FullContainerConfig {
         stepUpdateKyc(userId);
 
         mockMvc.perform(put("/api/v1/user/register/{userId}/financial", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildFinancialRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildFinancialRequest())))
                 .andExpect(status().isNoContent());
     }
 
@@ -130,8 +130,8 @@ public class RegisterControllerTest extends FullContainerConfig {
 
     private Long stepRegister() throws Exception {
         String body = mockMvc.perform(post("/api/v1/user/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildRegisterRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildRegisterRequest())))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -142,22 +142,22 @@ public class RegisterControllerTest extends FullContainerConfig {
 
     private void stepUpdateProfile(Long userId) throws Exception {
         mockMvc.perform(put("/api/v1/user/register/{userId}/profile", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildProfileRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildProfileRequest())))
                 .andExpect(status().isNoContent());
     }
 
     private void stepUpdateKyc(Long userId) throws Exception {
         mockMvc.perform(put("/api/v1/user/register/{userId}/kyc", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildKycRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildKycRequest())))
                 .andExpect(status().isNoContent());
     }
 
     private void stepUpdateFinancial(Long userId) throws Exception {
         mockMvc.perform(put("/api/v1/user/register/{userId}/financial", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildFinancialRequest())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildFinancialRequest())))
                 .andExpect(status().isNoContent());
     }
 
