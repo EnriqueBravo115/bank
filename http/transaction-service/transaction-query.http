@@ -1,97 +1,45 @@
 @baseUrl = http://localhost:8000/api/v1/transaction/query
-@token = Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIzZ0Rua3lQWTNWQ3Rnem1USkNVelBoVUpPTHpBbFBLdVYwU183YjJxRHhzIn0.eyJleHAiOjE3NzM2ODE1MjYsImlhdCI6MTc3MzY4MTIyNiwianRpIjoiNjllNjg3YjMtNThkYS00YWZlLThiNDctM2U3YTQ4YzY3NmRmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjU3M2FmYWViLThmZDEtNDkzNS1hMWM1LWJiNTE5MTZiNzY3MyIsInR5cCI6IkJlYXJlciIsImF6cCI6ImtvbmciLCJzaWQiOiI0NDFiYWYzYi03ZGE4LTQxYTAtODBiMC0xN2Y1ZWQ5YTQ4ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIkNVU1RPTUVSX0JBU0lDIiwib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLWJhbmsiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyZWdpc3RyYXRpb25fc3RhdHVzIjoiQ09NUExFVEUiLCJuYW1lIjoiQW5hIE1hcnRpbmV6IExvcGV6IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYW5hLm1hcnRpbmV6OTJAZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6IkFuYSIsImZhbWlseV9uYW1lIjoiTWFydGluZXogTG9wZXoiLCJlbWFpbCI6ImFuYS5tYXJ0aW5lejkyQGdtYWlsLmNvbSJ9.Z0nYi6RzXhzNTDIsV41ONMN-3BFp6HYRh4MdupAroJuAj2YImHmG4ruYkUpotLRMi3eyLi2VpE0GGTI9VWa8644ULzlI_gKkwXwuFX19uAsKfEG_XoKVgkIrWTRMVCxKVPbNy5--g1JQ5_wSvE8lQQLV-NectmDYL26Md2krixctL04PxIMzOvJr9lVjU3MfJH9cPwTsUXOzZ1tYPxj1w6pk7XFoerhuvGglQ8aj184aVYlb700MQauInAueOgzJRUAkwGLzxq03tHUCi0vN6FlsyUdFlpEFHyaONPJ82fdkSGj-F9_XwuMQFStAdfOYgOqoTkn0j-fps1MRlnFG8w
+@token = Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5Vl83VkhIb2NIRk1iQmtZTGpmc2s4dWlCY2hmX2lBX1hCX2xWdnJuZXE0In0.eyJleHAiOjE3NzM3NzA3NjMsImlhdCI6MTc3Mzc3MDQ2MywianRpIjoiZmFiZmNjMjItMTdlNi00MzZhLTg0ZTAtMDA1YjFjYmIxMGI4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwic3ViIjoiNDUxNWVhMzctOTQ3ZC00Zjk3LThiMTgtMzFlMDJhNjI2NDQ1IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoia29uZyIsInNpZCI6ImU1YTkwYjE3LWZiYTMtNDlmZi05N2U2LTA4ZjMzM2I3YWNlZSIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiQURNSU4iXX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicmVnaXN0cmF0aW9uX3N0YXR1cyI6IkNPTVBMRVRFIiwibmFtZSI6IkFkbWluIFVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi11c2VyIiwiZ2l2ZW5fbmFtZSI6IkFkbWluIiwiZmFtaWx5X25hbWUiOiJVc2VyIiwiZW1haWwiOiJhZG1pbkBiYW5rLmNvbSJ9.mWDGWfis2GC6ox0MpD2jFhq07bPImp4ckVSBbhKO78WgRgiXQt2_QP4DY6_mMQMRWk39QlQVTB4cFcGaD5mni-dqM4_hmJUR-M-fUMwlq3wzsT_wLy4Ax-Bsyv-k6Mld841UZ2VJOHyr89Mg4j8bbVqZHBWjCKJhACS0Whx27DFWZCC8qmGAXyGrRPHiOYH3O5_DvVdtiDllJhk_PH4AwDYesOloL4xasd6enfKA1exdc-RK_fS3iOQCKUftnUhHsWJMI_koBS9p_tFUubQ0VIC4uPwye2m5R1iOUdbj4qSihrKO6M7475zBkQ_ope6kgKyoProDQ7ZSSwYwUQRjBQ
 
-### Transaction history - CLABE COMPLETED
+### Transaction history - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/history?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Transaction history - CARD COMPLETED
-GET {{baseUrl}}/history?sourceIdentifier=4111111111111111&status=COMPLETED
-Authorization: {{token}}
-
-### Transaction history - CLABE PROCESSING
-GET {{baseUrl}}/history?sourceIdentifier=646180110400000003&status=PROCESSING
-Authorization: {{token}}
-
-### All transactions paginated - CLABE COMPLETED
+### All transactions paginated - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/all?sourceIdentifier=646180110400000001&status=COMPLETED&page=0&size=10
 Authorization: {{token}}
 
-### All transactions paginated - CARD COMPLETED
-GET {{baseUrl}}/all?sourceIdentifier=4532015112830366&status=COMPLETED&page=0&size=10
-Authorization: {{token}}
-
-### Transactions by year - CLABE 2024 COMPLETED
+### Transactions by year - CLABE 2024 COMPLETED(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/status-year?sourceIdentifier=646180110400000001&status=COMPLETED&year=2024
 Authorization: {{token}}
 
-### Transactions by year - CLABE 2024 PROCESSING
-GET {{baseUrl}}/status-year?sourceIdentifier=646180110400000003&status=PROCESSING&year=2024
-Authorization: {{token}}
-
-### By sources - ADMIN only
+### By sources - ADMIN only(ADMIN)
 GET {{baseUrl}}/by-sources
 Authorization: {{token}}
 Content-Type: application/json
 
 ["646180110400000001", "4111111111111111", "646180110400000003", "4532015112830366"]
 
-### Max transaction - CLABE COMPLETED
+### Max transaction - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/max?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Max transaction - CARD COMPLETED
-GET {{baseUrl}}/max?sourceIdentifier=4532015112830366&status=COMPLETED
-Authorization: {{token}}
-
-### Date range - CLABE COMPLETED enero 2024
+### Date range - CLABE COMPLETED january 2024(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/date-range?sourceIdentifier=646180110400000001&status=COMPLETED&startDate=2024-01-01T00:00:00&endDate=2024-01-31T23:59:59
 Authorization: {{token}}
 
-### Date range - CARD COMPLETED enero 2024
-GET {{baseUrl}}/date-range?sourceIdentifier=4111111111111111&status=COMPLETED&startDate=2024-01-01T00:00:00&endDate=2024-01-31T23:59:59
-Authorization: {{token}}
-
-### Amount range - CLABE COMPLETED entre 500 y 2000
+### Amount range - CLABE COMPLETED between 500-2000(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/amount-range?sourceIdentifier=646180110400000001&status=COMPLETED&minAmount=500.00&maxAmount=2000.00
 Authorization: {{token}}
 
-### Amount range - CARD COMPLETED entre 100 y 500
-GET {{baseUrl}}/amount-range?sourceIdentifier=4111111111111111&status=COMPLETED&minAmount=100.00&maxAmount=500.00
-Authorization: {{token}}
-
-### Transaction by code - TXN-2024-001
+### Transaction by code - TXN-2024-001(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/TXN-2024-001
 Authorization: {{token}}
 
-### Transaction by code - TXN-2024-002
-GET {{baseUrl}}/TXN-2024-002
-Authorization: {{token}}
-
-### Transaction by code - TXN-2024-003
-GET {{baseUrl}}/TXN-2024-003
-Authorization: {{token}}
-
-### Transaction by code - TXN-2024-004
-GET {{baseUrl}}/TXN-2024-004
-Authorization: {{token}}
-
-### By identifier type - CLABE COMPLETED
+### By identifier type - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/identifier-type?sourceIdentifier=646180110400000001&status=COMPLETED&identifierType=CLABE
 Authorization: {{token}}
 
-### By identifier type - CARD COMPLETED
-GET {{baseUrl}}/identifier-type?sourceIdentifier=4111111111111111&status=COMPLETED&identifierType=CARD
-Authorization: {{token}}
-
-### By keyword - "renta" CLABE COMPLETED
+### By keyword - "renta" CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/keyword?sourceIdentifier=646180110400000001&status=COMPLETED&keyword=renta
-Authorization: {{token}}
-
-### By keyword - "Compra" CARD COMPLETED
-GET {{baseUrl}}/keyword?sourceIdentifier=4111111111111111&status=COMPLETED&keyword=Compra
-Authorization: {{token}}
-
-### By keyword - "CFE" CLABE PROCESSING
-GET {{baseUrl}}/keyword?sourceIdentifier=646180110400000003&status=PROCESSING&keyword=CFE
 Authorization: {{token}}

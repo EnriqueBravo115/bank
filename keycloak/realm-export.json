@@ -66,6 +66,24 @@
       "clientRoles": {
         "realm-management": ["realm-admin", "manage-users", "view-users", "query-users"]
       }
-    }
+    },
+    {
+      "username": "admin-user",
+      "email": "admin@bank.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"],
+      "attributes": {
+        "registration_status": ["COMPLETE"]
+      }
+  }
   ]
 }

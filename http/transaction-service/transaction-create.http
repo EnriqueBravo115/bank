@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:8000/api/v1/transaction/create
 @token = Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ2bks3VUQ1TlVqRTR0cVdYcUZhN3VZSzJTSjZ3SzNhM3NQZVdBQk54UWpFIn0.eyJleHAiOjE3NzM3Njg5NTUsImlhdCI6MTc3Mzc2ODY1NSwianRpIjoiYzI4ZjkxMTYtNDU4MS00N2E2LWIzNjgtNDIyMjZmNDE0OWY0IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjkyMjQ0N2UxLTNmMGItNGY0ZS05YmNlLTdkMjUwNjM0OTg1YiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImtvbmciLCJzaWQiOiIxZmYzMTcwZS03NDFlLTQxZTktYWYwZS1lNWExNjY4ZDhkMTciLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIkNVU1RPTUVSX0JBU0lDIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtYmFuayJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyZWdpc3RyYXRpb25fc3RhdHVzIjoiQ09NUExFVEUiLCJuYW1lIjoiQW5hIE1hcnRpbmV6IExvcGV6IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYW5hLm1hcnRpbmV6OTJAZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6IkFuYSIsImZhbWlseV9uYW1lIjoiTWFydGluZXogTG9wZXoiLCJlbWFpbCI6ImFuYS5tYXJ0aW5lejkyQGdtYWlsLmNvbSJ9.WE3m0NiLYeIHWXzghDRbSZgHUBsiS3qcqjL8c8vx8-YAFnEFArSGVCSqeKk5kU-ercAL6WYU8979lXCCT7nxB3wIh0_njM78znzknl89na-vDXUWoaYuTk-6JBAQozmf8eMdNlkKIdAuUMiq-LYbcl5YEL1VkGcaCZq6OlrKPa7hLsteD3HLQwHuSTb0J_4jkMspPfeiG1P5neAF2TrADAZMrjxEWx7P8YU4qR_IdcObXmFClTsj297fJ370vDLGxTODyMHGFD4Q08-5ooji9Z9dqN2R-RtHP70sX979y879ctReMUqEnFGbshOdFHNFr2MLqjavDZTFPQ3iIjlC8w
 
-### Transfer - CLABE a CLABE
+### Transfer - CLABE a CLABE(ADMIN-CUSTOMER_BASIC)
 POST {{baseUrl}}/transfer
 Authorization: {{token}}
 Content-Type: application/json
@@ -16,7 +16,7 @@ Content-Type: application/json
   "targetIdentifierType": "CLABE"
 }
 
-### Purchase - card Liverpool
+### Purchase - card Liverpool(ADMIN-CUSTOMER_BASIC)
 POST {{baseUrl}}/purchase
 Authorization: {{token}}
 Content-Type: application/json
@@ -33,7 +33,7 @@ Content-Type: application/json
   "currency": "MX"
 }
 
-### Service payment - CFE
+### Service payment - CFE(ADMIN-CUSTOMER_BASIC)
 POST {{baseUrl}}/service-payment
 Authorization: {{token}}
 Content-Type: application/json

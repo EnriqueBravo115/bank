@@ -1,38 +1,38 @@
 @baseUrl = http://localhost:8000/api/v1/transaction/analytics
-@token = Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIzZ0Rua3lQWTNWQ3Rnem1USkNVelBoVUpPTHpBbFBLdVYwU183YjJxRHhzIn0.eyJleHAiOjE3NzM2NzYxMzIsImlhdCI6MTc3MzY3NTgzMiwianRpIjoiNmY5MjE1ZDAtNDUxYy00YjQ0LTk3YjItYTc4ODFiYmE0ODc3IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjU3M2FmYWViLThmZDEtNDkzNS1hMWM1LWJiNTE5MTZiNzY3MyIsInR5cCI6IkJlYXJlciIsImF6cCI6ImtvbmciLCJzaWQiOiI0ZDVlZGU1Ny04ZGM3LTRmYTItOTE5Zi1jNjNlMWQ5NGMyZmQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIkNVU1RPTUVSX0JBU0lDIiwib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLWJhbmsiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyZWdpc3RyYXRpb25fc3RhdHVzIjoiQ09NUExFVEUiLCJuYW1lIjoiQW5hIE1hcnRpbmV6IExvcGV6IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYW5hLm1hcnRpbmV6OTJAZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6IkFuYSIsImZhbWlseV9uYW1lIjoiTWFydGluZXogTG9wZXoiLCJlbWFpbCI6ImFuYS5tYXJ0aW5lejkyQGdtYWlsLmNvbSJ9.TWmgG8XgAtEmKs2oQbJ95w1oJUCTy7ue9iEP98gbzUOSktM3K3Z7lKSyK51ydZNq_2mXPE5rG5R6bOKd5ZFCWFT7g9nviBktEY98XXy3rLrQs8us6I_JpwIBS2K_Hqo-pQ6Y-mi0ueXK3LrUsBGBcSJPFTLMobA_1jn1nJbeSwN84JWGt-VwmHUtcCvM8l59M4nP6MdWw2jkqE4CbsJnPgzjlD8UF8o6YFZ-R6xVVDeYAx5HQ9kpULqbzVPAid-PFhgAYsmUwoCbDnzm8Ti2kAbedALcW-jcTw3KFK0lsNuhbmRJIA-yeeQlm-s2FWE5PZmu73Nc-6q0-BWghWn3Ag
+@token = Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5Vl83VkhIb2NIRk1iQmtZTGpmc2s4dWlCY2hmX2lBX1hCX2xWdnJuZXE0In0.eyJleHAiOjE3NzM3NzQwMTEsImlhdCI6MTc3Mzc3MzcxMSwianRpIjoiN2VkNjhhMGUtNTUwMS00NjE4LTkzZTAtOTQ2ODY4NjVjMDNkIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwic3ViIjoiNDUxNWVhMzctOTQ3ZC00Zjk3LThiMTgtMzFlMDJhNjI2NDQ1IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoia29uZyIsInNpZCI6ImI4MTUyNDY5LTk3ZDMtNGNhZi1hNzE3LTI5N2E4MWNmMjUxZSIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiQURNSU4iXX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicmVnaXN0cmF0aW9uX3N0YXR1cyI6IkNPTVBMRVRFIiwibmFtZSI6IkFkbWluIFVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi11c2VyIiwiZ2l2ZW5fbmFtZSI6IkFkbWluIiwiZmFtaWx5X25hbWUiOiJVc2VyIiwiZW1haWwiOiJhZG1pbkBiYW5rLmNvbSJ9.Gy9Xsz6zkLynD7BdPVow_b1U4W6mmP6TTPqFqqOguDpwTdYX7m5PcdMNjoIw3XkmpWZxYttLGmZYlyRih5JZHVAPyxxGrEBTfRKufYvl2oYeNmyfWca_dynL_vja1ic2fsvie9QtXviscq8wxIombRct541mOXDMKPiAzlXBzaMq4M8qyKvUupe4ZzqGFHZn39Whf2-bLCYzCX2xwWdwC6bIpHz3uiiaWGPlXRYLM5Bj8ej3i7pp-WZJMDmrotsmLpARYXyBBgFeTQGUEozo3luSuPvXKXSuos_7RjkGFVbEyT1nv_-ShtetRwad9Mwrv4HioqD7DC0HLdXtWfgiig
 
-### Group transactions by type (CUSTOMER_BASIC)
+### Group transactions by type (ADMIN)
 GET {{baseUrl}}/group-by-type?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Sum transactions by type (CUSTOMER_BASIC)
+### Sum transactions by type (ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/sum-by-type?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Partition transactions by amount (CUSTOMER_BASIC)
+### Partition transactions by amount (ADMIN)
 GET {{baseUrl}}/partition-by-amount?sourceIdentifier=646180110400000001&status=COMPLETED&amount=1000.00
 Authorization: {{token}}
 
-### Transaction type summary (CUSTOMER_BASIC)
+### Transaction type summary (ADMIN)
 GET {{baseUrl}}/type-summary?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Total amount by status and type (CUSTOMER_BASIC)
+### Total amount by status and type (ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/total-amount?sourceIdentifier=646180110400000001&status=COMPLETED&type=TRANSFER
 Authorization: {{token}}
 
-### Average days between transactions (CUSTOMER_BASIC)
+### Average days between transactions (ADMIN)
 GET {{baseUrl}}/average-days?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Max transaction by type (CUSTOMER_BASIC)
+### Max transaction by type (ADMIN)
 GET {{baseUrl}}/max-by-type?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Count transactions by month (CUSTOMER_BASIC)
+### Count transactions by month (ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/count-by-month?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
-### Average amount by type (CUSTOMER_BASIC)
+### Average amount by type (ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/average-amount?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}

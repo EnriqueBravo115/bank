@@ -44,7 +44,7 @@ Content-Type: application/json
   "maritalStatus": "SINGLE"
 }
 
-### POST get access token
+### POST get access token(CUSTOMER_BASIC)
 POST http://localhost:9090/realms/bank/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
@@ -53,6 +53,16 @@ grant_type=password
 &client_secret=kong-client-secret
 &username=ana.martinez92@gmail.com
 &password=secure1!
+
+### POST get access token(ADMIN)
+POST http://localhost:9090/realms/bank/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+&client_id=kong
+&client_secret=kong-client-secret
+&username=admin@bank.com
+&password=admin123
 
 ### GET test jwt
 GET http://localhost:8000/api/v1/user/test-jwt

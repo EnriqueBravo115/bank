@@ -5,6 +5,7 @@ import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_SUPPO
 import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,13 +20,15 @@ import lombok.RequiredArgsConstructor;
 public class TransactionSupportController {
     private final TransactionSupportService transactionSupportService;
 
-    @GetMapping("/unique-descriptions/{sourceIdentifier}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
+    @GetMapping("/unique-descriptions/{accountNumber}")
     public ResponseEntity<Set<String>> getUniqueTransactionDescriptions(
             @PathVariable String accountNumber) {
         return ResponseEntity.ok(transactionSupportService.getAllUniqueTransactionDescriptions(accountNumber));
     }
 
-    @GetMapping("/all-descriptions/{sourceIdentifier}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
+    @GetMapping("/all-descriptions/{accountNumber}")
     public ResponseEntity<String> getAllTransactionDescriptions(
             @PathVariable String accountNumber) {
         return ResponseEntity.ok(transactionSupportService.getAllTransactionDescriptions(accountNumber));

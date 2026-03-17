@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,6 +30,7 @@ public class TransactionAnalyticsController {
     private final TransactionAnalyticsService transactionAnalyticsService;
     private final BasicMapper mapper;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/group-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionDetailedResponse>>> groupTransactionsByType(
             @RequestParam String sourceIdentifier,
@@ -38,6 +40,7 @@ public class TransactionAnalyticsController {
                 TransactionDetailedResponse.class));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/sum-by-type")
     public ResponseEntity<Map<TransactionType, BigDecimal>> sumTransactionsByType(
             @RequestParam String sourceIdentifier,
@@ -45,6 +48,7 @@ public class TransactionAnalyticsController {
         return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(sourceIdentifier, status));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/partition-by-amount")
     public ResponseEntity<Map<Boolean, List<TransactionBasicResponse>>> partitionTransactionsByAmount(
             @RequestParam String sourceIdentifier,
@@ -55,6 +59,7 @@ public class TransactionAnalyticsController {
                 TransactionBasicResponse.class));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/type-summary")
     public ResponseEntity<Map<TransactionType, TransactionSummaryResponse>> getTransactionTypeSummary(
             @RequestParam String sourceIdentifier,
@@ -62,6 +67,7 @@ public class TransactionAnalyticsController {
         return ResponseEntity.ok(transactionAnalyticsService.getTransactionTypeSummary(sourceIdentifier, status));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/total-amount")
     public ResponseEntity<BigDecimal> getTotalTransactionAmount(
             @RequestParam String sourceIdentifier,
@@ -71,6 +77,7 @@ public class TransactionAnalyticsController {
                 sourceIdentifier, status, type));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/average-days")
     public ResponseEntity<Double> getAverageDaysBetweenTransactions(
             @RequestParam String sourceIdentifier,
@@ -80,6 +87,7 @@ public class TransactionAnalyticsController {
     }
 
     // FIX: Internal Server Error
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/max-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionBasicResponse>>> getMaxByTransactionType(
             @RequestParam String sourceIdentifier,
@@ -89,6 +97,7 @@ public class TransactionAnalyticsController {
                 TransactionBasicResponse.class));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/count-by-month")
     public ResponseEntity<Map<Month, Long>> countTransactionsByMonth(
             @RequestParam String sourceIdentifier,
@@ -96,6 +105,7 @@ public class TransactionAnalyticsController {
         return ResponseEntity.ok(transactionAnalyticsService.countTransactionsByMonth(sourceIdentifier, status));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/average-amount")
     public ResponseEntity<Map<TransactionType, BigDecimal>> getAverageAmountByType(
             @RequestParam String sourceIdentifier,

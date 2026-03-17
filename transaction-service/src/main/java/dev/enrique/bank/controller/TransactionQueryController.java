@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +35,7 @@ public class TransactionQueryController {
     private final TransactionQueryService transactionQueryService;
     private final BasicMapper basicMapper;
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/history")
     public ResponseEntity<List<TransactionDetailedResponse>> getTransactionHistory(
             @RequestParam String sourceIdentifier,
@@ -43,6 +45,8 @@ public class TransactionQueryController {
                 TransactionDetailedResponse.class));
     }
 
+    // FIX: return null on "transactionCode" & "description"
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/all")
     public ResponseEntity<HeaderResponse<TransactionCommonResponse>> getAllTransactions(
             @RequestParam String sourceIdentifier,
@@ -54,6 +58,7 @@ public class TransactionQueryController {
     }
 
     @GetMapping("/status-year")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     public ResponseEntity<List<TransactionDetailedResponse>> getTransactionsByYear(
             @RequestParam String sourceIdentifier,
             @RequestParam TransactionStatus status,
@@ -63,7 +68,8 @@ public class TransactionQueryController {
                 TransactionDetailedResponse.class));
     }
 
-    // This controller must be executed with "ADMIN" authorities
+    // FIX: return null on "transactionCode" & "description"
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-sources")
     public ResponseEntity<List<TransactionCommonResponse>> getTransactionsBySourceIdentifiers(
             @RequestBody List<String> sourceIdentifiers) {
@@ -73,6 +79,7 @@ public class TransactionQueryController {
     }
 
     // FIX: return null on "transactionCode" & "description"
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/max")
     public ResponseEntity<Optional<TransactionCommonResponse>> getMaxTransaction(
             @RequestParam String sourceIdentifier,
@@ -82,6 +89,8 @@ public class TransactionQueryController {
                 TransactionCommonResponse.class));
     }
 
+    // FIX: return null on "transactionCode" & "description"
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/date-range")
     public ResponseEntity<List<TransactionCommonResponse>> getTransactionInDateRange(
             @RequestParam String sourceIdentifier,
@@ -93,6 +102,8 @@ public class TransactionQueryController {
                 TransactionCommonResponse.class));
     }
 
+    // FIX: return null on "transactionCode" & "description"
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/amount-range")
     public ResponseEntity<List<TransactionCommonResponse>> getAllByAmountRangeAndStatus(
             @RequestParam String sourceIdentifier,
@@ -105,6 +116,8 @@ public class TransactionQueryController {
                 TransactionCommonResponse.class));
     }
 
+    // TODO: requires validation on sourceIdentifier 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/{transactionCode}")
     public ResponseEntity<Optional<TransactionDetailedResponse>> getTransactionByTransactionCode(
             @PathVariable String transactionCode) {
@@ -113,6 +126,8 @@ public class TransactionQueryController {
                 TransactionDetailedResponse.class));
     }
 
+    // FIX: return null on "transactionCode" & "description"
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/identifier-type")
     public ResponseEntity<List<TransactionCommonResponse>> getAllByIdentifierTypeAndStatus(
             @RequestParam String sourceIdentifier,
@@ -123,6 +138,7 @@ public class TransactionQueryController {
                 TransactionCommonResponse.class));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/keyword")
     public ResponseEntity<List<TransactionDetailedResponse>> getTransactionByKeyword(
             @RequestParam String sourceIdentifier,
