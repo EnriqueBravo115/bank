@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
+import dev.enrique.bank.commons.dto.response.TransactionResultResponse;
 import dev.enrique.bank.service.TransactionCreationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,20 +23,17 @@ public class TransactionCreationController {
     private final TransactionCreationService transactionCreationService;
 
     @PostMapping("/transfer")
-    public ResponseEntity<Void> transfer(@Valid @RequestBody TransferRequest transferRequest) {
-        transactionCreationService.transfer(transferRequest);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<TransactionResultResponse> transfer(@Valid @RequestBody TransferRequest transferRequest) {
+        return ResponseEntity.ok(transactionCreationService.transfer(transferRequest));
     }
 
     @PostMapping("/purchase")
-    public ResponseEntity<Void> purchase(@Valid @RequestBody PurchaseRequest purchaseRequest) {
-        transactionCreationService.purchase(purchaseRequest);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<TransactionResultResponse> purchase(@Valid @RequestBody PurchaseRequest purchaseRequest) {
+        return ResponseEntity.ok(transactionCreationService.purchase(purchaseRequest));
     }
 
     @PostMapping("/service-payment")
-    public ResponseEntity<Void> servicePayment(@Valid @RequestBody ServiceRequest serviceRequest) {
-        transactionCreationService.servicePayment(serviceRequest);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<TransactionResultResponse> servicePayment(@Valid @RequestBody ServiceRequest serviceRequest) {
+        return ResponseEntity.ok(transactionCreationService.servicePayment(serviceRequest));
     }
 }

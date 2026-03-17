@@ -6,6 +6,7 @@ import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
 import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
+import dev.enrique.bank.commons.dto.response.TransactionResultResponse;
 import dev.enrique.bank.commons.util.PurchaseTransactionProcessor;
 import dev.enrique.bank.commons.util.ServiceTransactionProcessor;
 import dev.enrique.bank.commons.util.TransferTransactionProcessor;
@@ -23,23 +24,23 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
     private final WithdrawalTransactionProcessor withdrawalTransactionProcessor;
 
     @Override
-    public void transfer(TransferRequest transferRequest) {
-        transferTransactionProcessor.process(transferRequest);
+    public TransactionResultResponse transfer(TransferRequest transferRequest) {
+        return transferTransactionProcessor.process(transferRequest);
     }
 
     @Override
-    public void purchase(PurchaseRequest purchaseRequest) {
-        purchaseTransactionProcessor.process(purchaseRequest);
+    public TransactionResultResponse purchase(PurchaseRequest purchaseRequest) {
+        return purchaseTransactionProcessor.process(purchaseRequest);
     }
 
     @Override
-    public void servicePayment(ServiceRequest serviceRequest) {
-        serviceTransactionProcessor.process(serviceRequest);
+    public TransactionResultResponse servicePayment(ServiceRequest serviceRequest) {
+        return serviceTransactionProcessor.process(serviceRequest);
     }
 
     @Override
-    public void withdrawal(WithdrawalRequest withdrawalRequest) {
-        withdrawalTransactionProcessor.process(withdrawalRequest);
+    public TransactionResultResponse withdrawal(WithdrawalRequest withdrawalRequest) {
+        return withdrawalTransactionProcessor.process(withdrawalRequest);
     }
 
     @Override

@@ -3,6 +3,7 @@ package dev.enrique.bank.commons.util;
 import java.util.UUID;
 
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
+import dev.enrique.bank.commons.dto.response.TransactionResultResponse;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Transaction;
 import jakarta.transaction.Transactional;
@@ -16,7 +17,7 @@ public abstract class AbstractTransactionProcessor<RQ, SUB> {
     protected final BasicMapper basicMapper;
 
     @Transactional
-    public void process(RQ request) {
+    public TransactionResultResponse process(RQ request) {
         String transactionCode = UUID.randomUUID().toString();
         log.debug("Start transaction: {} for request: {}", transactionCode, request);
 
@@ -28,7 +29,8 @@ public abstract class AbstractTransactionProcessor<RQ, SUB> {
             link(transaction, subEntity);
 
             transactionRepository.save(transaction);
-            log.debug("End transaction: {}", transactionCode);
+
+            return basicMapper.convertToResponse(transaction, TransactionResultResponse.class);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error processing transaction", e);
         }
