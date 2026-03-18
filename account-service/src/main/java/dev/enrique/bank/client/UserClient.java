@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import dev.enrique.bank.config.FeignConfiguration;
-import dev.enrique.bank.dto.response.UserResponse;
+import dev.enrique.bank.commons.dto.response.UserResponse;
 
 @FeignClient(value = "user-service", path = "/api/v1/user", configuration = FeignConfiguration.class)
 public interface UserClient {
