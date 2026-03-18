@@ -1,6 +1,9 @@
 package dev.enrique.bank.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.LimitType;
@@ -9,33 +12,54 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "transaction_limit")
 public class TransactionLimit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "max_amount")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
+
+    @Column(name = "max_amount", nullable = false)
     private BigDecimal maxAmount;
 
-    @Column(name = "max_transactions")
-    private BigDecimal maxTransactions;
+    @Column(name = "max_transactions", nullable = false)
+    private Integer maxTransactions;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "currency")
+    @Column(name = "currency", nullable = false)
     private Currency currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "limit_type")
+    @Column(name = "limit_type", nullable = false)
     private LimitType limitType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "time_period")
+    @Column(name = "time_period", nullable = false)
     private TimePeriod timePeriod;
+
+    @Column(name = "creation_date", nullable = false, updatable = false)
+    @CreationTimestamp
+    private LocalDateTime creationDate;
 }

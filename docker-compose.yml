@@ -33,7 +33,7 @@ services:
       timeout: 5s
       retries: 5
 
-  transaction-db:
+  account-db:
     container_name: account_db
     image: postgres:15
     restart: always
