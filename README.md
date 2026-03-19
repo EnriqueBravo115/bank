@@ -4,6 +4,8 @@ The project simulates core banking operations such as account management, transa
 
 It integrates authentication, API gateway, service discovery, and resilience patterns.
 
+![Architecture](img/architecture.png)
+
 ## Tech Stack
 - Java 17
 - Spring Boot 3.2.4
@@ -16,9 +18,7 @@ It integrates authentication, API gateway, service discovery, and resilience pat
 - Testcontainers
 
 ## Running the Project
-The process to run the system in Docker consists of two steps: first, create the bank-maven-cache image, which contains 
-the dependencies of all services, since there is a parent pom.xml and each service contains its own pom.xml. This image
-helps make the build process faster in docker-compose. Run this command to build bank-maven-cache:
+Create the bank-maven-cache image, which contains the dependencies of all services:
 ```bash
 docker build -f Dockerfile.maven-cache -t bank-maven-cache .
 ```
@@ -34,14 +34,6 @@ The system follows a microservices architecture with the following infrastructur
 - Authentication and authorization using ***Keycloak***
 - API Gateway using ***Kong***
 - Event streaming using ***Apache Kafka***
-
-## Services
-The system currently includes the following services:
-- Eureka Server: Service discovery
-- Config Server: Centralized configuration
-- User Service: User management and registration
-- Account Service: Bank account management
-- Transaction Service: Handles all financial transactions
 
 ## Features
 ### User Registration Flow
