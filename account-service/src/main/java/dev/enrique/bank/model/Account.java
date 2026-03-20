@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.AccountType;
 import dev.enrique.bank.commons.enums.Currency;
@@ -36,7 +38,7 @@ public class Account {
     private Long id;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private String userId;
 
     @Column(name = "clabe", length = 18, unique = true)
     private String clabe;
@@ -56,9 +58,7 @@ public class Account {
     @Column(name = "currency", nullable = false)
     private Currency currency;
 
-    @Column(name = "minimum_balance")
-    private BigDecimal minimumBalance;
-
+    @CreationTimestamp
     @Column(name = "creation_date", nullable = false, updatable = false)
     private LocalDateTime creationDate;
 
@@ -67,4 +67,7 @@ public class Account {
 
     @OneToMany(mappedBy = "account", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TransactionLimit> transactionLimits;
+
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Card> card;
 }
