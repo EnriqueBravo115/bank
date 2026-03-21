@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.AccountType;
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.service.AccountService;
@@ -21,11 +22,11 @@ public class AccountServiceImpl implements AccountService {
     public void createAccount(CreateAccountEvent createAccountEvent, String authId) {
         Account account = new Account();
         account.setUserId(authId);
-        account.setClabe(createAccountEvent.getClabe());
+        account.setClabe("123456789123456789");
         account.setAccountType(AccountType.SAVING);
-        account.setAccountNumber(UUID.randomUUID().toString());
+        account.setAccountNumber("ACC-" + System.currentTimeMillis());
         account.setAccountStatus(AccountStatus.OPEN);
-        account.setCurrency(createAccountEvent.getCurrency());
+        account.setCurrency(Currency.MX);
 
         accountRepository.save(account);
     }

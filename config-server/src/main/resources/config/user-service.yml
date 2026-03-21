@@ -21,6 +21,15 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: user-service-group
+      properties:
+        spring.json.trusted.packages: "*"
   mail:
     host: smtp.gmail.com
     port: 587

@@ -23,8 +23,13 @@ spring:
     locations: classpath:db/migration
   kafka:
     bootstrap-servers: localhost:29092
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       group-id: account-service-group
+      properties:
+        spring.json.trusted.packages: "*"
 
 eureka:
     client:
