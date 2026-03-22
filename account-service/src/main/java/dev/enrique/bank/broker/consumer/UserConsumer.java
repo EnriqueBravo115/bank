@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 public class UserConsumer {
     private final AccountService accountService;
 
-    @KafkaListener(topics = "user-service.create-user", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "user-service.account-requested", groupId = "${spring.kafka.consumer.group-id}")
     public void createAccount(CreateAccountEvent createAccountEvent, @Header("auth-user-id") String authId) {
         accountService.createAccount(createAccountEvent, authId);
     }
