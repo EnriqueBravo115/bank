@@ -26,9 +26,7 @@ import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.service.RegisterService;
 import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RegisterServiceImpl implements RegisterService {
