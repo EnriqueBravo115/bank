@@ -19,10 +19,24 @@ import lombok.RequiredArgsConstructor;
 public class AccountController {
     private final AccountService accountService;
 
-    @PreAuthorize("hasRole('CUSTOMER_BASIC')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/get-by-account-number/{accountNumber}")
     public ResponseEntity<AccountDetailedResponse> getByAccountNumber(
             @PathVariable String accountNumber) {
         return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber));
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
+    @GetMapping("/get-by-clabe/{clabe}")
+    public ResponseEntity<AccountDetailedResponse> getByClabe(
+            @PathVariable String clabe) {
+        return ResponseEntity.ok(accountService.findByClabe(clabe));
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
+    @GetMapping("/get-by-email/{email}")
+    public ResponseEntity<AccountDetailedResponse> getByEmail(
+            @PathVariable String email) {
+        return ResponseEntity.ok(accountService.findByEmail(email));
     }
 }
