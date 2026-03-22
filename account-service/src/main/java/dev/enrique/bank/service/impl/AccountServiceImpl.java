@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.broker.event.CreateAccountEvent;
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
-import dev.enrique.bank.commons.dto.response.AccountUpdatedResponse;
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.exception.AccountAlreadyExistsException;
 import dev.enrique.bank.commons.exception.AccountNotFoundException;
@@ -35,9 +34,10 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.save(account);
     }
 
+    // TODO: integrate with kaka via user-service
     @Override
     @Transactional
-    public AccountUpdatedResponse updateEmail(String accountNumber, String newEmail) {
+    public void updateEmail(String accountNumber, String newEmail) {
         if (accountRepository.existsByEmail(newEmail)) {
             throw new AccountAlreadyExistsException("email", newEmail);
         }
@@ -48,12 +48,6 @@ public class AccountServiceImpl implements AccountService {
 
         account.setEmail(newEmail);
         accountRepository.save(account);
-
-        return new AccountUpdatedResponse(
-                account.getId(),
-                account.getAccountNumber(),
-                "email",
-                newEmail);
     }
 
     @Override
