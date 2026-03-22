@@ -3,7 +3,9 @@ package dev.enrique.bank.service.impl;
 import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.broker.event.CreateAccountEvent;
+import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
 import dev.enrique.bank.commons.enums.AccountStatus;
+import dev.enrique.bank.commons.exception.AccountNotFoundException;
 import dev.enrique.bank.commons.util.ClabeGenerator;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.model.Account;
@@ -36,5 +38,12 @@ public class AccountServiceImpl implements AccountService {
             clabe = clabeGenerator.generate();
         } while (accountRepository.existsByClabe(clabe));
         return clabe;
+    }
+
+    @Override
+    public AccountDetailedResponse findByAccountNumber(String accountNumber) {
+        return accountRepository
+                .findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
     }
 }
