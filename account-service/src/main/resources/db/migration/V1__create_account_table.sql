@@ -6,7 +6,6 @@ CREATE TABLE account (
     account_type    VARCHAR(50)     NOT NULL,
     account_status  VARCHAR(50)     NOT NULL,
     currency        VARCHAR(10)     NOT NULL,
-    minimum_balance NUMERIC(19, 4)  NULL,
     creation_date   TIMESTAMP       NOT NULL,
     CONSTRAINT pk_account PRIMARY KEY (id),
     CONSTRAINT uq_account_clabe          UNIQUE (clabe),

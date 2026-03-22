@@ -9,6 +9,8 @@ public interface KeycloakUserService {
 
     void updateUser(String keycloakId, UserProfileRequest request);
 
+    void deleteUser(String keycloakId);
+
     void assignRole(String keycloakId, UserRole roleName);
 
     void updateRegistrationStatus(String keycloakId, String status);

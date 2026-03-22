@@ -73,6 +73,17 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     }
 
     @Override
+    public void deleteUser(String keycloakId) {
+        Response response = keycloak.realm(realm)
+                .users()
+                .delete(keycloakId);
+
+        if (response.getStatus() != 204) {
+            throw new RuntimeException("Error deleting user in Keycloak: " + response.getStatus());
+        }
+    }
+
+    @Override
     public void assignRole(String keycloakId, UserRole roleName) {
         RealmResource realmResource = keycloak.realm(realm);
 

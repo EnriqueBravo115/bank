@@ -7,14 +7,17 @@ It integrates authentication, API gateway, service discovery, and resilience pat
 ![Architecture](img/architecture.png)
 
 ## Tech Stack
-- Java 17
-- Spring Boot 3.2.4
+- Java
+- Spring Boot
+- Spring Cloud
+- Postgres
+- Flyway 
 - Resilience4j
 - Docker
-- Keycloak 26.0.6
-- Kong 3.6
-- Apache Kafka 4.2.0
-- JUnit 5
+- Keycloak
+- Kong
+- Kafka
+- JUnit
 - Testcontainers
 
 ## Running the Project
@@ -26,14 +29,6 @@ Finally, run the docker-compose:
 ```bash
 docker compose up --build
 ```
-
-## Architecture
-The system follows a microservices architecture with the following infrastructure components:
-- Service Discovery using ***Netflix Eureka***
-- Centralized configuration using ***Spring Cloud Config***
-- Authentication and authorization using ***Keycloak***
-- API Gateway using ***Kong***
-- Event streaming using ***Apache Kafka***
 
 ## Features
 ### User Registration Flow

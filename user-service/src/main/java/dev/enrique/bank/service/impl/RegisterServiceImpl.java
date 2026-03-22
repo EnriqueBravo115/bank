@@ -26,7 +26,9 @@ import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.service.RegisterService;
 import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RegisterServiceImpl implements RegisterService {
@@ -40,10 +42,7 @@ public class RegisterServiceImpl implements RegisterService {
 
     @Override
     public UserRegisterResponse register(UserRegisterRequest request) {
-        String keycloakId = keycloakUserService.createUser(request);
-
         User user = new User();
-        user.setKeycloakId(keycloakId);
         user.setEmail(request.getEmail());
         user.setPhoneCode(request.getPhoneCode());
         user.setPhoneNumber(request.getPhoneNumber());
@@ -51,6 +50,8 @@ public class RegisterServiceImpl implements RegisterService {
         user.setRegisterStatus(RegisterStatus.REGISTER);
         user.setActive(false);
 
+        String keycloakId = keycloakUserService.createUser(request);
+        user.setKeycloakId(keycloakId);
         userRepository.save(user);
 
         keycloakUserService.updateRegistrationStatus(keycloakId, RegisterStatus.REGISTER.name());
@@ -64,9 +65,9 @@ public class RegisterServiceImpl implements RegisterService {
 
         validateStep(user, RegisterStatus.REGISTER);
 
-        keycloakUserService.updateUser(user.getKeycloakId(), request);
+        UserProfile userProfile = userProfileRepository.findById(userId)
+                .orElse(new UserProfile());
 
-        UserProfile userProfile = new UserProfile();
         userProfile.setUser(user);
         userProfile.setNames(request.getNames());
         userProfile.setFirstSurname(request.getFirstSurname());
@@ -74,12 +75,13 @@ public class RegisterServiceImpl implements RegisterService {
         userProfile.setGender(request.getGender());
         userProfile.setBirthday(request.getBirthday());
         userProfile.setCountryOfBirth(request.getCountryOfBirth());
-
         userProfileRepository.save(userProfile);
+
         user.setRegisterStatus(RegisterStatus.PROFILE);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
+        keycloakUserService.updateUser(user.getKeycloakId(), request);
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.PROFILE.name());
     }
 
@@ -90,19 +92,22 @@ public class RegisterServiceImpl implements RegisterService {
 
         validateStep(user, RegisterStatus.PROFILE);
 
-        UserKyc userKyc = new UserKyc();
+        UserKyc userKyc = userKycRepository.findById(userId)
+                .orElse(new UserKyc());
+
         userKyc.setUser(user);
         userKyc.setCurp(request.getCurp());
         userKyc.setRfc(request.getRfc());
         userKyc.setDocumentType(request.getDocumentType());
-
         userKycRepository.save(userKyc);
-        keycloakUserService.assignRole(user.getKeycloakId(), UserRole.CUSTOMER_BASIC);
 
         user.setRegisterStatus(RegisterStatus.KYC);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
+
+        keycloakUserService.assignRole(user.getKeycloakId(), UserRole.CUSTOMER_BASIC);
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.KYC.name());
+
         accountProducer.sendCreateAccountEvent(user, user.getKeycloakId());
     }
 
@@ -113,19 +118,21 @@ public class RegisterServiceImpl implements RegisterService {
 
         validateStep(user, RegisterStatus.KYC);
 
-        UserFinancialInfo userFinancialInfo = new UserFinancialInfo();
+        UserFinancialInfo userFinancialInfo = userFinancialInfoRepository.findById(userId)
+                .orElse(new UserFinancialInfo());
+
         userFinancialInfo.setUser(user);
         userFinancialInfo.setOccupationType(request.getOccupationType());
         userFinancialInfo.setEmployerName(request.getEmployerName());
         userFinancialInfo.setIncomeSource(request.getIncomeSource());
         userFinancialInfo.setMonthlyIncome(request.getMonthlyIncome());
         userFinancialInfo.setMaritalStatus(request.getMaritalStatus());
-
         userFinancialInfoRepository.save(userFinancialInfo);
 
         user.setRegisterStatus(RegisterStatus.COMPLETE);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
+
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.COMPLETE.name());
     }
 
