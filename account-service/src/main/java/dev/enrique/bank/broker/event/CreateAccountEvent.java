@@ -14,6 +14,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateAccountEvent {
+    String email;
     AccountType accountType;
     Currency currency;
 }

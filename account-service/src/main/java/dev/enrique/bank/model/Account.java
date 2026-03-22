@@ -39,6 +39,9 @@ public class Account {
     @Column(name = "user_id", nullable = false)
     private String userId;
 
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
     @Column(name = "clabe", length = 18, unique = true)
     private String clabe;
 
