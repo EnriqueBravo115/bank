@@ -17,39 +17,23 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @FeignClient(value = ACCOUNT_SERVICE, path = "/api/v1/account", configuration = FeignConfiguration.class)
 public interface AccountClient {
-    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "movementFallback")
     @PostMapping("/transfer")
-    MovementResultResponse processTransfer(@RequestBody ClientTransferRequest clientTransferRequest);
+    MovementResultResponse processTransfer(@RequestBody ClientTransferRequest request);
 
-    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "purchaseFallback")
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "movementFallback")
     @PostMapping("/purchase")
-    MovementResultResponse processPurchase(@RequestBody ClientPurchaseRequest clientPurchaseRequest);
+    MovementResultResponse processPurchase(@RequestBody ClientPurchaseRequest request);
 
-    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "serviceFallback")
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "movementFallback")
     @PostMapping("/service")
-    MovementResultResponse processService(@RequestBody ClientServiceRequest clientServiceRequest);
+    MovementResultResponse processService(@RequestBody ClientServiceRequest request);
 
-    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "withdrawalFallback")
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "movementFallback")
     @PostMapping("/withdrawal")
-    MovementResultResponse processWithdrawal(@RequestBody ClientWithdrawalRequest clientWithdrawalRequest);
+    MovementResultResponse processWithdrawal(@RequestBody ClientWithdrawalRequest request);
 
-    default MovementResultResponse transferFallback(ClientTransferRequest clientTransferRequest,
-                                                    Throwable throwable) {
-        return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
-    }
-
-    default MovementResultResponse purchaseFallback(ClientPurchaseRequest clientPurchaseRequest,
-                                                    Throwable throwable) {
-        return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
-    }
-
-    default MovementResultResponse serviceFallback(ClientServiceRequest clientServiceRequest,
-                                                   Throwable throwable) {
-        return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
-    }
-
-    default MovementResultResponse withdrawalFallback(ClientWithdrawalRequest clientWithdrawalRequest,
-                                                      Throwable throwable) {
+    default MovementResultResponse movementFallback(Throwable throwable) {
         return new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
     }
 }
