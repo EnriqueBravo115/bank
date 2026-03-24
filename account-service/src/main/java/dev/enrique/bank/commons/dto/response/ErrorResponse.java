@@ -12,4 +12,3 @@ public class ErrorResponse {
     private String message;
     private LocalDateTime timestamp;
 }
-

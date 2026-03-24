@@ -37,18 +37,9 @@ public class AccountBalance {
     @Column(name = "balance", nullable = false)
     private BigDecimal balance;
 
-    @Column(name = "available_balance", nullable = false)
-    private BigDecimal availableBalance;
-
-    @Column(name = "current_balance", nullable = false)
-    private BigDecimal currentBalance;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "balance_type", nullable = false)
     private BalanceType balanceType;
-
-    @Column(name = "snapshot_date", nullable = false, updatable = false)
-    private LocalDateTime snapshotDate;
 
     @Column(name = "creation_date", nullable = false, updatable = false)
     @CreationTimestamp

@@ -34,7 +34,7 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.save(account);
     }
 
-    // TODO: integrate with kaka via user-service
+    // TODO: integrate with kafka via user-service
     @Override
     @Transactional
     public void updateEmail(String accountNumber, String newEmail) {

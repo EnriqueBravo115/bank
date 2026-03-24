@@ -4,5 +4,7 @@ public enum BalanceType {
     OPENING,
     CLOSING,
     INTRADAY,
-    END_OF_DAY
+    END_OF_DAY,
+    AVAILABLE,
+    ON_HOLD
 }
