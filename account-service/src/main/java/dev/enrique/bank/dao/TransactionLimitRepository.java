@@ -13,25 +13,25 @@ import dev.enrique.bank.model.TransactionLimit;
 public interface TransactionLimitRepository extends JpaRepository<TransactionLimit, Long> {
     @Query("""
             SELECT tl FROM TransactionLimit tl
-            WHERE tl.account.id = :accountId
+            WHERE tl.account.accountNumber = :accountNumber
             AND tl.limitType = :limitType
             AND tl.timePeriod = :timePeriod
             ORDER BY tl.creationDate DESC
             LIMIT 1
             """)
-    Optional<TransactionLimit> findLatestByAccountIdAndLimitTypeAndTimePeriod(
-            @Param("accountId") Long accountId,
+    Optional<TransactionLimit> findLatestByAccountNumberAndLimitTypeAndTimePeriod(
+            @Param("accountNumber") String accountNumber,
             @Param("limitType") LimitType limitType,
             @Param("timePeriod") TimePeriod timePeriod);
 
     @Query("""
             SELECT tl FROM TransactionLimit tl
-            WHERE tl.account.id = :accountId
+            WHERE tl.account.accountNumber = :accountNumber
             AND tl.limitType = :limitType
             ORDER BY tl.creationDate DESC
             LIMIT 1
             """)
-    Optional<TransactionLimit> findLatestByAccountIdAndLimitType(
-            @Param("accountId") Long accountId,
+    Optional<TransactionLimit> findLatestByAccountNumberAndLimitType(
+            @Param("accountNumber") String accountNumber,
             @Param("limitType") LimitType limitType);
 }

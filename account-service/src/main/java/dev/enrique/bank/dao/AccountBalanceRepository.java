@@ -14,20 +14,21 @@ import dev.enrique.bank.model.AccountBalance;
 public interface AccountBalanceRepository extends JpaRepository<AccountBalance, Long> {
     @Query("""
             SELECT ab FROM AccountBalance ab
-            WHERE ab.account.id = :accountId
+            WHERE ab.account.accountNumber = :accountNumber
             ORDER BY ab.creationDate DESC
             LIMIT 1
             """)
-    Optional<AccountBalance> findLatestByAccountId(Long accountId);
+    Optional<AccountBalance> findLatestByAccountNumber(
+            @Param("accountNumber") String accountNumber);
 
     @Query("""
             SELECT ab FROM AccountBalance ab
-            WHERE ab.account.id = :accountId
+            WHERE ab.account.accountNumber = :accountNumber
             AND ab.balanceType = :type
             ORDER BY ab.creationDate DESC
             LIMIT 1
             """)
-    Optional<AccountBalance> findLatestByAccountIdAndType(
-            @Param("accountId") Long accountId,
+    Optional<AccountBalance> findLatestByAccountNumberAndType(
+            @Param("accountNumber") String accountNumber,
             @Param("type") BalanceType type);
 }

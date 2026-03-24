@@ -21,50 +21,48 @@ public class FundsValidationServiceImpl implements FundsValidationService {
     private final TransactionLimitRepository transactionLimitRepository;
 
     @Override
-    public Boolean hasSufficientFunds(Long accountId, BigDecimal amount) {
+    public Boolean hasSufficientFunds(String accountNumber, BigDecimal amount) {
         AccountBalance latest = accountBalanceRepository
-                .findLatestByAccountId(accountId)
-                .orElseThrow(() -> new AccountNotFoundException(String.valueOf(accountId)));
-
+                .findLatestByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         return latest.getBalance().compareTo(amount) >= 0;
     }
 
     @Override
-    public BigDecimal getAvailableBalance(Long accountId) {
+    public BigDecimal getAvailableBalance(String accountNumber) {
         AccountBalance latest = accountBalanceRepository
-                .findLatestByAccountId(accountId)
-                .orElseThrow(() -> new AccountNotFoundException(String.valueOf(accountId)));
+                .findLatestByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
         return latest.getBalance();
     }
 
     @Override
-    public Boolean hasSufficientFundsIncludingHolds(Long accountId, BigDecimal amount) {
+    public Boolean hasSufficientFundsIncludingHolds(String accountNumber, BigDecimal amount) {
         BigDecimal available = accountBalanceRepository
-                .findLatestByAccountIdAndType(accountId, BalanceType.AVAILABLE)
+                .findLatestByAccountNumberAndType(accountNumber, BalanceType.AVAILABLE)
                 .map(AccountBalance::getBalance)
-                .orElseThrow(() -> new AccountNotFoundException(String.valueOf(accountId)));
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
 
         BigDecimal onHold = accountBalanceRepository
-                .findLatestByAccountIdAndType(accountId, BalanceType.ON_HOLD)
+                .findLatestByAccountNumberAndType(accountNumber, BalanceType.ON_HOLD)
                 .map(AccountBalance::getBalance)
                 .orElse(BigDecimal.ZERO);
 
-        BigDecimal effectiveBalance = available.subtract(onHold);
-        return effectiveBalance.compareTo(amount) >= 0;
+        return available.subtract(onHold).compareTo(amount) >= 0;
     }
 
     @Override
-    public Boolean isWithinDailyLimit(Long accountId, BigDecimal amount, LimitType limitType) {
+    public Boolean isWithinDailyLimit(String accountNumber, BigDecimal amount, LimitType limitType) {
         return transactionLimitRepository
-                .findLatestByAccountIdAndLimitTypeAndTimePeriod(accountId, limitType, TimePeriod.DAILY)
+                .findLatestByAccountNumberAndLimitTypeAndTimePeriod(accountNumber, limitType, TimePeriod.DAILY)
                 .map(limit -> amount.compareTo(limit.getMaxAmount()) <= 0)
                 .orElse(true);
     }
 
     @Override
-    public Boolean isWithinTransactionLimit(Long accountId, BigDecimal amount, LimitType limitType) {
+    public Boolean isWithinTransactionLimit(String accountNumber, BigDecimal amount, LimitType limitType) {
         return transactionLimitRepository
-                .findLatestByAccountIdAndLimitType(accountId, limitType)
+                .findLatestByAccountNumberAndLimitType(accountNumber, limitType)
                 .map(limit -> amount.compareTo(limit.getMaxAmount()) <= 0)
                 .orElse(true);
     }
