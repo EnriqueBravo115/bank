@@ -18,7 +18,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TransactionResultResponse {
     private BigDecimal amount;
-    private TransactionStatus transactionStatus;
     private TransactionType transactionType;
+    private TransactionStatus transactionStatus;
+    private String reason;
     private LocalDateTime transactionDate;
 }

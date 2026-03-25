@@ -50,12 +50,6 @@ keycloak:
   client-id: kong
   client-secret: kong-client-secret
 
-resilience4j:
-  circuitbreaker:
-    instances:
-      tweet-service:
-        minimum-number-of-calls: 5
-
 eureka:
     client:
         service-url:

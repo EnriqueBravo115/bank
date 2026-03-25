@@ -30,14 +30,22 @@ public abstract class AbstractTransactionProcessor<RQ, SUB> {
 
             transactionRepository.save(transaction);
 
-            return basicMapper.convertToResponse(transaction, TransactionResultResponse.class);
+            TransactionResultResponse transactionResultResponse = basicMapper
+                    .convertToResponse(transaction, TransactionResultResponse.class);
+
+            transactionResultResponse.setReason(response.reason());
+
+            return transactionResultResponse;
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error processing transaction", e);
         }
     }
 
     protected abstract MovementResultResponse callAccountClient(RQ request);
+
     protected abstract SUB buildSubTransaction(RQ request);
+
     protected abstract Transaction buildTransaction(String code, RQ request, MovementResultResponse response);
+
     protected abstract void link(Transaction transaction, SUB subEntity);
 }

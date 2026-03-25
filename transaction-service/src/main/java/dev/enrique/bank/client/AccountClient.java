@@ -15,7 +15,7 @@ import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.config.FeignConfiguration;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
-@FeignClient(value = ACCOUNT_SERVICE, path = "/api/v1/account", configuration = FeignConfiguration.class)
+@FeignClient(value = ACCOUNT_SERVICE, path = "/api/v1/account/movement", configuration = FeignConfiguration.class)
 public interface AccountClient {
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "movementFallback")
     @PostMapping("/transfer")
