@@ -27,7 +27,7 @@ public class ServiceTransactionProcessor extends AbstractTransactionProcessor<Se
 
     @Override
     protected MovementResultResponse callAccountClient(ServiceRequest request) {
-        ClientServiceRequest clientRequest = new ClientServiceRequest(request.amount());
+        ClientServiceRequest clientRequest = new ClientServiceRequest(request.sourceAccountNumber(), request.amount());
         return accountClient.processService(clientRequest);
     }
 

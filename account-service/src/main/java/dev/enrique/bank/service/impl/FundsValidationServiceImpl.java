@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import dev.enrique.bank.commons.enums.BalanceType;
 import dev.enrique.bank.commons.enums.LimitType;
 import dev.enrique.bank.commons.enums.TimePeriod;
-import dev.enrique.bank.commons.exception.AccountNotFoundException;
+import dev.enrique.bank.commons.exception.AccountBalanceNotFoundException;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.TransactionLimitRepository;
 import dev.enrique.bank.model.AccountBalance;
@@ -24,7 +24,7 @@ public class FundsValidationServiceImpl implements FundsValidationService {
     public Boolean hasSufficientFunds(String accountNumber, BigDecimal amount) {
         AccountBalance latest = accountBalanceRepository
                 .findLatestByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+                .orElseThrow(() -> new AccountBalanceNotFoundException(accountNumber));
         return latest.getBalance().compareTo(amount) >= 0;
     }
 
@@ -32,7 +32,7 @@ public class FundsValidationServiceImpl implements FundsValidationService {
     public BigDecimal getAvailableBalance(String accountNumber) {
         AccountBalance latest = accountBalanceRepository
                 .findLatestByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+                .orElseThrow(() -> new AccountBalanceNotFoundException(accountNumber));
         return latest.getBalance();
     }
 
@@ -41,7 +41,7 @@ public class FundsValidationServiceImpl implements FundsValidationService {
         BigDecimal available = accountBalanceRepository
                 .findLatestByAccountNumberAndType(accountNumber, BalanceType.AVAILABLE)
                 .map(AccountBalance::getBalance)
-                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+                .orElseThrow(() -> new AccountBalanceNotFoundException(accountNumber));
 
         BigDecimal onHold = accountBalanceRepository
                 .findLatestByAccountNumberAndType(accountNumber, BalanceType.ON_HOLD)
