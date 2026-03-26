@@ -21,14 +21,20 @@ It integrates authentication, API gateway, service discovery, and resilience pat
 - Testcontainers
 
 ## Running the Project
-Create the bank-maven-cache image, which contains the dependencies of all services:
+(**4.30 minutes**)Create the bank-maven-cache image, which contains the dependencies of all services:
 ```bash
 docker build -f Dockerfile.maven-cache -t bank-maven-cache .
 ```
-Finally, run the docker-compose:
+(**3.30 minutes**)Finally, run the docker-compose:
 ```bash
 docker compose up --build
 ```
+
+## Test the project
+Check the files under folder `http`:
+1. `user-service`: follow the register flow to get a `CUSTOMER_BASIC` role and perform request to valid endpoints.
+2. `account-service`: endpoints only available if there is accounts via `CreateAccountEvent` from user-service.
+3. `transaction-service`: an account needs to have balance to perform transactions(STATE: only works by manual SQL inserts).
 
 ## Features
 ### User Registration Flow

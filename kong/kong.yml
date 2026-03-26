@@ -2,21 +2,21 @@ _format_version: "3.0"
 
 services:
   - name: user-service
-    url: http://host.docker.internal:8080
+    url: http://user-service:8080
     routes:
       - name: user-route
         paths:
           - /api/v1/user
         strip_path: false
   - name: transaction-service
-    url: http://host.docker.internal:8081
+    url: http://transaction-service:8081
     routes:
       - name: transaction-route
         paths:
           - /api/v1/transaction
         strip_path: false
   - name: account-service
-    url: http://host.docker.internal:8082
+    url: http://account-service:8082
     routes:
       - name: account-route
         paths:
