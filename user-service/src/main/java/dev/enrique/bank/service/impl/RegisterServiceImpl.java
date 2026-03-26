@@ -46,7 +46,7 @@ public class RegisterServiceImpl implements RegisterService {
         user.setPhoneNumber(request.getPhoneNumber());
         user.setRole(UserRole.CUSTOMER_BASIC);
         user.setRegisterStatus(RegisterStatus.REGISTER);
-        user.setActive(false);
+        user.setActive(true);
 
         String keycloakId = keycloakUserService.createUser(request);
         user.setKeycloakId(keycloakId);
