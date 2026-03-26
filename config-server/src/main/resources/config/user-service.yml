@@ -13,7 +13,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:9090/realms/bank/protocol/openid-connect/certs
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/bank/protocol/openid-connect/certs
   jpa:
     hibernate:
       ddl-auto: validate
