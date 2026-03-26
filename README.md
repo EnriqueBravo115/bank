@@ -40,7 +40,7 @@ User registration is implemented using a custom Keycloak authentication flow com
 
 ### Transaction Types
 The platform currently supports four types of financial transactions:
-1. Transfer
-2. Purchase
-3. Service Payment
-4. Withdrawal
+1. Transfer(STATE: Don't work)
+2. Purchase(STATE: Don't work)
+3. Service Payment(STATE: ACTIVE)
+4. Withdrawal(STATE: Don't work)
