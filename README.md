@@ -52,4 +52,4 @@ The platform currently supports four types of financial transactions:
 3. Service Payment
 4. Withdrawal
 
-![Transaction Flow](img/tranasaction_flow.png)
+![Transaction Flow](img/transaction_flow.png)
