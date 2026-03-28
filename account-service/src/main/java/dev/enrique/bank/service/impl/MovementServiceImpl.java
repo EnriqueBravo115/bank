@@ -37,9 +37,7 @@ public class MovementServiceImpl implements MovementService {
     @Transactional
     public MovementResultResponse processTransfer(ClientTransferRequest request) {
         validate(request.sourceAccountNumber(), request.amount(), LimitType.TRANSFER, false);
-        // TODO: needs another specific implmentation
-        //debit(request.sourceAccountNumber(), request.amount());
-
+        transfer(request.sourceAccountNumber(), request.targetAccountNumber(), request.amount());
         return new MovementResultResponse(TransactionStatus.COMPLETED, "Valid Transaction");
     }
 
@@ -47,8 +45,7 @@ public class MovementServiceImpl implements MovementService {
     @Transactional
     public MovementResultResponse processPurchase(ClientPurchaseRequest request) {
         validate(request.accountNumber(), request.amount(), LimitType.PURCHASE, false);
-        // TODO: needs another specific implmentation
-        //debit(request.accountNumber(), request.amount());
+        debit(request.accountNumber(), request.amount());
         return new MovementResultResponse(TransactionStatus.COMPLETED, "Valid Transaction");
     }
 
@@ -64,8 +61,7 @@ public class MovementServiceImpl implements MovementService {
     @Transactional
     public MovementResultResponse processWithdrawal(ClientWithdrawalRequest request) {
         validate(request.accountNumber(), request.amount(), LimitType.WITHDRAWAL, false);
-        // TODO: needs another specific implmentation
-        //debit(request.accountNumber(), request.amount());
+        debit(request.accountNumber(), request.amount());
         return new MovementResultResponse(TransactionStatus.COMPLETED, "Valid Transaction");
     }
 
@@ -100,6 +96,28 @@ public class MovementServiceImpl implements MovementService {
         accountBalanceRepository.save(AccountBalance.builder()
                 .account(latest.getAccount())
                 .balance(latest.getBalance().subtract(amount))
+                .balanceType(BalanceType.INTRADAY)
+                .build());
+    }
+
+    private void transfer(String sourceAccountNumber, String targetAccountNumber, BigDecimal amount) {
+        AccountBalance latestSource = accountBalanceRepository
+                .findLatestByAccountNumber(sourceAccountNumber)
+                .orElseThrow(() -> new AccountBalanceNotFoundException(sourceAccountNumber));
+
+        accountBalanceRepository.save(AccountBalance.builder()
+                .account(latestSource.getAccount())
+                .balance(latestSource.getBalance().subtract(amount))
+                .balanceType(BalanceType.INTRADAY)
+                .build());
+
+        AccountBalance latestTarget = accountBalanceRepository
+                .findLatestByAccountNumber(targetAccountNumber)
+                .orElseThrow(() -> new AccountBalanceNotFoundException(targetAccountNumber));
+
+        accountBalanceRepository.save(AccountBalance.builder()
+                .account(latestTarget.getAccount())
+                .balance(latestTarget.getBalance().add(amount))
                 .balanceType(BalanceType.INTRADAY)
                 .build());
     }
