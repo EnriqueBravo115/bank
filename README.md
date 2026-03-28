@@ -43,6 +43,7 @@ User registration is implemented using a custom Keycloak authentication flow com
 2. Profile Info
 3. KYC Info
 4. Financial Info
+![Register Flow](img/register_flow.png)
 
 ### Transaction Types
 The platform currently supports four types of financial transactions:
