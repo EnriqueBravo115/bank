@@ -2,9 +2,11 @@ package dev.enrique.bank.integration;
 
 import dev.enrique.bank.commons.enums.*;
 import dev.enrique.bank.dao.UserFinancialInfoRepository;
+import dev.enrique.bank.dao.UserProfileRepository;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.model.UserFinancialInfo;
+import dev.enrique.bank.model.UserProfile;
 import dev.enrique.bank.util.PostgresContainerConfig;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class UserFinancialInfoControllerTest extends PostgresContainerConfig {
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -124,26 +125,30 @@ class UserFinancialInfoControllerTest extends PostgresContainerConfig {
     static class TestConfig {
         @Bean
         TestDataHelper testDataHelper(UserRepository userRepository,
-                                      UserFinancialInfoRepository financialInfoRepository) {
-            return new TestDataHelper(userRepository, financialInfoRepository);
+                                      UserFinancialInfoRepository financialInfoRepository,
+                                      UserProfileRepository userProfileRepository) {
+            return new TestDataHelper(userRepository, financialInfoRepository, userProfileRepository);
         }
     }
 
     @Component
     static class TestDataHelper {
-
         private final UserRepository userRepository;
+        private final UserProfileRepository userProfileRepository;
         private final UserFinancialInfoRepository financialInfoRepository;
 
         TestDataHelper(UserRepository userRepository,
-                       UserFinancialInfoRepository financialInfoRepository) {
+                       UserFinancialInfoRepository financialInfoRepository,
+                       UserProfileRepository userProfileRepository) {
             this.userRepository = userRepository;
+            this.userProfileRepository = userProfileRepository;
             this.financialInfoRepository = financialInfoRepository;
         }
 
         @Transactional
         public Long createUserWithFinancialInfo() {
             financialInfoRepository.deleteAll();
+            userProfileRepository.deleteAll();
             userRepository.deleteAll();
 
             User user = new User();
@@ -155,6 +160,15 @@ class UserFinancialInfoControllerTest extends PostgresContainerConfig {
             user.setRole(UserRole.CUSTOMER_BASIC);
             user.setRegisterStatus(RegisterStatus.COMPLETE);
             User savedUser = userRepository.save(user);
+
+            UserProfile profile = new UserProfile();
+            profile.setUser(savedUser);
+            profile.setNames("Ana");
+            profile.setFirstSurname("Martinez");
+            profile.setSecondSurname("Lopez");
+            profile.setGender(Gender.FEMALE);
+            profile.setCountryOfBirth(Country.MX);
+            userProfileRepository.save(profile);
 
             UserFinancialInfo financialInfo = new UserFinancialInfo();
             financialInfo.setUser(savedUser);
