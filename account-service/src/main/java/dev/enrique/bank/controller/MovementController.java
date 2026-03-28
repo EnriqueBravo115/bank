@@ -1,5 +1,7 @@
 package dev.enrique.bank.controller;
 
+import static dev.enrique.bank.commons.constants.PathConstants.MOVEMENT;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +17,7 @@ import dev.enrique.bank.service.MovementService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/account/movement")
+@RequestMapping(MOVEMENT)
 @RequiredArgsConstructor
 public class MovementController {
     private final MovementService movementService;

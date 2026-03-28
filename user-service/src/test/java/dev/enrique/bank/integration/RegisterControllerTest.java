@@ -1,6 +1,7 @@
 package dev.enrique.bank.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.enrique.bank.broker.producer.AccountProducer;
 import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
 import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
@@ -26,6 +27,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -56,6 +58,9 @@ public class RegisterControllerTest extends FullContainerConfig {
     @Value("${keycloak.realm}")
     private String realm;
 
+    @MockitoBean
+    private AccountProducer accountProducer;
+
     @BeforeEach
     void cleanUp() {
         userFinancialInfoRepository.deleteAll();
@@ -79,11 +84,10 @@ public class RegisterControllerTest extends FullContainerConfig {
                 .content(objectMapper.writeValueAsString(buildRegisterRequest())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").isNotEmpty())
+                .andExpect(jsonPath("$.keycloakId").isNotEmpty())
                 .andExpect(jsonPath("$.email").value("test@test.com"))
-                .andExpect(jsonPath("$.phoneCode").value("+52"))
-                .andExpect(jsonPath("$.phoneNumber").value("1234567890"))
                 .andExpect(jsonPath("$.role").value("CUSTOMER_BASIC"))
-                .andExpect(jsonPath("$.active").value(false))
+                .andExpect(jsonPath("$.active").value(true))
                 .andExpect(jsonPath("$.registerStatus").value("REGISTER"));
     }
 
