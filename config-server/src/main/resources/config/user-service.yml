@@ -50,6 +50,12 @@ keycloak:
   client-id: kong
   client-secret: kong-client-secret
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
 eureka:
     client:
         service-url:

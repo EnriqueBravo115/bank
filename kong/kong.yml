@@ -8,6 +8,10 @@ services:
         paths:
           - /api/v1/user
         strip_path: false
+      - name: user-health-route
+        paths:
+          - /user
+        strip_path: true
   - name: transaction-service
     url: http://transaction-service:8081
     routes:
@@ -15,6 +19,10 @@ services:
         paths:
           - /api/v1/transaction
         strip_path: false
+      - name: transaction-health-route
+        paths:
+          - /transaction
+        strip_path: true
   - name: account-service
     url: http://account-service:8082
     routes:
@@ -22,3 +30,7 @@ services:
         paths:
           - /api/v1/account
         strip_path: false
+      - name: account-health-route
+        paths:
+          - /account
+        strip_path: true

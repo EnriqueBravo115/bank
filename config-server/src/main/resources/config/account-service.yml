@@ -31,6 +31,12 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
 eureka:
     client:
         service-url:
