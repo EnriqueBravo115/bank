@@ -50,6 +50,7 @@ public interface AccountClient {
             }
             return switch (ex.status()) {
                 case 404 -> new MovementResultResponse(TransactionStatus.FAILED, "Account not found");
+                case 401 -> new MovementResultResponse(TransactionStatus.FAILED, "Unauthorized operation");
                 default -> new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable");
             };
         }

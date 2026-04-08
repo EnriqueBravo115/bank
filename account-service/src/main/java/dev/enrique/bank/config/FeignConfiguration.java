@@ -1,9 +1,8 @@
 package dev.enrique.bank.config;
 
-import static dev.enrique.bank.commons.constants.PathConstants.AUTH_USER_ID_HEADER;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -19,7 +18,7 @@ public class FeignConfiguration {
             RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-                template.header(AUTH_USER_ID_HEADER, request.getHeader(AUTH_USER_ID_HEADER));
+                template.header(HttpHeaders.AUTHORIZATION, request.getHeader(HttpHeaders.AUTHORIZATION));
             }
         };
     }
