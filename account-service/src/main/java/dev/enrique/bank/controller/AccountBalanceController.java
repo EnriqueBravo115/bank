@@ -15,8 +15,8 @@ import static dev.enrique.bank.commons.constants.PathConstants.ACCOUNT_BALANCE;
 @RestController
 @RequestMapping(ACCOUNT_BALANCE)
 public class AccountBalanceController {
-    @PostMapping("/balance/{accountId}")
-    public ResponseEntity<AccountBalanceResponse> createAccountBalance(@PathVariable Long accountId,
-            @RequestBody CreateBalanceRequest request) {
-    }
+    //@PostMapping("/balance/{accountId}")
+    //public ResponseEntity<AccountBalanceResponse> createAccountBalance(@PathVariable Long accountId,
+    //        @RequestBody CreateBalanceRequest request) {
+    //}
 }
