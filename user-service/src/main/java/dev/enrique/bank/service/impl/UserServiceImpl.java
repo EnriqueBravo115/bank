@@ -1,9 +1,5 @@
 package dev.enrique.bank.service.impl;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
 import dev.enrique.bank.commons.dto.response.UserDetailedResponse;
 import dev.enrique.bank.commons.dto.response.UserPrincipalResponse;
 import dev.enrique.bank.commons.enums.UserRole;
@@ -11,6 +7,9 @@ import dev.enrique.bank.commons.exception.UserNotFoundException;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
