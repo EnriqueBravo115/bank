@@ -12,22 +12,22 @@
   - Correr `docker compose build` después de instalar buildx.
   - Hasta ahora solo se verificó el build con Maven local, no las imágenes Docker.
 
-- [ ] **Agregar `.dockerignore`**
-  - El contexto de build es la raíz (`context: .`) y se envía completo al daemon, incluidos `**/target`, `.git` e `.idea`.
-  - Sugerencia:
-    ```
-    **/target
-    .git
-    .idea
-    .settings
-    .project
-    img
-    http
-    ```
+- [x] **Agregar `.dockerignore`**
+  - El contexto enviado al daemon bajó de ~451 MB a ~640 KB: solo `pom.xml` y `src` de cada servicio.
 
 - [ ] **(Opcional) Cambiar el `context` de cada servicio en `docker-compose.yml` a su propia carpeta**
   - Ahora que cada servicio es independiente, puede ser `context: ./account-service`.
   - En ese caso, el Dockerfile tendría que copiar `pom.xml` y `src`, sin el prefijo del servicio.
+
+- [ ] **Definir estrategia de caché de Maven para CI/CD**
+  - El `RUN --mount=type=cache,target=/root/.m2` solo acelera builds donde el builder de BuildKit persiste: local o runners self-hosted.
+  - En runners efímeros (GitHub Actions hosted, GitLab shared runners) la caché empieza vacía en cada job.
+  - `--cache-to type=gha` y `--cache-to type=registry` cachean capas, no cache mounts.
+  - Opciones al armar el pipeline:
+    1. Compilar el `.jar` en el CI con la caché del propio CI (p. ej. `actions/setup-java` con `cache: maven`) y que el Dockerfile solo copie el jar. Permite además correr los tests con Testcontainers en ese paso.
+    2. Usar Jib (`jib-maven-plugin`) para construir la imagen desde Maven sin Dockerfile.
+    3. Mantener el cache mount y persistirlo con `buildkit-cache-dance` (GitHub Actions).
+  - Mantener el Dockerfile actual para desarrollo local con `docker compose`.
 
 ## Maven
 
