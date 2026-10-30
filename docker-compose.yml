@@ -134,7 +134,7 @@ services:
     ports:
       - "9090:8080"
     volumes:
-      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - ./k8s/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -191,7 +191,7 @@ services:
     container_name: kong_deck
     restart: on-failure
     volumes:
-      - ./kong/kong.yml:/etc/deck/kong.yml
+      - ./k8s/kong/kong.yml:/etc/deck/kong.yml
     command: >
       gateway sync
       --kong-addr http://kong:8001

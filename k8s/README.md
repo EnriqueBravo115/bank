@@ -73,8 +73,8 @@ k8s/
   porque el hostname de un pod no se resuelve por DNS dentro del clúster.
 - **`enableServiceLinks: false`** en todos los pods: evita que Kubernetes inyecte variables como
   `KAFKA_UI_PORT=tcp://...`, que Kafka, Kong y Spring interpretarían como configuración.
-- `keycloak/realm-export.json` y `kong/kong.yml` son copias de los archivos de la raíz
-  (kustomize no permite referenciar archivos fuera de su directorio). Si cambias uno, actualiza el otro.
+- `keycloak/realm-export.json` y `kong/kong.yml` son la única copia de esos archivos:
+  `docker-compose.yml` también los monta desde `k8s/`.
 
 ## Limpieza
 

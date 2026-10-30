@@ -82,9 +82,9 @@
   - Las credenciales de PostgreSQL y del admin de Keycloak están como `literals` en el `secretGenerator`.
   - Para algo más allá de desarrollo local: Sealed Secrets, External Secrets o SOPS.
 
-- [ ] **`kong.yml` y `realm-export.json` duplicados**
-  - `k8s/kong/kong.yml` y `k8s/keycloak/realm-export.json` son copias de `kong/kong.yml` y `keycloak/realm-export.json` (kustomize no permite referenciar archivos fuera de su directorio).
-  - Opciones: dejar una sola copia (p. ej. que `docker-compose.yml` monte los de `k8s/`) o sincronizarlos en CI.
+- [x] **`kong.yml` y `realm-export.json` duplicados**
+  - Se eliminaron `kong/` y `keycloak/` de la raíz; `docker-compose.yml` monta `k8s/kong/kong.yml` y `k8s/keycloak/realm-export.json`.
+  - Nota: los tests de `user-service` usan su propio realm (`user-service/src/main/resources/keycloak/realm-export.json`), distinto al de despliegue.
 
 - [ ] **Datos de Kafka efímeros**
   - El broker no tiene volumen (igual que en docker-compose); los tópicos se pierden si el pod se reinicia.
