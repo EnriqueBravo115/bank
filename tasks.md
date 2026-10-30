@@ -49,7 +49,7 @@
 
 ## Dependencias innecesarias
 
-- [ ] **Quitar `spring-boot-starter-data-jpa` de `eureka-server` y `config-server`**
+- [x] **Quitar `spring-boot-starter-data-jpa` de `eureka-server` y `config-server`**
   - Solo la tenían porque el pom raíz la imponía a todos los módulos.
   - Por eso ambas clases main usan `@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)`.
   - Al quitar la dependencia, eliminar también ese `exclude`.
