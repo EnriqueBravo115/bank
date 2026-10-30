@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        - name: wait-for-config-server
+          image: busybox:1.36
+          command: ["sh", "-c", "until wget -q -O /dev/null http://config-server:8888/actuator/health; do echo waiting for config-server:8888/actuator/health; sleep 3; done"]
+        - name: wait-for-user-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z -w 2 user-db 5432; do echo waiting for user-db:5432; sleep 3; done"]
+        - name: wait-for-keycloak
+          image: busybox:1.36
+          command: ["sh", "-c", "until wget -q -O /dev/null http://keycloak:8080/realms/bank; do echo waiting for keycloak:8080/realms/bank; sleep 3; done"]
+        - name: wait-for-broker
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z -w 2 broker 9092; do echo waiting for broker:9092; sleep 3; done"]
+      containers:
+        - name: user-service
+          image: bank/user-service:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: EUREKA_HOST
+              value: "eureka-server"
+            - name: DATASOURCE_HOST
+              value: "user-db"
+            - name: KEYCLOAK_HOST
+              value: "keycloak"
+            - name: CONFIG_SERVER_HOST
+              value: "config-server"
+            - name: KAFKA_HOST
+              value: "broker"
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 20
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              memory: 1Gi

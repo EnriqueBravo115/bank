@@ -1,0 +1,15 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: bank
+nodes:
+  - role: control-plane
+    # Host ports -> NodePort services (see each Service's nodePort)
+    extraPortMappings:
+      - containerPort: 30000 # kong proxy
+        hostPort: 8000
+      - containerPort: 30090 # keycloak
+        hostPort: 9090
+      - containerPort: 30761 # eureka dashboard
+        hostPort: 8761
+      - containerPort: 30083 # kafka-ui
+        hostPort: 8083

@@ -1,14 +1,10 @@
 package dev.enrique.bank.service;
 
 import dev.enrique.bank.TransactionServiceTestHelper;
-import dev.enrique.bank.commons.enums.Currency;
-import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionStatus;
-import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
-import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.service.impl.TransactionQueryServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -136,32 +132,15 @@ public class TransactionQueryServiceTest {
         LocalDateTime startDate = LocalDateTime.of(2025, Month.AUGUST, 10, 10, 10);
         LocalDateTime endDate = LocalDateTime.of(2025, Month.OCTOBER, 10, 10, 10);
 
-        Transaction transaction = new Transaction();
-        transaction.setId(1L);
-        transaction.setSourceIdentifier(CLABE);
-        transaction.setTransactionCode("");
-        transaction.setAmount(new BigDecimal("400.00"));
-        transaction.setDescription("transaction test");
-        transaction.setReason("transfer successful");
-        transaction.setTransactionDate(LocalDateTime.of(2025, Month.SEPTEMBER, 10, 10, 0));
-        transaction.setIdentifierType(IdentifierType.CLABE);
-        transaction.setCurrency(Currency.EU);
-        transaction.setTransactionType(TransactionType.TRANSFER);
-        transaction.setTransactionStatus(STATUS_COMPLETED);
-
-        transactionRepository.save(transaction);
-        transactionRepository.flush();
+        List<TransactionCommonProjection> projections = generateCommonProjections();
+        when(transactionRepository.findAllBySourceIdentifierAndDateRangeAndStatus(
+                CLABE, STATUS_COMPLETED, startDate, endDate)).thenReturn(projections);
 
         List<TransactionCommonProjection> result = transactionQueryService.getTransactionsInDateRange(
                 CLABE, STATUS_COMPLETED, startDate, endDate);
 
-        Transaction saved = transactionRepository.findById(1L).orElse(null);
-        assertThat(saved).isNotNull();
-        assertThat(saved.getTransactionDate()).isEqualTo(LocalDateTime.of(2025, Month.SEPTEMBER, 10, 10, 0));
-
-        assertThat(result)
-                .hasSize(1)
-                .extracting(TransactionCommonProjection::getAmount)
-                .containsExactlyInAnyOrder(new BigDecimal("400.00"));
+        verify(transactionRepository, times(1)).findAllBySourceIdentifierAndDateRangeAndStatus(
+                CLABE, STATUS_COMPLETED, startDate, endDate);
+        assertEquals(projections, result);
     }
 }
