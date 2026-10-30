@@ -21,11 +21,7 @@ It integrates authentication, API gateway, service discovery, and resilience pat
 - Testcontainers
 
 ## Running the Project
-(**4.30 minutes**)Create the bank-maven-cache image, which contains the dependencies of all services:
-```bash
-docker build -f Dockerfile.maven-cache -t bank-maven-cache .
-```
-(**3.30 minutes**)Finally, run the docker-compose:
+Run the docker-compose (Maven dependencies are cached between builds via BuildKit):
 ```bash
 docker compose up --build
 ```

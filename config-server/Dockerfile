@@ -1,14 +1,16 @@
-FROM bank-maven-cache AS build
+FROM maven:3.9.5-eclipse-temurin-17 AS build
 
 WORKDIR /build
 
-COPY config-server/src config-server/src
+COPY config-server/pom.xml .
+COPY config-server/src src
 
-RUN mvn -pl config-server clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B clean package -DskipTests
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-COPY --from=build /build/config-server/target/*.jar app.jar
+COPY --from=build /build/target/*.jar app.jar
 EXPOSE 8888
 ENTRYPOINT ["java","-jar","app.jar"]
