@@ -2,15 +2,19 @@
 
 ## Build / Docker
 
-- [ ] **Instalar `docker-buildx`**
+- [x] **Instalar `docker-buildx`**
   - Los Dockerfiles usan `RUN --mount=type=cache,target=/root/.m2`, que requiere BuildKit.
   - Sin buildx, Docker usa el builder legacy y falla con:
     `the --mount option requires BuildKit`.
   - Solución (Arch): `sudo pacman -S docker-buildx`.
 
-- [ ] **Verificar que las 5 imágenes se construyen**
-  - Correr `docker compose build` después de instalar buildx.
-  - Hasta ahora solo se verificó el build con Maven local, no las imágenes Docker.
+- [x] **Verificar que las 5 imágenes se construyen**
+  - `docker compose up --build` levanta toda la arquitectura; todos los contenedores quedan `healthy`.
+
+- [x] **Puertos de `account-service` y `transaction-service` desalineados en `docker-compose.yml`**
+  - Config Server les asigna `8082` y `8081`, pero compose mapeaba `808x:8080` y el healthcheck consultaba `8080`.
+  - Resultado: ambos quedaban `unhealthy` y no eran accesibles desde el host (Kong sí funcionaba porque usa los puertos reales).
+  - Corregido: mapeo `8081:8081` / `8082:8082`, healthcheck al puerto real y `EXPOSE` en sus Dockerfiles.
 
 - [x] **Agregar `.dockerignore`**
   - El contexto enviado al daemon bajó de ~451 MB a ~640 KB: solo `pom.xml` y `src` de cada servicio.
