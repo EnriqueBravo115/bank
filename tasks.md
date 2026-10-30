@@ -54,7 +54,7 @@
   - Por eso ambas clases main usan `@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)`.
   - Al quitar la dependencia, eliminar también ese `exclude`.
 
-- [ ] **Revisar `lombok` y `spring-boot-starter-web` en `eureka-server` y `config-server`**
+- [x] **Revisar `lombok` y `spring-boot-starter-web` en `eureka-server` y `config-server`**
   - También venían heredadas del pom raíz.
   - Ninguno de los dos servicios usa Lombok.
   - `spring-cloud-starter-netflix-eureka-server` y `spring-cloud-config-server` ya traen la capa web.
