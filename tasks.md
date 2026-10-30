@@ -40,8 +40,8 @@
     - Agregar `<maven.compiler.proc>full</maven.compiler.proc>` en `<properties>` de cada pom.
     - Usar JDK 17/21 localmente.
 
-- [ ] **`mvnw` y `.mvn/` quedaron en la raíz sin `pom.xml`**
-  - Hay que usarlos con `./mvnw -f <servicio>/pom.xml ...`, o bien mover/copiar el wrapper a cada servicio.
+- [x] **`mvnw` y `.mvn/` quedaron en la raíz sin `pom.xml`**
+  - Eliminados: el build se hace con Docker (imagen `maven:3.9.5-eclipse-temurin-17`) o con Maven instalado localmente.
 
 - [ ] **Versiones duplicadas entre servicios**
   - Spring Boot `3.5.8`, Spring Cloud `2025.0.0`, `modelmapper 3.2.0` y `testcontainers 1.21.4` ahora están repetidas en cada pom.
