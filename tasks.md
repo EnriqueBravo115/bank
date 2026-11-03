@@ -115,8 +115,10 @@
   - `users.role` es `NULL` hasta el KYC; ahí se asigna `CUSTOMER_BASIC` en `user_db` y en Keycloak a la vez.
   - `PUT /api/v1/user/{userId}/role` (`ADMIN`) cambia entre `CUSTOMER_BASIC`, `CUSTOMER_PREMIUM` y `CUSTOMER_BUSINESS`. En Keycloak `CUSTOMER_BASIC` se conserva siempre (todos los endpoints lo exigen) y el nivel se agrega encima. `ADMIN` no se puede otorgar por la API (400) y los usuarios sin KYC responden 409.
 
-- [ ] **Validar duplicados antes de crear el usuario en Keycloak**
-  - Email, teléfono, CURP y RFC: hoy un email repetido hace que Keycloak responda 409 → `RuntimeException` → `500`.
+- [x] **Validar duplicados antes de crear el usuario en Keycloak**
+  - `POST /register` comprueba email (sin distinguir mayúsculas) y teléfono en `user_db` antes de llamar a Keycloak; el paso KYC comprueba CURP y RFC. Todos responden `409` con el campo duplicado.
+  - Un email que solo existe en Keycloak (p. ej. un admin creado en la consola) también responde `409` en vez de `500`.
+  - Si dos registros simultáneos pasan las comprobaciones, la restricción `UNIQUE` de la BD responde `409` y se borra el usuario de Keycloak.
 
 - [ ] **Evento `CreateAccountEvent` fuera de la transacción**
   - Se envía a Kafka en el paso KYC aunque la BD no haya hecho commit; si Kafka falla, el usuario queda sin cuenta. Usar `@TransactionalEventListener(AFTER_COMMIT)` o el patrón outbox.

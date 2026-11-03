@@ -19,6 +19,7 @@ import dev.enrique.bank.dao.UserKycRepository;
 import dev.enrique.bank.dao.UserProfileRepository;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.model.User;
+import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.util.FullContainerConfig;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +30,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
@@ -42,6 +46,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -62,8 +68,10 @@ public class RegisterControllerTest extends FullContainerConfig {
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
-    @Autowired
+    @MockitoSpyBean
     private UserRepository userRepository;
+    @Autowired
+    private KeycloakUserService keycloakUserService;
     @Autowired
     private UserProfileRepository userProfileRepository;
     @Autowired
@@ -183,16 +191,87 @@ public class RegisterControllerTest extends FullContainerConfig {
     }
 
     @Test
-    void shouldRollbackKeycloakUserWhenDatabaseRejectsRegistration() throws Exception {
+    void shouldRejectDuplicateEmailWithoutTouchingKeycloak() throws Exception {
         stepRegister(EMAIL, PHONE);
 
-        mockMvc.perform(post("/api/v1/user/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(buildRegisterRequest(OTHER_EMAIL, PHONE))))
-                .andExpect(status().isConflict());
+        registerRequest(EMAIL.toUpperCase(), OTHER_PHONE)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A user with this email is already registered"));
+
+        assertThat(keycloak.realm(realm).users().searchByEmail(EMAIL, true)).hasSize(1);
+        assertThat(userRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldRejectDuplicatePhoneWithoutTouchingKeycloak() throws Exception {
+        stepRegister(EMAIL, PHONE);
+
+        registerRequest(OTHER_EMAIL, PHONE)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A user with this phone number is already registered"));
 
         assertThat(keycloak.realm(realm).users().searchByEmail(OTHER_EMAIL, true)).isEmpty();
         assertThat(userRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldRejectEmailThatOnlyExistsInKeycloak() throws Exception {
+        // e.g. an admin created from the Keycloak console, with no row in user_db
+        keycloakUserService.createUser(buildRegisterRequest(EMAIL, PHONE));
+
+        registerRequest(EMAIL, PHONE)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A user with this email is already registered"));
+
+        assertThat(userRepository.count()).isZero();
+    }
+
+    @Test
+    void shouldRollbackKeycloakUserWhenDatabaseRejectsRegistration() throws Exception {
+        // Simulates a concurrent duplicate that passes the pre-checks and fails on the unique constraint.
+        doThrow(new DataIntegrityViolationException("users_phone_number_key"))
+                .when(userRepository).saveAndFlush(any());
+
+        registerRequest(EMAIL, PHONE).andExpect(status().isConflict());
+
+        assertThat(keycloak.realm(realm).users().searchByEmail(EMAIL, true)).isEmpty();
+        assertThat(userRepository.count()).isZero();
+    }
+
+    @Test
+    void shouldRejectDuplicateCurp() throws Exception {
+        String firstToken = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(firstToken);
+        stepUpdateKyc(firstToken);
+
+        String secondToken = registerAndLogin(OTHER_EMAIL, OTHER_PHONE);
+        stepUpdateProfile(secondToken);
+        UserKycDataRequest sameCurp = buildKycRequest();
+        sameCurp.setRfc("OTRO900101XYZ");
+
+        kycRequest(secondToken, sameCurp)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A user with this CURP is already registered"));
+
+        assertThat(registerStatusOf(OTHER_EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+    }
+
+    @Test
+    void shouldRejectDuplicateRfc() throws Exception {
+        String firstToken = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(firstToken);
+        stepUpdateKyc(firstToken);
+
+        String secondToken = registerAndLogin(OTHER_EMAIL, OTHER_PHONE);
+        stepUpdateProfile(secondToken);
+        UserKycDataRequest sameRfc = buildKycRequest();
+        sameRfc.setCurp("OTRO900101HDFLNS01");
+
+        kycRequest(secondToken, sameRfc)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A user with this RFC is already registered"));
+
+        assertThat(registerStatusOf(OTHER_EMAIL)).isEqualTo(RegisterStatus.PROFILE);
     }
 
     @Test
@@ -207,11 +286,21 @@ public class RegisterControllerTest extends FullContainerConfig {
                 .andExpect(status().isConflict());
     }
 
-    private void stepRegister(String email, String phone) throws Exception {
-        mockMvc.perform(post("/api/v1/user/register")
+    private ResultActions registerRequest(String email, String phone) throws Exception {
+        return mockMvc.perform(post("/api/v1/user/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(buildRegisterRequest(email, phone))))
-                .andExpect(status().isOk());
+                .content(objectMapper.writeValueAsString(buildRegisterRequest(email, phone))));
+    }
+
+    private void stepRegister(String email, String phone) throws Exception {
+        registerRequest(email, phone).andExpect(status().isOk());
+    }
+
+    private ResultActions kycRequest(String token, UserKycDataRequest request) throws Exception {
+        return mockMvc.perform(put("/api/v1/user/register/me/kyc")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
     }
 
     private String registerAndLogin(String email, String phone) throws Exception {
@@ -258,11 +347,7 @@ public class RegisterControllerTest extends FullContainerConfig {
     }
 
     private void stepUpdateKyc(String token) throws Exception {
-        mockMvc.perform(put("/api/v1/user/register/me/kyc")
-                .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(buildKycRequest())))
-                .andExpect(status().isNoContent());
+        kycRequest(token, buildKycRequest()).andExpect(status().isNoContent());
     }
 
     private void stepUpdateFinancial(String token) throws Exception {

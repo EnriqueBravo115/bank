@@ -42,4 +42,8 @@ public interface UserKycRepository extends JpaRepository<UserKyc, Long> {
             WHERE k.curp = :curp
             """)
     Optional<UserKycResponse> getKycByCurp(String curp);
+
+    boolean existsByCurpIgnoreCase(String curp);
+
+    boolean existsByRfcIgnoreCase(String rfc);
 }

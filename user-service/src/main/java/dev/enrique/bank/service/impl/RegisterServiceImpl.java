@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.enrique.bank.commons.enums.RegisterStatus;
 import dev.enrique.bank.commons.enums.UserRole;
+import dev.enrique.bank.commons.exception.DuplicateUserDataException;
 import dev.enrique.bank.commons.exception.InvalidRegistrationStepException;
 import dev.enrique.bank.commons.exception.UserNotFoundException;
 import dev.enrique.bank.dao.UserFinancialInfoRepository;
@@ -42,6 +43,15 @@ public class RegisterServiceImpl implements RegisterService {
     @Override
     @Transactional
     public UserRegisterResponse register(UserRegisterRequest request) {
+        // Checked before Keycloak so a duplicate never creates (and then has to delete) a Keycloak user.
+        // A concurrent duplicate still hits the DB unique constraint and is compensated below.
+        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
+            throw new DuplicateUserDataException("email");
+        }
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new DuplicateUserDataException("phone number");
+        }
+
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPhoneCode(request.getPhoneCode());
@@ -96,6 +106,13 @@ public class RegisterServiceImpl implements RegisterService {
         User user = findByKeycloakId(keycloakId);
 
         validateStep(user, RegisterStatus.PROFILE);
+
+        if (userKycRepository.existsByCurpIgnoreCase(request.getCurp())) {
+            throw new DuplicateUserDataException("CURP");
+        }
+        if (userKycRepository.existsByRfcIgnoreCase(request.getRfc())) {
+            throw new DuplicateUserDataException("RFC");
+        }
 
         UserKyc userKyc = userKycRepository.findById(user.getId())
                 .orElse(new UserKyc());

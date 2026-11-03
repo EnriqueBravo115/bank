@@ -42,4 +42,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<UserDetailedResponse> getActiveUsers();
 
     Optional<User> findByKeycloakId(String keycloakId);
+
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByPhoneNumber(String phoneNumber);
 }

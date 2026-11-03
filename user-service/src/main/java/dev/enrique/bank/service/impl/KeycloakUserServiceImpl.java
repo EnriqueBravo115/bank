@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.commons.enums.UserRole;
+import dev.enrique.bank.commons.exception.DuplicateUserDataException;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
 import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
 import dev.enrique.bank.service.KeycloakUserService;
@@ -63,6 +64,11 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         if (response.getStatus() == 201) {
             String location = response.getHeaderString("Location");
             return location.substring(location.lastIndexOf("/") + 1);
+        }
+
+        // Keycloak-only users (e.g. admins created in the console) are not in user_db.
+        if (response.getStatus() == 409) {
+            throw new DuplicateUserDataException("email");
         }
 
         throw new RuntimeException("Error user creation in Keycloak: " + response.getStatus());
