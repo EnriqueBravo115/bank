@@ -3,7 +3,8 @@ package dev.enrique.bank.controller;
 import static dev.enrique.bank.commons.constants.PathConstants.REGISTER;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,27 +31,27 @@ public class RegisterController {
         return ResponseEntity.ok(registerService.register(request));
     }
 
-    @PutMapping("/{userId}/profile")
+    @PutMapping("/me/profile")
     public ResponseEntity<Void> updateProfile(
-            @PathVariable Long userId,
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UserProfileRequest request) {
-        registerService.updateProfile(userId, request);
+        registerService.updateProfile(jwt.getSubject(), request);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{userId}/kyc")
+    @PutMapping("/me/kyc")
     public ResponseEntity<Void> updateKycData(
-            @PathVariable Long userId,
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UserKycDataRequest request) {
-        registerService.updateKycData(userId, request);
+        registerService.updateKycData(jwt.getSubject(), request);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{userId}/financial")
+    @PutMapping("/me/financial")
     public ResponseEntity<Void> updateFinancialInfo(
-            @PathVariable Long userId,
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UserFinancialInfoRequest request) {
-        registerService.updateFinancialInfo(userId, request);
+        registerService.updateFinancialInfo(jwt.getSubject(), request);
         return ResponseEntity.noContent().build();
     }
 }

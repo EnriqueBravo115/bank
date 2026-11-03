@@ -40,4 +40,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             WHERE u.active = true
             """)
     List<UserDetailedResponse> getActiveUsers();
+
+    Optional<User> findByKeycloakId(String keycloakId);
 }

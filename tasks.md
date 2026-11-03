@@ -107,9 +107,9 @@
   - Eliminado código muerto: `EmailService`/`EmailConfig`, `UserNotFoundEmailException`, `PersonalInfoResponse`, `FinancialProfileResponse` y las dependencias `mail`, `openfeign`, `resilience4j` y `oauth2-client`.
   - Registro: si falla el guardado en BD después de crear el usuario en Keycloak, se borra el usuario de Keycloak (antes quedaba huérfano y bloqueaba el email). Las violaciones de unicidad responden `409`.
 
-- [ ] **Pasos del registro sin autenticación (prioridad alta)**
-  - `PUT /register/{userId}/profile|kyc|financial` es `permitAll` y los ids son secuenciales: cualquiera puede completar el onboarding de otro usuario.
-  - Propuesta: después de `POST /register` el cliente inicia sesión y los pasos pasan a `/register/me/...` con el `sub` del JWT. `RegisterStatusFilter` debe dejar pasar `/register/**` con estado incompleto.
+- [x] **Pasos del registro protegidos con JWT**
+  - Antes `PUT /register/{userId}/profile|kyc|financial` era `permitAll` con ids secuenciales: cualquiera podía completar el onboarding de otro usuario.
+  - Ahora solo `POST /register` es público. Tras registrarse, el cliente inicia sesión y los pasos usan `PUT /register/me/profile|kyc|financial`, resueltos con el `sub` del JWT. `RegisterStatusFilter` no aplica a `/register/**`, pero sigue bloqueando el resto de endpoints mientras el registro esté incompleto.
 
 - [ ] **Validar duplicados antes de crear el usuario en Keycloak**
   - Email, teléfono, CURP y RFC: hoy un email repetido hace que Keycloak responda 409 → `RuntimeException` → `500`.

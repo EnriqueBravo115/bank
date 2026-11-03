@@ -9,9 +9,9 @@ import dev.enrique.bank.commons.dto.response.UserRegisterResponse;
 public interface RegisterService {
     UserRegisterResponse register(UserRegisterRequest request);
 
-    void updateProfile(Long userId, UserProfileRequest request);
+    void updateProfile(String keycloakId, UserProfileRequest request);
 
-    void updateKycData(Long userId, UserKycDataRequest request);
+    void updateKycData(String keycloakId, UserKycDataRequest request);
 
-    void updateFinancialInfo(Long userId, UserFinancialInfoRequest request);
+    void updateFinancialInfo(String keycloakId, UserFinancialInfoRequest request);
 }

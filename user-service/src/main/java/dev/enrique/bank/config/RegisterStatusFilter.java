@@ -1,5 +1,7 @@
 package dev.enrique.bank.config;
 
+import static dev.enrique.bank.commons.constants.PathConstants.REGISTER;
+
 import java.io.IOException;
 import java.util.Set;
 
@@ -19,6 +21,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RegisterStatusFilter extends OncePerRequestFilter {
     private static final Set<String> COMPLETE_STATUSES = Set.of("KYC", "COMPLETE");
+
+    // Registration steps are reached by users whose registration is still in progress.
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return path.equals(REGISTER) || path.startsWith(REGISTER + "/");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

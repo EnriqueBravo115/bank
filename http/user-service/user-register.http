@@ -9,8 +9,21 @@ Content-Type: application/json
   "phoneNumber": "6649876543"
 }
 
+### POST login after register (token for the registration steps)
+POST http://localhost:9090/realms/bank/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+&client_id=kong
+&client_secret=kong-client-secret
+&username=ana.martinez92@gmail.com
+&password=secure1!
+
+> {% client.global.set("register_token", response.body.access_token); %}
+
 ### PUT update profile
-PUT http://localhost:8000/api/v1/user/register/1/profile
+PUT http://localhost:8000/api/v1/user/register/me/profile
+Authorization: Bearer {{register_token}}
 Content-Type: application/json
 
 {
@@ -23,7 +36,8 @@ Content-Type: application/json
 }
 
 ### PUT update kyc
-PUT http://localhost:8000/api/v1/user/register/1/kyc
+PUT http://localhost:8000/api/v1/user/register/me/kyc
+Authorization: Bearer {{register_token}}
 Content-Type: application/json
 
 {
@@ -33,7 +47,8 @@ Content-Type: application/json
 }
 
 ### PUT update financial info (optional)
-PUT http://localhost:8000/api/v1/user/register/1/financial
+PUT http://localhost:8000/api/v1/user/register/me/financial
+Authorization: Bearer {{register_token}}
 Content-Type: application/json
 
 {
@@ -43,16 +58,6 @@ Content-Type: application/json
   "monthlyIncome": 25000.00,
   "maritalStatus": "SINGLE"
 }
-
-### POST get access token(CUSTOMER_BASIC)
-POST http://localhost:9090/realms/bank/protocol/openid-connect/token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=password
-&client_id=kong
-&client_secret=kong-client-secret
-&username=ana.martinez92@gmail.com
-&password=secure1!
 
 ### POST get access token(ADMIN)
 POST http://localhost:9090/realms/bank/protocol/openid-connect/token

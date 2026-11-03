@@ -66,13 +66,12 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     @Override
-    public void updateProfile(Long userId, UserProfileRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+    public void updateProfile(String keycloakId, UserProfileRequest request) {
+        User user = findByKeycloakId(keycloakId);
 
         validateStep(user, RegisterStatus.REGISTER);
 
-        UserProfile userProfile = userProfileRepository.findById(userId)
+        UserProfile userProfile = userProfileRepository.findById(user.getId())
                 .orElse(new UserProfile());
 
         userProfile.setUser(user);
@@ -93,13 +92,12 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     @Override
-    public void updateKycData(Long userId, UserKycDataRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+    public void updateKycData(String keycloakId, UserKycDataRequest request) {
+        User user = findByKeycloakId(keycloakId);
 
         validateStep(user, RegisterStatus.PROFILE);
 
-        UserKyc userKyc = userKycRepository.findById(userId)
+        UserKyc userKyc = userKycRepository.findById(user.getId())
                 .orElse(new UserKyc());
 
         userKyc.setUser(user);
@@ -119,13 +117,12 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     @Override
-    public void updateFinancialInfo(Long userId, UserFinancialInfoRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+    public void updateFinancialInfo(String keycloakId, UserFinancialInfoRequest request) {
+        User user = findByKeycloakId(keycloakId);
 
         validateStep(user, RegisterStatus.KYC);
 
-        UserFinancialInfo userFinancialInfo = userFinancialInfoRepository.findById(userId)
+        UserFinancialInfo userFinancialInfo = userFinancialInfoRepository.findById(user.getId())
                 .orElse(new UserFinancialInfo());
 
         userFinancialInfo.setUser(user);
@@ -141,6 +138,11 @@ public class RegisterServiceImpl implements RegisterService {
         userRepository.save(user);
 
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.COMPLETE.name());
+    }
+
+    private User findByKeycloakId(String keycloakId) {
+        return userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new UserNotFoundException("keycloakId", keycloakId));
     }
 
     private void validateStep(User user, RegisterStatus expectedStatus) {
