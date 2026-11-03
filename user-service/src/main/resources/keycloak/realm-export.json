@@ -103,6 +103,24 @@
         "clientRole": false,
         "containerId": "82f88a92-de0d-48fd-b290-4f661bd7664e",
         "attributes": {}
+      },
+      {
+        "id": "5b1e0c2a-7d4f-4a8e-9c3b-000000000001",
+        "name": "CUSTOMER_PREMIUM",
+        "description": "Premium customer tier, granted by an admin on top of CUSTOMER_BASIC",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "82f88a92-de0d-48fd-b290-4f661bd7664e",
+        "attributes": {}
+      },
+      {
+        "id": "5b1e0c2a-7d4f-4a8e-9c3b-000000000002",
+        "name": "CUSTOMER_BUSINESS",
+        "description": "Business customer tier, granted by an admin on top of CUSTOMER_BASIC",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "82f88a92-de0d-48fd-b290-4f661bd7664e",
+        "attributes": {}
       }
     ],
     "client": {

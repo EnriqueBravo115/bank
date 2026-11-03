@@ -10,12 +10,16 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.enrique.bank.commons.dto.request.UserRoleUpdateRequest;
 import dev.enrique.bank.commons.dto.response.UserDetailedResponse;
 import dev.enrique.bank.commons.dto.response.UserPrincipalResponse;
 import dev.enrique.bank.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -46,5 +50,13 @@ public class UserController {
     @GetMapping("/get-active")
     public ResponseEntity<List<UserDetailedResponse>> getActiveUsers() {
         return ResponseEntity.ok(userService.getActiveUsers());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{userId}/role")
+    public ResponseEntity<UserDetailedResponse> updateRole(
+            @PathVariable Long userId,
+            @Valid @RequestBody UserRoleUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateRole(userId, request.getRole()));
     }
 }

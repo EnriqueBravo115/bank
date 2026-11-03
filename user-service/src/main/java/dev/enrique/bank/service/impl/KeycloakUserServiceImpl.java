@@ -3,9 +3,13 @@ package dev.enrique.bank.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -21,6 +25,10 @@ import jakarta.ws.rs.core.Response;
 
 @Service
 public class KeycloakUserServiceImpl implements KeycloakUserService {
+    private static final Set<String> TIER_ROLES = Set.of(
+            UserRole.CUSTOMER_PREMIUM.name(),
+            UserRole.CUSTOMER_BUSINESS.name());
+
     private final Keycloak keycloak;
     private final String realm;
 
@@ -96,6 +104,34 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                 .roles()
                 .realmLevel()
                 .add(List.of(role));
+    }
+
+    // CUSTOMER_BASIC is the base customer role every endpoint checks, so it is always kept;
+    // PREMIUM/BUSINESS are tiers on top of it and only one of them can be active.
+    @Override
+    public void setCustomerTier(String keycloakId, UserRole tier) {
+        RealmResource realmResource = keycloak.realm(realm);
+        RoleScopeResource userRealmRoles = realmResource.users().get(keycloakId).roles().realmLevel();
+        List<RoleRepresentation> currentRoles = userRealmRoles.listAll();
+
+        List<RoleRepresentation> toRemove = currentRoles.stream()
+                .filter(role -> TIER_ROLES.contains(role.getName()) && !role.getName().equals(tier.name()))
+                .toList();
+        if (!toRemove.isEmpty()) {
+            userRealmRoles.remove(toRemove);
+        }
+
+        Set<String> currentNames = currentRoles.stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+        List<RoleRepresentation> toAdd = Stream.of(UserRole.CUSTOMER_BASIC.name(), tier.name())
+                .distinct()
+                .filter(name -> !currentNames.contains(name))
+                .map(name -> realmResource.roles().get(name).toRepresentation())
+                .toList();
+        if (!toAdd.isEmpty()) {
+            userRealmRoles.add(toAdd);
+        }
     }
 
     @Override

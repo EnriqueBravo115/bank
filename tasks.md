@@ -111,6 +111,10 @@
   - Antes `PUT /register/{userId}/profile|kyc|financial` era `permitAll` con ids secuenciales: cualquiera podía completar el onboarding de otro usuario.
   - Ahora solo `POST /register` es público. Tras registrarse, el cliente inicia sesión y los pasos usan `PUT /register/me/profile|kyc|financial`, resueltos con el `sub` del JWT. `RegisterStatusFilter` no aplica a `/register/**`, pero sigue bloqueando el resto de endpoints mientras el registro esté incompleto.
 
+- [x] **Rol asignado en el KYC y cambio de nivel de cliente**
+  - `users.role` es `NULL` hasta el KYC; ahí se asigna `CUSTOMER_BASIC` en `user_db` y en Keycloak a la vez.
+  - `PUT /api/v1/user/{userId}/role` (`ADMIN`) cambia entre `CUSTOMER_BASIC`, `CUSTOMER_PREMIUM` y `CUSTOMER_BUSINESS`. En Keycloak `CUSTOMER_BASIC` se conserva siempre (todos los endpoints lo exigen) y el nivel se agrega encima. `ADMIN` no se puede otorgar por la API (400) y los usuarios sin KYC responden 409.
+
 - [ ] **Validar duplicados antes de crear el usuario en Keycloak**
   - Email, teléfono, CURP y RFC: hoy un email repetido hace que Keycloak responda 409 → `RuntimeException` → `500`.
 

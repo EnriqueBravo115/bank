@@ -2,14 +2,16 @@ package dev.enrique.bank.util;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 
 public abstract class FullContainerConfig extends PostgresContainerConfig {
-    @Container
     static KeycloakContainer keycloak = new KeycloakContainer("quay.io/keycloak/keycloak:26.0.6")
             .withRealmImportFile("keycloak/realm-export.json");
+
+    static {
+        keycloak.start();
+    }
 
     @DynamicPropertySource
     static void configureKeycloak(DynamicPropertyRegistry registry) {

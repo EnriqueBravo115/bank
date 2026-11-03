@@ -8,6 +8,14 @@
         "description": "Standard registered user with completed registration"
       },
       {
+        "name": "CUSTOMER_PREMIUM",
+        "description": "Premium customer tier, granted by an admin on top of CUSTOMER_BASIC"
+      },
+      {
+        "name": "CUSTOMER_BUSINESS",
+        "description": "Business customer tier, granted by an admin on top of CUSTOMER_BASIC"
+      },
+      {
         "name": "ADMIN",
         "description": "Administrator with full access"
       }

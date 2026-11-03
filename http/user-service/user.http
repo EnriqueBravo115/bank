@@ -17,3 +17,13 @@ Authorization: Bearer {{tokenAdmin}}
 ### GET user - active (ADMIN)
 GET {{baseUrl}}/get-active
 Authorization: Bearer {{tokenAdmin}}
+
+### PUT user - change customer tier (ADMIN). Allowed: CUSTOMER_BASIC, CUSTOMER_PREMIUM, CUSTOMER_BUSINESS
+# The user must log in again to get a token with the new role.
+PUT {{baseUrl}}/1/role
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "role": "CUSTOMER_PREMIUM"
+}

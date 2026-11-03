@@ -13,5 +13,7 @@ public interface KeycloakUserService {
 
     void assignRole(String keycloakId, UserRole roleName);
 
+    void setCustomerTier(String keycloakId, UserRole tier);
+
     void updateRegistrationStatus(String keycloakId, String status);
 }
