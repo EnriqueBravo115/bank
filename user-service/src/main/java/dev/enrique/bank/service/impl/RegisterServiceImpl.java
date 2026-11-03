@@ -46,7 +46,7 @@ public class RegisterServiceImpl implements RegisterService {
         user.setEmail(request.getEmail());
         user.setPhoneCode(request.getPhoneCode());
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setRole(UserRole.CUSTOMER_BASIC);
+        // Role is granted at the KYC step, together with the Keycloak role.
         user.setRegisterStatus(RegisterStatus.REGISTER);
         user.setActive(true);
 
@@ -106,6 +106,7 @@ public class RegisterServiceImpl implements RegisterService {
         userKyc.setDocumentType(request.getDocumentType());
         userKycRepository.save(userKyc);
 
+        user.setRole(UserRole.CUSTOMER_BASIC);
         user.setRegisterStatus(RegisterStatus.KYC);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);

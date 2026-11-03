@@ -13,15 +13,18 @@ import dev.enrique.bank.commons.enums.IncomeSource;
 import dev.enrique.bank.commons.enums.MaritalStatus;
 import dev.enrique.bank.commons.enums.OccupationType;
 import dev.enrique.bank.commons.enums.RegisterStatus;
+import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.dao.UserFinancialInfoRepository;
 import dev.enrique.bank.dao.UserKycRepository;
 import dev.enrique.bank.dao.UserProfileRepository;
 import dev.enrique.bank.dao.UserRepository;
+import dev.enrique.bank.model.User;
 import dev.enrique.bank.util.FullContainerConfig;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -106,7 +109,7 @@ public class RegisterControllerTest extends FullContainerConfig {
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.keycloakId").isNotEmpty())
                 .andExpect(jsonPath("$.email").value(EMAIL))
-                .andExpect(jsonPath("$.role").value("CUSTOMER_BASIC"))
+                .andExpect(jsonPath("$.role").doesNotExist())
                 .andExpect(jsonPath("$.active").value(true))
                 .andExpect(jsonPath("$.registerStatus").value("REGISTER"));
     }
@@ -118,6 +121,7 @@ public class RegisterControllerTest extends FullContainerConfig {
         stepUpdateProfile(token);
 
         assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+        assertThat(userOf(EMAIL).getRole()).isNull();
     }
 
     @Test
@@ -127,7 +131,12 @@ public class RegisterControllerTest extends FullContainerConfig {
 
         stepUpdateKyc(token);
 
-        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.KYC);
+        User user = userOf(EMAIL);
+        assertThat(user.getRegisterStatus()).isEqualTo(RegisterStatus.KYC);
+        assertThat(user.getRole()).isEqualTo(UserRole.CUSTOMER_BASIC);
+        assertThat(keycloak.realm(realm).users().get(user.getKeycloakId()).roles().realmLevel().listAll())
+                .extracting(RoleRepresentation::getName)
+                .contains(UserRole.CUSTOMER_BASIC.name());
     }
 
     @Test
@@ -229,12 +238,15 @@ public class RegisterControllerTest extends FullContainerConfig {
         return "Bearer " + token;
     }
 
-    private RegisterStatus registerStatusOf(String email) {
+    private User userOf(String email) {
         return userRepository.findAll().stream()
                 .filter(user -> user.getEmail().equals(email))
                 .findFirst()
-                .orElseThrow()
-                .getRegisterStatus();
+                .orElseThrow();
+    }
+
+    private RegisterStatus registerStatusOf(String email) {
+        return userOf(email).getRegisterStatus();
     }
 
     private void stepUpdateProfile(String token) throws Exception {

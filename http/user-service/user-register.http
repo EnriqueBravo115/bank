@@ -1,4 +1,6 @@
-### POST register user(keycloak & user_db)
+@register_token = eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJJbWs0M0IzTXhoSHJnSmc1MG5IQTdDNm45cEtWR1BhX3JkampWekpfQUpFIn0.eyJleHAiOjE3OTM3MzYyMjUsImlhdCI6MTc5MzczNTkyNSwianRpIjoiMjM4NzI0ZTctMWRiNi00Zjc1LWJlYjEtNzExMDc0MDhiNDI4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjIyZjlmZDBlLWNjNDUtNGRmNC05MjNjLWE5MDQwMjFlMmJkZSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImtvbmciLCJzaWQiOiI5ZWQyODE3Yy1mNTQ5LTQ1ZmUtOTY4NS1jYjg3ZDBlMzM1OTYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJkZWZhdWx0LXJvbGVzLWJhbmsiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicmVnaXN0cmF0aW9uX3N0YXR1cyI6IlJFR0lTVEVSIiwibmFtZSI6IlBFTkRJTkcgUEVORElORyIsInByZWZlcnJlZF91c2VybmFtZSI6ImFuYS5tYXJ0aW5lejkyQGdtYWlsLmNvbSIsImdpdmVuX25hbWUiOiJQRU5ESU5HIiwiZmFtaWx5X25hbWUiOiJQRU5ESU5HIiwiZW1haWwiOiJhbmEubWFydGluZXo5MkBnbWFpbC5jb20ifQ.STG3kYMh5-c4NimvSq63JOwLgI1UdrclzSaNfnsG5GXfHbdVrE3irO3aFCbg7HqwbGVTf6Mi9sA66PpRylXFHz3hIlm288rarTEz_eqjg2srN1hLAR1tHeveXink3nv6ITF7KiFbHAloWGb1FVtZtl1jBkmz7OMqzrLoptDMoVJDFw0wdacSK2ME08IejooynZMBJpp427bJidGodx1IvU3vRB_zcsE63jCRrH2WOvNmYCj7A2njr0iPoN1m5q2-GoKMYBzaU4G-YEEBg2on61EGkvuLGcZuCFyoHjz8Vkdn8oCFFIbCnWallTIWEGQB4RA60qfpUT4Fc8oSpMLTPQ
+
+### STEP 1 - POST register user(keycloak & user_db)
 POST http://localhost:8000/api/v1/user/register
 Content-Type: application/json
 
@@ -9,7 +11,7 @@ Content-Type: application/json
   "phoneNumber": "6649876543"
 }
 
-### POST login after register (token for the registration steps)
+### STEP 2 - POST access_token info (returns current register_status access token)
 POST http://localhost:9090/realms/bank/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
@@ -18,8 +20,6 @@ grant_type=password
 &client_secret=kong-client-secret
 &username=ana.martinez92@gmail.com
 &password=secure1!
-
-> {% client.global.set("register_token", response.body.access_token); %}
 
 ### PUT update profile
 PUT http://localhost:8000/api/v1/user/register/me/profile
