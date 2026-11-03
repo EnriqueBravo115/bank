@@ -3,6 +3,7 @@ package dev.enrique.bank.service.impl;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import dev.enrique.bank.commons.enums.RegisterStatus;
 import dev.enrique.bank.commons.enums.UserRole;
@@ -39,6 +40,7 @@ public class RegisterServiceImpl implements RegisterService {
     private final BasicMapper basicMapper;
 
     @Override
+    @Transactional
     public UserRegisterResponse register(UserRegisterRequest request) {
         User user = new User();
         user.setEmail(request.getEmail());
@@ -50,9 +52,16 @@ public class RegisterServiceImpl implements RegisterService {
 
         String keycloakId = keycloakUserService.createUser(request);
         user.setKeycloakId(keycloakId);
-        userRepository.save(user);
 
-        keycloakUserService.updateRegistrationStatus(keycloakId, RegisterStatus.REGISTER.name());
+        try {
+            userRepository.saveAndFlush(user);
+            keycloakUserService.updateRegistrationStatus(keycloakId, RegisterStatus.REGISTER.name());
+        } catch (RuntimeException ex) {
+            // Compensate: avoid an orphan Keycloak user that would block re-registration with the same email.
+            keycloakUserService.deleteUser(keycloakId);
+            throw ex;
+        }
+
         return basicMapper.convertToResponse(user, UserRegisterResponse.class);
     }
 

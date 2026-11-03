@@ -30,19 +30,6 @@ spring:
       group-id: user-service-group
       properties:
         spring.json.trusted.packages: "*"
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: testerapipersonal@gmail.com
-    password: yalu erjx xclw otqr 
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls.enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
 
 keycloak:
   auth-server-url: http://${KEYCLOAK_HOST:localhost}:8080

@@ -96,8 +96,36 @@
 ## Seguridad
 
 - [ ] **Contraseña de aplicación de Gmail en el repositorio**
-  - `spring.mail.password` aparece en texto plano en `config-server/src/main/resources/config/user-service.yml` y en los `application-test*.yml` de `user-service` y `transaction-service`.
-  - Revocarla en la cuenta de Google y moverla a una variable de entorno / Secret.
+  - Ya se quitó de `user-service` (no usaba el correo) y de `config-server/.../user-service.yml`.
+  - Sigue en `transaction-service/src/main/resources/application-test.yml` y en el historial de git: **hay que revocarla** en la cuenta de Google.
+
+## user-service
+
+- [x] **Recorte de endpoints de consulta (de ~37 a 15)**
+  - Se eliminaron los filtros sin caso de uso (por género, país, estado civil, ocupación, fuente/rango de ingreso, tipo de documento), los `get-all-detailed`/`get-active` duplicados por tabla, los `exists/{userId}`, `get-full-name`, `get-by-role` y el endpoint de depuración `/test-jwt`.
+  - IDOR corregido: un `CUSTOMER_BASIC` podía leer el perfil, el KYC (RFC/CURP) y los ingresos de cualquier usuario por id. Ahora el cliente usa `GET .../me` (resuelto con el `sub` del JWT) y las consultas por id/email/RFC/CURP son solo `ADMIN`.
+  - Eliminado código muerto: `EmailService`/`EmailConfig`, `UserNotFoundEmailException`, `PersonalInfoResponse`, `FinancialProfileResponse` y las dependencias `mail`, `openfeign`, `resilience4j` y `oauth2-client`.
+  - Registro: si falla el guardado en BD después de crear el usuario en Keycloak, se borra el usuario de Keycloak (antes quedaba huérfano y bloqueaba el email). Las violaciones de unicidad responden `409`.
+
+- [ ] **Pasos del registro sin autenticación (prioridad alta)**
+  - `PUT /register/{userId}/profile|kyc|financial` es `permitAll` y los ids son secuenciales: cualquiera puede completar el onboarding de otro usuario.
+  - Propuesta: después de `POST /register` el cliente inicia sesión y los pasos pasan a `/register/me/...` con el `sub` del JWT. `RegisterStatusFilter` debe dejar pasar `/register/**` con estado incompleto.
+
+- [ ] **Validar duplicados antes de crear el usuario en Keycloak**
+  - Email, teléfono, CURP y RFC: hoy un email repetido hace que Keycloak responda 409 → `RuntimeException` → `500`.
+
+- [ ] **Evento `CreateAccountEvent` fuera de la transacción**
+  - Se envía a Kafka en el paso KYC aunque la BD no haya hecho commit; si Kafka falla, el usuario queda sin cuenta. Usar `@TransactionalEventListener(AFTER_COMMIT)` o el patrón outbox.
+
+- [ ] **Funcionalidad que falta**
+  - Actualizar datos de contacto después del onboarding (teléfono/email, sincronizado con Keycloak).
+  - Bloquear/desbloquear usuario (`ADMIN`): el campo `active` nunca cambia. Sincronizar `enabled` en Keycloak y avisar a account-service.
+  - Paginación en `get-active`, `profile/get-by-status` y `profile/search`.
+  - Validación de formato de CURP/RFC, `birthday` como `LocalDate` y mayoría de edad.
+  - Verificación de email: `createUser` fuerza `emailVerified=true`; usar `executeActionsEmail` de Keycloak en vez de SMTP propio.
+
+- [ ] **Configuración de tests dentro de `src/main`**
+  - `TestKeycloakConfig`, `TestPostgresConfig` y `application-test-*.yml` se empaquetan en la imagen; moverlos a `src/test`.
 
 ## Otros
 

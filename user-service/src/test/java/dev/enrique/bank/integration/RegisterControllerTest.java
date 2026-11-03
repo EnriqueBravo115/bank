@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -130,6 +131,33 @@ public class RegisterControllerTest extends FullContainerConfig {
         stepUpdateProfile(userId);
         stepUpdateKyc(userId);
         stepUpdateFinancial(userId);
+    }
+
+    @Test
+    void shouldRollbackKeycloakUserWhenDatabaseRejectsRegistration() throws Exception {
+        stepRegister();
+
+        UserRegisterRequest duplicatedPhone = buildRegisterRequest();
+        duplicatedPhone.setEmail("other@test.com");
+
+        mockMvc.perform(post("/api/v1/user/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(duplicatedPhone)))
+                .andExpect(status().isConflict());
+
+        assertThat(keycloak.realm(realm).users().searchByEmail("other@test.com", true)).isEmpty();
+        assertThat(userRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldRejectProfileStepOutOfOrder() throws Exception {
+        Long userId = stepRegister();
+        stepUpdateProfile(userId);
+
+        mockMvc.perform(put("/api/v1/user/register/{userId}/profile", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildProfileRequest())))
+                .andExpect(status().isConflict());
     }
 
     private Long stepRegister() throws Exception {
