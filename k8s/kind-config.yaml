@@ -13,3 +13,5 @@ nodes:
         hostPort: 8761
       - containerPort: 30083 # kafka-ui
         hostPort: 8083
+      - containerPort: 30025 # mailpit inbox
+        hostPort: 8025

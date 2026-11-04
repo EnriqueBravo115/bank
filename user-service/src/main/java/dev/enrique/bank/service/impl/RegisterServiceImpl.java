@@ -8,13 +8,19 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.enrique.bank.commons.enums.RegisterStatus;
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.DuplicateUserDataException;
+import dev.enrique.bank.commons.exception.EmailDeliveryException;
+import dev.enrique.bank.commons.exception.EmailNotVerifiedException;
 import dev.enrique.bank.commons.exception.InvalidRegistrationStepException;
 import dev.enrique.bank.commons.exception.UserNotFoundException;
 import dev.enrique.bank.dao.UserFinancialInfoRepository;
 import dev.enrique.bank.dao.UserKycRepository;
 import dev.enrique.bank.dao.UserProfileRepository;
 import dev.enrique.bank.dao.UserRepository;
-import dev.enrique.bank.broker.outbox.AccountRequestOutbox;
+import dev.enrique.bank.broker.Topics;
+import dev.enrique.bank.broker.event.CreateAccountEvent;
+import dev.enrique.bank.broker.outbox.EventOutbox;
+import dev.enrique.bank.commons.enums.AccountType;
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
 import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
@@ -28,7 +34,9 @@ import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.service.RegisterService;
 import dev.enrique.bank.commons.util.BasicMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RegisterServiceImpl implements RegisterService {
@@ -37,7 +45,7 @@ public class RegisterServiceImpl implements RegisterService {
     private final UserKycRepository userKycRepository;
     private final UserFinancialInfoRepository userFinancialInfoRepository;
     private final KeycloakUserService keycloakUserService;
-    private final AccountRequestOutbox accountRequestOutbox;
+    private final EventOutbox eventOutbox;
     private final BasicMapper basicMapper;
 
     @Override
@@ -72,10 +80,18 @@ public class RegisterServiceImpl implements RegisterService {
             throw ex;
         }
 
+        // Best effort: if the email cannot be sent now, the user can ask for it again.
+        try {
+            keycloakUserService.sendVerificationEmail(keycloakId);
+        } catch (EmailDeliveryException ex) {
+            log.warn("Verification email for user {} could not be sent: {}", keycloakId, ex.getCause().toString());
+        }
+
         return basicMapper.convertToResponse(user, UserRegisterResponse.class);
     }
 
     @Override
+    @Transactional
     public void updateProfile(String keycloakId, UserProfileRequest request) {
         User user = findByKeycloakId(keycloakId);
 
@@ -95,7 +111,8 @@ public class RegisterServiceImpl implements RegisterService {
 
         user.setRegisterStatus(RegisterStatus.PROFILE);
         user.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(user);
+        // Hit the DB before touching Keycloak; if Keycloak fails, the step is rolled back and can be retried.
+        userRepository.saveAndFlush(user);
 
         keycloakUserService.updateUser(user.getKeycloakId(), request);
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.PROFILE.name());
@@ -107,6 +124,11 @@ public class RegisterServiceImpl implements RegisterService {
         User user = findByKeycloakId(keycloakId);
 
         validateStep(user, RegisterStatus.PROFILE);
+
+        // The account is opened at this step, so the email must be proven first.
+        if (!keycloakUserService.isEmailVerified(user.getKeycloakId())) {
+            throw new EmailNotVerifiedException();
+        }
 
         if (userKycRepository.existsByCurpIgnoreCase(request.getCurp())) {
             throw new DuplicateUserDataException("CURP");
@@ -130,7 +152,11 @@ public class RegisterServiceImpl implements RegisterService {
         userRepository.save(user);
 
         // Same transaction as the KYC: the account is requested only if the KYC is committed.
-        accountRequestOutbox.enqueue(user);
+        eventOutbox.enqueue(Topics.ACCOUNT_REQUESTED, user.getKeycloakId(), CreateAccountEvent.builder()
+                .email(user.getEmail())
+                .accountType(AccountType.SAVING)
+                .currency(Currency.MX)
+                .build());
         // Hit the DB constraints before touching Keycloak; if Keycloak fails, everything above rolls back.
         userRepository.flush();
 
@@ -139,6 +165,7 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     @Override
+    @Transactional
     public void updateFinancialInfo(String keycloakId, UserFinancialInfoRequest request) {
         User user = findByKeycloakId(keycloakId);
 
@@ -157,9 +184,17 @@ public class RegisterServiceImpl implements RegisterService {
 
         user.setRegisterStatus(RegisterStatus.COMPLETE);
         user.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
 
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.COMPLETE.name());
+    }
+
+    @Override
+    public void resendVerificationEmail(String keycloakId) {
+        User user = findByKeycloakId(keycloakId);
+        if (!keycloakUserService.isEmailVerified(user.getKeycloakId())) {
+            keycloakUserService.sendVerificationEmail(user.getKeycloakId());
+        }
     }
 
     private User findByKeycloakId(String keycloakId) {

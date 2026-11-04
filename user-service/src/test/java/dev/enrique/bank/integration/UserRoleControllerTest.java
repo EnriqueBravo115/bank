@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
-import dev.enrique.bank.broker.producer.AccountProducer;
+import dev.enrique.bank.broker.producer.UserEventProducer;
 import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
 import dev.enrique.bank.commons.enums.RegisterStatus;
 import dev.enrique.bank.commons.enums.UserRole;
@@ -60,7 +60,7 @@ class UserRoleControllerTest extends FullContainerConfig {
     private String realm;
 
     @MockitoBean
-    private AccountProducer accountProducer;
+    private UserEventProducer userEventProducer;
 
     @BeforeEach
     void cleanUp() {

@@ -118,6 +118,14 @@ services:
     depends_on:
       - broker
 
+  # Fake SMTP server for Keycloak's verification emails; inbox at http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.6
     container_name: keycloak
@@ -129,6 +137,9 @@ services:
       KC_DB_USERNAME: user
       KC_DB_PASSWORD: password
       KC_HEALTH_ENABLED: "true"
+      # Public URL used in the links of Keycloak's emails; services keep calling it at keycloak:8080.
+      KC_HOSTNAME: http://localhost:9090
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:

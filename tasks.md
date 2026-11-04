@@ -123,14 +123,19 @@
 - [x] **Evento `CreateAccountEvent` con patrón outbox**
   - El KYC guarda el evento en `outbox_event` en la misma transacción; `OutboxScheduler` lo publica cada 2 s (`FOR UPDATE SKIP LOCKED`), espera el ack de Kafka y lo marca `SENT`. Si Kafka falla queda `PENDING` y se reintenta; tras 10 intentos pasa a `FAILED`.
   - account-service ignora solicitudes repetidas (`existsByUserId`) y `account.user_id` es `UNIQUE`.
-  - Pendiente: revisar/reintentar los eventos `FAILED` (hoy solo a mano en la tabla) y limpiar los `SENT` antiguos.
 
-- [ ] **Funcionalidad que falta**
-  - Actualizar datos de contacto después del onboarding (teléfono/email, sincronizado con Keycloak).
-  - Bloquear/desbloquear usuario (`ADMIN`): el campo `active` nunca cambia. Sincronizar `enabled` en Keycloak y avisar a account-service.
-  - Paginación en `get-active`, `profile/get-by-status` y `profile/search`.
-  - Validación de formato de CURP/RFC, `birthday` como `LocalDate` y mayoría de edad.
-  - Verificación de email: `createUser` fuerza `emailVerified=true`; usar `executeActionsEmail` de Keycloak en vez de SMTP propio.
+- [x] **Funcionalidad que faltaba**
+  - Bloquear/desbloquear (`PUT /api/v1/user/{userId}/active`, `ADMIN`): actualiza `active`, deshabilita el usuario en Keycloak (y cierra sus sesiones) y avisa por outbox a account-service, que congela (`FROZEN`) o reabre la cuenta.
+  - Cambio de contacto (`PUT /api/v1/user/me/email` y `/me/phone`, cliente): valida duplicados; el email cambia también el `username` de Keycloak, vuelve a pedir verificación y se propaga a account-service por outbox. El usuario ya no puede editar `username`/`email` desde la consola de cuenta de Keycloak.
+  - Paginación (`page`, `size` de 1 a 100) en `get-active`, `profile/search` y `profile/get-by-status`; responden `{content, page}`.
+  - Validaciones: CURP y RFC (persona física) con regex, `birthday` como `LocalDate` (`dd/MM/yyyy`, fechas imposibles rechazadas) y mayoría de edad (`@Adult`).
+  - Verificación de email: Keycloak la envía al registrarse (Mailpit en local: http://localhost:8025), se puede reenviar con `POST /register/me/verify-email` y el KYC la exige.
+
+- [ ] **Pendientes que salieron de lo anterior**
+  - Un usuario bloqueado conserva su access token hasta que expira (5 min); si hace falta corte inmediato, validar `active` en `RegisterStatusFilter` o reducir la vida del token.
+  - Antes del KYC el usuario no puede corregir un email mal escrito (los endpoints de contacto exigen el registro completo).
+  - No se comprueba que CURP/RFC coincidan entre sí ni con `birthday`.
+  - Revisar/reintentar eventos `FAILED` del outbox y limpiar los `SENT` antiguos.
 
 - [ ] **Configuración de tests dentro de `src/main`**
   - `TestKeycloakConfig`, `TestPostgresConfig` y `application-test-*.yml` se empaquetan en la imagen; moverlos a `src/test`.

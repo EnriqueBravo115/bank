@@ -1,7 +1,8 @@
 package dev.enrique.bank.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.enrique.bank.broker.producer.AccountProducer;
+import dev.enrique.bank.broker.Topics;
+import dev.enrique.bank.broker.producer.UserEventProducer;
 import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
 import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
@@ -23,11 +24,13 @@ import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.util.FullContainerConfig;
+import dev.enrique.bank.util.Mailbox;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -43,6 +46,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -95,10 +99,13 @@ public class RegisterControllerTest extends FullContainerConfig {
     private String clientSecret;
 
     @MockitoBean
-    private AccountProducer accountProducer;
+    private UserEventProducer userEventProducer;
+
+    private final Mailbox mailbox = new Mailbox(mailpitUrl());
 
     @BeforeEach
     void cleanUp() {
+        mailbox.clear();
         outboxEventRepository.deleteAll();
         userFinancialInfoRepository.deleteAll();
         userKycRepository.deleteAll();
@@ -151,11 +158,11 @@ public class RegisterControllerTest extends FullContainerConfig {
         // The account request is stored in the outbox, not sent directly to Kafka.
         assertThat(outboxEventRepository.findAll()).singleElement().satisfies(event -> {
             assertThat(event.getStatus()).isEqualTo(OutboxStatus.PENDING);
-            assertThat(event.getTopic()).isEqualTo(AccountProducer.ACCOUNT_REQUESTED_TOPIC);
+            assertThat(event.getTopic()).isEqualTo(Topics.ACCOUNT_REQUESTED);
             assertThat(event.getAggregateId()).isEqualTo(user.getKeycloakId());
             assertThat(objectMapper.readTree(event.getPayload()).get("email").asText()).isEqualTo(EMAIL);
         });
-        verifyNoInteractions(accountProducer);
+        verifyNoInteractions(userEventProducer);
         assertThat(user.getRole()).isEqualTo(UserRole.CUSTOMER_BASIC);
         assertThat(keycloak.realm(realm).users().get(user.getKeycloakId()).roles().realmLevel().listAll())
                 .extracting(RoleRepresentation::getName)
@@ -262,7 +269,7 @@ public class RegisterControllerTest extends FullContainerConfig {
         String secondToken = registerAndLogin(OTHER_EMAIL, OTHER_PHONE);
         stepUpdateProfile(secondToken);
         UserKycDataRequest sameCurp = buildKycRequest();
-        sameCurp.setRfc("OTRO900101XYZ");
+        sameCurp.setRfc("OARO900101XY2");
 
         kycRequest(secondToken, sameCurp)
                 .andExpect(status().isConflict())
@@ -281,7 +288,7 @@ public class RegisterControllerTest extends FullContainerConfig {
         String secondToken = registerAndLogin(OTHER_EMAIL, OTHER_PHONE);
         stepUpdateProfile(secondToken);
         UserKycDataRequest sameRfc = buildKycRequest();
-        sameRfc.setCurp("OTRO900101HDFLNS01");
+        sameRfc.setCurp("OARO900101HDFLNS01");
 
         kycRequest(secondToken, sameRfc)
                 .andExpect(status().isConflict())
@@ -302,6 +309,111 @@ public class RegisterControllerTest extends FullContainerConfig {
                 .andExpect(status().isConflict());
     }
 
+    // ---- email verification ----
+
+    @Test
+    void shouldSendVerificationEmailOnRegister() throws Exception {
+        stepRegister(EMAIL, PHONE);
+
+        assertThat(mailbox.countTo(EMAIL)).isEqualTo(1);
+        assertThat(keycloakUser(EMAIL).isEmailVerified()).isFalse();
+    }
+
+    @Test
+    void shouldRejectKycWhenEmailIsNotVerified() throws Exception {
+        stepRegister(EMAIL, PHONE);
+        String token = login(EMAIL);
+        stepUpdateProfile(token);
+
+        kycRequest(token, buildKycRequest())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Email must be verified before this step"));
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+        assertThat(outboxEventRepository.count()).isZero();
+    }
+
+    @Test
+    void shouldResendVerificationEmail() throws Exception {
+        stepRegister(EMAIL, PHONE);
+        String token = login(EMAIL);
+
+        mockMvc.perform(post("/api/v1/user/register/me/verify-email").header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isNoContent());
+
+        assertThat(mailbox.countTo(EMAIL)).isEqualTo(2);
+    }
+
+    @Test
+    void shouldNotResendVerificationEmailWhenAlreadyVerified() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+
+        mockMvc.perform(post("/api/v1/user/register/me/verify-email").header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isNoContent());
+
+        assertThat(mailbox.countTo(EMAIL)).as("only the one sent at registration").isEqualTo(1);
+    }
+
+    // ---- format validations ----
+
+    @Test
+    void shouldRejectInvalidCurp() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token);
+        UserKycDataRequest request = buildKycRequest();
+        request.setCurp("DOEJ901301HDFLNS09"); // month 13
+
+        kycRequest(token, request).andExpect(status().isBadRequest());
+
+        request.setCurp("doej900101hdflns09"); // lowercase
+        kycRequest(token, request).andExpect(status().isBadRequest());
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+    }
+
+    @Test
+    void shouldRejectInvalidRfc() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token);
+        UserKycDataRequest request = buildKycRequest();
+        request.setRfc("DOEJ900101ABC"); // check digit must be 0-9 or A
+
+        kycRequest(token, request).andExpect(status().isBadRequest());
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+    }
+
+    @Test
+    void shouldRejectUnderageBirthday() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        String seventeen = LocalDate.now().minusYears(17).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+        profileRequest(token, profileJson(seventeen)).andExpect(status().isBadRequest());
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.REGISTER);
+    }
+
+    @Test
+    void shouldRejectImpossibleOrMalformedBirthday() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+
+        profileRequest(token, profileJson("31/02/1990")).andExpect(status().isBadRequest());
+        profileRequest(token, profileJson("1990-01-01")).andExpect(status().isBadRequest());
+        profileRequest(token, """
+                {"names":"John","firstSurname":"Doe","secondSurname":"Smith","gender":"MALE","countryOfBirth":"MX"}""")
+                .andExpect(status().isBadRequest());
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.REGISTER);
+    }
+
+    @Test
+    void shouldAcceptAdultBirthday() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+
+        profileRequest(token, profileJson("29/02/2000")).andExpect(status().isNoContent());
+
+        assertThat(userProfileRepository.findAll()).singleElement()
+                .satisfies(profile -> assertThat(profile.getBirthday()).isEqualTo(LocalDate.of(2000, 2, 29)));
+    }
+
     private ResultActions registerRequest(String email, String phone) throws Exception {
         return mockMvc.perform(post("/api/v1/user/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -319,9 +431,34 @@ public class RegisterControllerTest extends FullContainerConfig {
                 .content(objectMapper.writeValueAsString(request)));
     }
 
+    // Registers, confirms the email (as if the user clicked the link) and logs in.
     private String registerAndLogin(String email, String phone) throws Exception {
         stepRegister(email, phone);
+        markEmailVerified(email);
         return login(email);
+    }
+
+    private void markEmailVerified(String email) {
+        UserRepresentation user = keycloakUser(email);
+        user.setEmailVerified(true);
+        keycloak.realm(realm).users().get(user.getId()).update(user);
+    }
+
+    private UserRepresentation keycloakUser(String email) {
+        return keycloak.realm(realm).users().searchByEmail(email, true).get(0);
+    }
+
+    private ResultActions profileRequest(String token, String json) throws Exception {
+        return mockMvc.perform(put("/api/v1/user/register/me/profile")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json));
+    }
+
+    private String profileJson(String birthday) {
+        return """
+                {"names":"John","firstSurname":"Doe","secondSurname":"Smith","gender":"MALE",
+                 "birthday":"%s","countryOfBirth":"MX"}""".formatted(birthday);
     }
 
     // Same password grant the client uses after POST /register.
@@ -393,7 +530,7 @@ public class RegisterControllerTest extends FullContainerConfig {
         request.setFirstSurname("Doe");
         request.setSecondSurname("Smith");
         request.setGender(Gender.MALE);
-        request.setBirthday("01/01/1990");
+        request.setBirthday(LocalDate.of(1990, 1, 1));
         request.setCountryOfBirth(Country.MX);
         return request;
     }
@@ -401,7 +538,7 @@ public class RegisterControllerTest extends FullContainerConfig {
     private UserKycDataRequest buildKycRequest() {
         UserKycDataRequest request = new UserKycDataRequest();
         request.setCurp("DOEJ900101HDFLNS09");
-        request.setRfc("DOEJ900101ABC");
+        request.setRfc("DOEJ900101AB1");
         request.setDocumentType(DocumentType.DRIVERS_LICENSE);
         return request;
     }

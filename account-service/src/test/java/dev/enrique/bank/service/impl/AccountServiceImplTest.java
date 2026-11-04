@@ -6,6 +6,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -56,6 +58,63 @@ class AccountServiceImplTest {
         accountService.createAccount(event(), USER_ID);
 
         verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldFreezeOpenAccountWhenUserIsBlocked() {
+        Account account = account(AccountStatus.OPEN);
+        when(accountRepository.findEntityByUserId(USER_ID)).thenReturn(Optional.of(account));
+
+        accountService.updateStatusByUserId(USER_ID, false);
+
+        assertThat(account.getAccountStatus()).isEqualTo(AccountStatus.FROZEN);
+    }
+
+    @Test
+    void shouldReopenFrozenAccountWhenUserIsUnblocked() {
+        Account account = account(AccountStatus.FROZEN);
+        when(accountRepository.findEntityByUserId(USER_ID)).thenReturn(Optional.of(account));
+
+        accountService.updateStatusByUserId(USER_ID, true);
+
+        assertThat(account.getAccountStatus()).isEqualTo(AccountStatus.OPEN);
+    }
+
+    @Test
+    void shouldNotReopenClosedAccountWhenUserIsUnblocked() {
+        Account account = account(AccountStatus.CLOSE);
+        when(accountRepository.findEntityByUserId(USER_ID)).thenReturn(Optional.of(account));
+
+        accountService.updateStatusByUserId(USER_ID, true);
+
+        assertThat(account.getAccountStatus()).isEqualTo(AccountStatus.CLOSE);
+    }
+
+    @Test
+    void shouldIgnoreStatusChangeWhenUserHasNoAccount() {
+        when(accountRepository.findEntityByUserId(USER_ID)).thenReturn(Optional.empty());
+
+        accountService.updateStatusByUserId(USER_ID, false);
+
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldUpdateEmailOfUserAccount() {
+        Account account = account(AccountStatus.OPEN);
+        when(accountRepository.findEntityByUserId(USER_ID)).thenReturn(Optional.of(account));
+
+        accountService.updateEmailByUserId(USER_ID, "new@test.com");
+
+        assertThat(account.getEmail()).isEqualTo("new@test.com");
+    }
+
+    private static Account account(AccountStatus status) {
+        Account account = new Account();
+        account.setUserId(USER_ID);
+        account.setEmail("user@test.com");
+        account.setAccountStatus(status);
+        return account;
     }
 
     private static CreateAccountEvent event() {

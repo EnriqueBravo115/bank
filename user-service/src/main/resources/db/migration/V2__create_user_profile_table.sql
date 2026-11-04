@@ -4,7 +4,7 @@ CREATE TABLE user_profiles
     names            VARCHAR(255) NOT NULL,
     first_surname    VARCHAR(255) NOT NULL,
     second_surname   VARCHAR(255) NOT NULL,
-    birthday         VARCHAR(10),
+    birthday         DATE,
     gender           VARCHAR(50)  NOT NULL,
     country_of_birth VARCHAR(2)   NOT NULL,
     updated_at       TIMESTAMP

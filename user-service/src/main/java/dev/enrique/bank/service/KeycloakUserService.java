@@ -16,4 +16,12 @@ public interface KeycloakUserService {
     void setCustomerTier(String keycloakId, UserRole tier);
 
     void updateRegistrationStatus(String keycloakId, String status);
+
+    void setEnabled(String keycloakId, boolean enabled);
+
+    void updateEmail(String keycloakId, String email);
+
+    void sendVerificationEmail(String keycloakId);
+
+    boolean isEmailVerified(String keycloakId);
 }

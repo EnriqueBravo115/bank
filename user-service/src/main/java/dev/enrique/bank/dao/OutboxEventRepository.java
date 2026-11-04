@@ -12,10 +12,10 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, UUID> 
     // SKIP LOCKED lets several user-service replicas publish in parallel without sending the same row twice.
     @Query(value = """
             SELECT * FROM outbox_event
-            WHERE status = 'PENDING' AND topic = :topic
+            WHERE status = 'PENDING'
             ORDER BY created_at
             LIMIT :limit
             FOR UPDATE SKIP LOCKED
             """, nativeQuery = true)
-    List<OutboxEvent> lockPending(String topic, int limit);
+    List<OutboxEvent> lockPending(int limit);
 }

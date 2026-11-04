@@ -1,8 +1,9 @@
 package dev.enrique.bank.dao;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -33,13 +34,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
             """)
     Optional<UserDetailedResponse> getUserByKeycloakId(String keycloakId);
 
-    @Query("""
+    @Query(value = """
             SELECT new dev.enrique.bank.commons.dto.response.UserDetailedResponse(
                 u.id, u.email, u.active, u.role, u.registerStatus)
             FROM User u
             WHERE u.active = true
-            """)
-    List<UserDetailedResponse> getActiveUsers();
+            ORDER BY u.id
+            """,
+            countQuery = "SELECT COUNT(u) FROM User u WHERE u.active = true")
+    Page<UserDetailedResponse> getActiveUsers(Pageable pageable);
 
     Optional<User> findByKeycloakId(String keycloakId);
 

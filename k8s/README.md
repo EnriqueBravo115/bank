@@ -34,6 +34,7 @@ kubectl apply -k k8s
 | Keycloak     | http://localhost:9090     |
 | Eureka       | http://localhost:8761     |
 | Kafka UI     | http://localhost:8083     |
+| Mailpit      | http://localhost:8025     |
 
 Los microservicios, las bases de datos y Kafka solo son accesibles dentro del clúster;
 el tráfico externo entra por Kong.
@@ -57,6 +58,7 @@ k8s/
 ├── namespace.yaml
 ├── databases/             # PostgreSQL (StatefulSet + PVC) por servicio y Keycloak
 ├── kafka/                 # broker (KRaft) y kafka-ui
+├── mailpit/               # SMTP falso para los correos de verificación de Keycloak
 ├── keycloak/              # Keycloak + realm-export.json (ConfigMap)
 ├── kong/                  # Kong DB-less + kong.yml (ConfigMap)
 └── services/              # eureka, config-server y microservicios

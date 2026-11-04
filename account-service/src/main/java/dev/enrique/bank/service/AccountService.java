@@ -8,6 +8,10 @@ public interface AccountService {
 
     public void updateEmail(String accountNumber, String newEmail);
 
+    public void updateStatusByUserId(String userId, boolean userActive);
+
+    public void updateEmailByUserId(String userId, String newEmail);
+
     public AccountDetailedResponse findByAccountNumber(String accountNumber);
 
     public AccountDetailedResponse findByClabe(String clabe);

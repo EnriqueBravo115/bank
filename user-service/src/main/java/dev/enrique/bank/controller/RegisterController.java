@@ -54,4 +54,10 @@ public class RegisterController {
         registerService.updateFinancialInfo(jwt.getSubject(), request);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/me/verify-email")
+    public ResponseEntity<Void> resendVerificationEmail(@AuthenticationPrincipal Jwt jwt) {
+        registerService.resendVerificationEmail(jwt.getSubject());
+        return ResponseEntity.noContent().build();
+    }
 }

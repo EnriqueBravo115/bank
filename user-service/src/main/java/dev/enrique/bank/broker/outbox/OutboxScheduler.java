@@ -13,10 +13,10 @@ import lombok.RequiredArgsConstructor;
 @ConditionalOnProperty(name = "outbox.publisher.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class OutboxScheduler {
-    private final AccountRequestOutbox accountRequestOutbox;
+    private final EventOutbox eventOutbox;
 
     @Scheduled(fixedDelayString = "${outbox.publisher.interval-ms:2000}")
     public void publishPending() {
-        accountRequestOutbox.publishPending();
+        eventOutbox.publishPending();
     }
 }

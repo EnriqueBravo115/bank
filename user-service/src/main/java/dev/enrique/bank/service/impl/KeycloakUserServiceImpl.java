@@ -19,9 +19,11 @@ import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.commons.enums.UserRole;
 import dev.enrique.bank.commons.exception.DuplicateUserDataException;
+import dev.enrique.bank.commons.exception.EmailDeliveryException;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
 import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
 import dev.enrique.bank.service.KeycloakUserService;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 @Service
@@ -47,7 +49,8 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         user.setFirstName("PENDING");
         user.setLastName("PENDING");
         user.setEmail(request.getEmail());
-        user.setEmailVerified(true);
+        // Verified through the email Keycloak sends after registration (see sendVerificationEmail).
+        user.setEmailVerified(false);
         user.setEnabled(true);
         user.setRequiredActions(List.of());
 
@@ -152,5 +155,53 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         attributes.put("registration_status", List.of(status));
         user.setAttributes(attributes);
         userResource.update(user);
+    }
+
+    @Override
+    public void setEnabled(String keycloakId, boolean enabled) {
+        UserResource userResource = keycloak.realm(realm).users().get(keycloakId);
+        UserRepresentation user = userResource.toRepresentation();
+        user.setEnabled(enabled);
+        userResource.update(user);
+
+        if (!enabled) {
+            // Ends the user's sessions so refresh tokens stop working right away;
+            // access tokens already issued stay valid until they expire.
+            userResource.logout();
+        }
+    }
+
+    // The username is the email, so both change together; the new email has to be verified again.
+    @Override
+    public void updateEmail(String keycloakId, String email) {
+        UserResource userResource = keycloak.realm(realm).users().get(keycloakId);
+        UserRepresentation user = userResource.toRepresentation();
+        user.setUsername(email);
+        user.setEmail(email);
+        user.setEmailVerified(false);
+
+        try {
+            userResource.update(user);
+        } catch (WebApplicationException ex) {
+            if (ex.getResponse().getStatus() == 409) {
+                throw new DuplicateUserDataException("email");
+            }
+            throw ex;
+        }
+    }
+
+    @Override
+    public void sendVerificationEmail(String keycloakId) {
+        try {
+            keycloak.realm(realm).users().get(keycloakId).sendVerifyEmail();
+        } catch (WebApplicationException ex) {
+            // Keycloak answers 500 when its SMTP server is not configured or unreachable.
+            throw new EmailDeliveryException(ex);
+        }
+    }
+
+    @Override
+    public boolean isEmailVerified(String keycloakId) {
+        return Boolean.TRUE.equals(keycloak.realm(realm).users().get(keycloakId).toRepresentation().isEmailVerified());
     }
 }

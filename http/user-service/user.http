@@ -14,8 +14,8 @@ Authorization: Bearer {{tokenAdmin}}
 GET {{baseUrl}}/get-by-email/ana.martinez92@gmail.com
 Authorization: Bearer {{tokenAdmin}}
 
-### GET user - active (ADMIN)
-GET {{baseUrl}}/get-active
+### GET user - active (ADMIN), paginated: page (from 0) and size (1-100, default 20)
+GET {{baseUrl}}/get-active?page=0&size=20
 Authorization: Bearer {{tokenAdmin}}
 
 ### PUT user - change customer tier (ADMIN). Allowed: CUSTOMER_BASIC, CUSTOMER_PREMIUM, CUSTOMER_BUSINESS
@@ -26,4 +26,41 @@ Content-Type: application/json
 
 {
   "role": "CUSTOMER_PREMIUM"
+}
+
+### PUT user - block (ADMIN). Disables the Keycloak user and freezes the account in account-service
+PUT {{baseUrl}}/1/active
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "active": false
+}
+
+### PUT user - unblock (ADMIN)
+PUT {{baseUrl}}/1/active
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "active": true
+}
+
+### PUT user - change my email (CUSTOMER_BASIC). Also the login username; a verification email is sent to http://localhost:8025
+PUT {{baseUrl}}/me/email
+Authorization: Bearer {{tokenBasic}}
+Content-Type: application/json
+
+{
+  "email": "ana.martinez.nuevo@gmail.com"
+}
+
+### PUT user - change my phone (CUSTOMER_BASIC)
+PUT {{baseUrl}}/me/phone
+Authorization: Bearer {{tokenBasic}}
+Content-Type: application/json
+
+{
+  "phoneCode": "+52",
+  "phoneNumber": "6641112233"
 }

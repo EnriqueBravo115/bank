@@ -59,6 +59,12 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: KC_HEALTH_ENABLED
               value: "true"
+            # Public URL used in the links of Keycloak's emails (NodePort 30090 -> localhost:9090);
+            # services keep calling it at keycloak:8080.
+            - name: KC_HOSTNAME
+              value: http://localhost:9090
+            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+              value: "true"
           startupProbe:
             httpGet:
               path: /health/started

@@ -1,8 +1,9 @@
 package dev.enrique.bank.dao;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -31,22 +32,30 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
             """)
     Optional<UserProfileDetailResponse> getProfileDetailByUserId(Long userId);
 
-    @Query("""
+    @Query(value = """
             SELECT new dev.enrique.bank.commons.dto.response.UserFullNameResponse(
                 p.id, p.names, p.firstSurname, p.secondSurname)
             FROM UserProfile p
             WHERE LOWER(CONCAT(p.names, ' ', p.firstSurname, ' ', p.secondSurname))
                 LIKE LOWER(CONCAT('%', :name, '%'))
+            ORDER BY p.id
+            """,
+            countQuery = """
+            SELECT COUNT(p) FROM UserProfile p
+            WHERE LOWER(CONCAT(p.names, ' ', p.firstSurname, ' ', p.secondSurname))
+                LIKE LOWER(CONCAT('%', :name, '%'))
             """)
-    List<UserFullNameResponse> searchByName(String name);
+    Page<UserFullNameResponse> searchByName(String name, Pageable pageable);
 
-    @Query("""
+    @Query(value = """
             SELECT new dev.enrique.bank.commons.dto.response.UserProfileDetailResponse(
                 p.id, p.user.email, p.user.phoneNumber, p.names, p.firstSurname,
                 p.secondSurname, p.birthday, p.gender, p.countryOfBirth,
                 p.user.role, p.user.registerStatus, p.user.active)
             FROM UserProfile p
             WHERE p.user.registerStatus = :status
-            """)
-    List<UserProfileDetailResponse> getProfilesByRegisterStatus(RegisterStatus status);
+            ORDER BY p.id
+            """,
+            countQuery = "SELECT COUNT(p) FROM UserProfile p WHERE p.user.registerStatus = :status")
+    Page<UserProfileDetailResponse> getProfilesByRegisterStatus(RegisterStatus status, Pageable pageable);
 }

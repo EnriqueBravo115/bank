@@ -153,7 +153,30 @@ class UserQueryControllerTest extends PostgresContainerConfig {
     void getActiveUsers_asAdmin_returns200() throws Exception {
         mockMvc.perform(get("/api/v1/user/get-active").with(admin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].email").value(EMAIL));
+                .andExpect(jsonPath("$.content[0].email").value(EMAIL))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.size").value(20))
+                .andExpect(jsonPath("$.page.totalElements").value(1));
+    }
+
+    @Test
+    void getActiveUsers_paginates() throws Exception {
+        mockMvc.perform(get("/api/v1/user/get-active").param("page", "1").param("size", "1").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.page.number").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(1))
+                .andExpect(jsonPath("$.page.totalPages").value(1));
+    }
+
+    @Test
+    void paginatedEndpoints_rejectInvalidPageParams() throws Exception {
+        mockMvc.perform(get("/api/v1/user/get-active").param("size", "101").with(admin()))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/user/profile/search/{name}", "ana").param("page", "-1").with(admin()))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/user/profile/get-by-status/COMPLETE").param("size", "0").with(admin()))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -168,18 +191,21 @@ class UserQueryControllerTest extends PostgresContainerConfig {
     void searchByName_matchesFullName() throws Exception {
         mockMvc.perform(get("/api/v1/user/profile/search/{name}", "martinez lo").with(admin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(savedUserId));
+                .andExpect(jsonPath("$.content[0].id").value(savedUserId))
+                .andExpect(jsonPath("$.page.totalElements").value(1));
     }
 
     @Test
     void getProfilesByStatus_asAdmin_returns200() throws Exception {
         mockMvc.perform(get("/api/v1/user/profile/get-by-status/COMPLETE").with(admin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(savedUserId));
+                .andExpect(jsonPath("$.content[0].id").value(savedUserId))
+                .andExpect(jsonPath("$.page.totalElements").value(1));
 
         mockMvc.perform(get("/api/v1/user/profile/get-by-status/PROFILE").with(admin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isEmpty());
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.page.totalElements").value(0));
     }
 
     @Test

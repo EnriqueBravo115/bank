@@ -1,5 +1,9 @@
 package dev.enrique.bank.commons.dto.response;
 
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import dev.enrique.bank.commons.enums.Country;
 import dev.enrique.bank.commons.enums.Gender;
 import dev.enrique.bank.commons.enums.RegisterStatus;
@@ -12,7 +16,7 @@ public record UserProfileDetailResponse(
         String names,
         String firstSurname,
         String secondSurname,
-        String birthday,
+        @JsonFormat(pattern = "dd/MM/yyyy") LocalDate birthday,
         Gender gender,
         Country countryOfBirth,
         UserRole role,

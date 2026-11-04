@@ -1,6 +1,7 @@
 package dev.enrique.bank.service.impl;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 
@@ -31,12 +32,12 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
-    public List<UserFullNameResponse> searchByName(String name) {
-        return userProfileRepository.searchByName(name);
+    public Page<UserFullNameResponse> searchByName(String name, Pageable pageable) {
+        return userProfileRepository.searchByName(name, pageable);
     }
 
     @Override
-    public List<UserProfileDetailResponse> getProfilesByRegisterStatus(RegisterStatus status) {
-        return userProfileRepository.getProfilesByRegisterStatus(status);
+    public Page<UserProfileDetailResponse> getProfilesByRegisterStatus(RegisterStatus status, Pageable pageable) {
+        return userProfileRepository.getProfilesByRegisterStatus(status, pageable);
     }
 }

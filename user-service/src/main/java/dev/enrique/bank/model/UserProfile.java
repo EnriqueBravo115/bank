@@ -1,5 +1,7 @@
 package dev.enrique.bank.model;
 
+import java.time.LocalDate;
+
 import dev.enrique.bank.commons.enums.Country;
 import dev.enrique.bank.commons.enums.Gender;
 import jakarta.persistence.Column;
@@ -36,8 +38,8 @@ public class UserProfile {
     @Column(name = "second_surname", nullable = false)
     private String secondSurname;
 
-    @Column(name = "birthday", length = 10)
-    private String birthday;
+    @Column(name = "birthday")
+    private LocalDate birthday;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "gender", length = 50)

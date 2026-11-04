@@ -14,4 +14,6 @@ public interface RegisterService {
     void updateKycData(String keycloakId, UserKycDataRequest request);
 
     void updateFinancialInfo(String keycloakId, UserFinancialInfoRequest request);
+
+    void resendVerificationEmail(String keycloakId);
 }

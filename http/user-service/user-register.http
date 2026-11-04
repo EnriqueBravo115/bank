@@ -21,6 +21,12 @@ grant_type=password
 &username=ana.martinez92@gmail.com
 &password=secure1!
 
+### Verify the email: open the link Keycloak sent to http://localhost:8025 (Mailpit). Required before the KYC step.
+
+### POST resend verification email
+POST http://localhost:8000/api/v1/user/register/me/verify-email
+Authorization: Bearer {{register_token}}
+
 ### PUT update profile
 PUT http://localhost:8000/api/v1/user/register/me/profile
 Authorization: Bearer {{register_token}}

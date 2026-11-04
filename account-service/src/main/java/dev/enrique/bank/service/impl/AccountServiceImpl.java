@@ -80,6 +80,28 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new AccountNotFoundException(email));
     }
 
+    // Blocking a user freezes the account; unblocking only reopens an account that was frozen,
+    // never one that was closed or marked inactive for other reasons. Repeated events are no-ops.
+    @Override
+    @Transactional
+    public void updateStatusByUserId(String userId, boolean userActive) {
+        accountRepository.findEntityByUserId(userId).ifPresentOrElse(account -> {
+            if (!userActive && account.getAccountStatus() == AccountStatus.OPEN) {
+                account.setAccountStatus(AccountStatus.FROZEN);
+            } else if (userActive && account.getAccountStatus() == AccountStatus.FROZEN) {
+                account.setAccountStatus(AccountStatus.OPEN);
+            }
+        }, () -> log.info("No account for user {}, ignoring status change", userId));
+    }
+
+    @Override
+    @Transactional
+    public void updateEmailByUserId(String userId, String newEmail) {
+        accountRepository.findEntityByUserId(userId).ifPresentOrElse(
+                account -> account.setEmail(newEmail),
+                () -> log.info("No account for user {}, ignoring email change", userId));
+    }
+
     private String generateUniqueClabe() {
         String clabe;
         do {

@@ -1,10 +1,15 @@
 package dev.enrique.bank.commons.dto.request;
 
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.OptBoolean;
+
 import dev.enrique.bank.commons.enums.Country;
 import dev.enrique.bank.commons.enums.Gender;
+import dev.enrique.bank.commons.validation.Adult;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,8 +30,11 @@ public class UserProfileRequest {
     @NotNull
     private Gender gender;
 
-    @Pattern(regexp = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(19[2-9][0-9]|20[0-9]{2})$")
-    private String birthday;
+    // dd/MM/yyyy; STRICT resolving rejects impossible dates such as 31/02/1990.
+    @NotNull
+    @Adult
+    @JsonFormat(pattern = "dd/MM/uuuu", lenient = OptBoolean.FALSE)
+    private LocalDate birthday;
 
     @NotNull
     private Country countryOfBirth;

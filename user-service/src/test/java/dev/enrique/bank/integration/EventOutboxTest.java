@@ -1,9 +1,11 @@
 package dev.enrique.bank.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,32 +14,35 @@ import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.KafkaException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import dev.enrique.bank.broker.outbox.AccountRequestOutbox;
-import dev.enrique.bank.broker.producer.AccountProducer;
+import dev.enrique.bank.broker.Topics;
+import dev.enrique.bank.broker.event.CreateAccountEvent;
+import dev.enrique.bank.broker.event.UserStatusChangedEvent;
+import dev.enrique.bank.broker.outbox.EventOutbox;
+import dev.enrique.bank.broker.producer.UserEventProducer;
 import dev.enrique.bank.commons.enums.AccountType;
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.OutboxStatus;
 import dev.enrique.bank.dao.OutboxEventRepository;
 import dev.enrique.bank.model.OutboxEvent;
-import dev.enrique.bank.model.User;
 import dev.enrique.bank.util.PostgresContainerConfig;
 
 @SpringBootTest
 @ActiveProfiles("test-postgres")
-class AccountRequestOutboxTest extends PostgresContainerConfig {
+class EventOutboxTest extends PostgresContainerConfig {
     @Autowired
-    private AccountRequestOutbox outbox;
+    private EventOutbox outbox;
     @Autowired
     private OutboxEventRepository outboxEventRepository;
 
     @MockitoBean
-    private AccountProducer accountProducer;
+    private UserEventProducer userEventProducer;
 
     @BeforeEach
     void cleanUp() {
@@ -47,8 +52,8 @@ class AccountRequestOutboxTest extends PostgresContainerConfig {
     @Test
     void shouldPublishPendingEventsAndMarkThemSent() {
         brokerAccepts();
-        outbox.enqueue(user("kc-1", "one@test.com"));
-        outbox.enqueue(user("kc-2", "two@test.com"));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-2", accountRequested("two@test.com"));
 
         outbox.publishPending();
 
@@ -56,31 +61,54 @@ class AccountRequestOutboxTest extends PostgresContainerConfig {
             assertThat(event.getStatus()).isEqualTo(OutboxStatus.SENT);
             assertThat(event.getSentAt()).isNotNull();
         });
-        OutboxEvent first = eventOf("kc-1");
-        verify(accountProducer).sendCreateAccountEvent(
-                argThat(e -> e.getEmail().equals("one@test.com")
-                        && e.getAccountType() == AccountType.SAVING
-                        && e.getCurrency() == Currency.MX),
+        verify(userEventProducer).send(
+                eq(Topics.ACCOUNT_REQUESTED),
                 eq("kc-1"),
-                eq(first.getId()));
+                argThat(e -> e instanceof CreateAccountEvent created
+                        && created.getEmail().equals("one@test.com")
+                        && created.getAccountType() == AccountType.SAVING
+                        && created.getCurrency() == Currency.MX),
+                eq(eventOf("kc-1").getId()));
+    }
+
+    @Test
+    void shouldPublishEventsOfDifferentTopicsInCreationOrder() {
+        brokerAccepts();
+        outbox.enqueue(Topics.USER_STATUS_CHANGED, "kc-1", new UserStatusChangedEvent(false));
+        outbox.enqueue(Topics.USER_STATUS_CHANGED, "kc-1", new UserStatusChangedEvent(true));
+
+        outbox.publishPending();
+
+        InOrder order = inOrder(userEventProducer);
+        order.verify(userEventProducer).send(eq(Topics.USER_STATUS_CHANGED), eq("kc-1"),
+                argThat(e -> e instanceof UserStatusChangedEvent changed && !changed.isActive()), any());
+        order.verify(userEventProducer).send(eq(Topics.USER_STATUS_CHANGED), eq("kc-1"),
+                argThat(e -> e instanceof UserStatusChangedEvent changed && changed.isActive()), any());
+    }
+
+    @Test
+    void shouldRejectEventNotRegisteredForTopic() {
+        assertThatThrownBy(() -> outbox.enqueue(Topics.USER_EMAIL_CHANGED, "kc-1", new UserStatusChangedEvent(true)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(outboxEventRepository.count()).isZero();
     }
 
     @Test
     void shouldNotResendEventsAlreadySent() {
         brokerAccepts();
-        outbox.enqueue(user("kc-1", "one@test.com"));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
 
         outbox.publishPending();
         outbox.publishPending();
 
-        verify(accountProducer, times(1)).sendCreateAccountEvent(any(), any(), any());
+        verify(userEventProducer, times(1)).send(any(), any(), any(), any());
     }
 
     @Test
     void shouldKeepEventPendingAndStopBatchWhenBrokerFails() {
         brokerFails();
-        outbox.enqueue(user("kc-1", "one@test.com"));
-        outbox.enqueue(user("kc-2", "two@test.com"));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-2", accountRequested("two@test.com"));
 
         outbox.publishPending();
 
@@ -89,13 +117,13 @@ class AccountRequestOutboxTest extends PostgresContainerConfig {
         assertThat(failed.getAttempts()).isEqualTo(1);
         assertThat(failed.getLastError()).contains("broker down");
         assertThat(eventOf("kc-2").getAttempts()).as("batch stops at the first failure").isZero();
-        verify(accountProducer, times(1)).sendCreateAccountEvent(any(), any(), any());
+        verify(userEventProducer, times(1)).send(any(), any(), any(), any());
     }
 
     @Test
     void shouldRetryOnNextRunAfterBrokerRecovers() {
         brokerFails();
-        outbox.enqueue(user("kc-1", "one@test.com"));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
         outbox.publishPending();
 
         brokerAccepts();
@@ -110,25 +138,24 @@ class AccountRequestOutboxTest extends PostgresContainerConfig {
     @Test
     void shouldMarkEventFailedAfterMaxAttempts() {
         brokerFails();
-        outbox.enqueue(user("kc-1", "one@test.com"));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
 
-        for (int i = 0; i < AccountRequestOutbox.MAX_ATTEMPTS + 2; i++) {
+        for (int i = 0; i < EventOutbox.MAX_ATTEMPTS + 2; i++) {
             outbox.publishPending();
         }
 
         OutboxEvent event = eventOf("kc-1");
         assertThat(event.getStatus()).isEqualTo(OutboxStatus.FAILED);
-        assertThat(event.getAttempts()).isEqualTo(AccountRequestOutbox.MAX_ATTEMPTS);
-        verify(accountProducer, times(AccountRequestOutbox.MAX_ATTEMPTS)).sendCreateAccountEvent(any(), any(), any());
+        assertThat(event.getAttempts()).isEqualTo(EventOutbox.MAX_ATTEMPTS);
+        verify(userEventProducer, times(EventOutbox.MAX_ATTEMPTS)).send(any(), any(), any(), any());
     }
 
     private void brokerAccepts() {
-        when(accountProducer.sendCreateAccountEvent(any(), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
+        when(userEventProducer.send(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
     }
 
     private void brokerFails() {
-        when(accountProducer.sendCreateAccountEvent(any(), any(), any()))
+        when(userEventProducer.send(any(), any(), any(), any()))
                 .thenReturn(CompletableFuture.failedFuture(new KafkaException("broker down")));
     }
 
@@ -139,10 +166,7 @@ class AccountRequestOutboxTest extends PostgresContainerConfig {
                 .orElseThrow();
     }
 
-    private static User user(String keycloakId, String email) {
-        User user = new User();
-        user.setKeycloakId(keycloakId);
-        user.setEmail(email);
-        return user;
+    private static CreateAccountEvent accountRequested(String email) {
+        return CreateAccountEvent.builder().email(email).accountType(AccountType.SAVING).currency(Currency.MX).build();
     }
 }

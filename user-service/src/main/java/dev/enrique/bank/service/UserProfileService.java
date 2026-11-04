@@ -1,6 +1,7 @@
 package dev.enrique.bank.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import dev.enrique.bank.commons.dto.response.UserFullNameResponse;
 import dev.enrique.bank.commons.dto.response.UserProfileDetailResponse;
@@ -12,7 +13,7 @@ public interface UserProfileService {
 
     UserProfileDetailResponse getProfileDetailByUserId(Long userId);
 
-    List<UserFullNameResponse> searchByName(String name);
+    Page<UserFullNameResponse> searchByName(String name, Pageable pageable);
 
-    List<UserProfileDetailResponse> getProfilesByRegisterStatus(RegisterStatus status);
+    Page<UserProfileDetailResponse> getProfilesByRegisterStatus(RegisterStatus status, Pageable pageable);
 }

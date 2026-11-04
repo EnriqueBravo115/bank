@@ -1,6 +1,7 @@
 package dev.enrique.bank.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import dev.enrique.bank.commons.dto.response.UserDetailedResponse;
 import dev.enrique.bank.commons.dto.response.UserPrincipalResponse;
@@ -13,7 +14,13 @@ public interface UserService {
 
     UserDetailedResponse getUserByKeycloakId(String keycloakId);
 
-    List<UserDetailedResponse> getActiveUsers();
+    Page<UserDetailedResponse> getActiveUsers(Pageable pageable);
 
     UserDetailedResponse updateRole(Long userId, UserRole role);
+
+    UserDetailedResponse updateActive(Long userId, boolean active);
+
+    UserDetailedResponse updateEmail(String keycloakId, String email);
+
+    UserDetailedResponse updatePhone(String keycloakId, String phoneCode, String phoneNumber);
 }

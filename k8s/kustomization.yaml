@@ -12,6 +12,7 @@ resources:
   - kafka/broker.yaml
   - kafka/kafka-ui.yaml
   - keycloak/keycloak.yaml
+  - mailpit/mailpit.yaml
   - kong/kong.yaml
   - services/eureka-server.yaml
   - services/config-server.yaml
