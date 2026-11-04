@@ -39,6 +39,11 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
         eventConsumerBufferSize: 10
+        # Business rejections (frozen account, insufficient funds, unknown account) are not
+        # account-service failures; they still reach the fallback, which records them as DECLINED/FAILED.
+        ignoreExceptions:
+          - feign.FeignException$UnprocessableEntity
+          - feign.FeignException$NotFound
   retry:
     instances:
       account-service:

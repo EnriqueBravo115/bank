@@ -2,6 +2,8 @@ package dev.enrique.bank.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -115,6 +117,35 @@ class UserAccountManagementControllerTest extends FullContainerConfig {
         assertThat(keycloakUser(user).isEnabled()).isFalse();
         assertThat(loginStatus(EMAIL).is4xxClientError()).as("a blocked user cannot log in").isTrue();
         assertThat(singleEvent(Topics.USER_STATUS_CHANGED).getPayload()).contains("false");
+    }
+
+    @Test
+    void shouldRejectRequestsFromBlockedUserWithStillValidToken() throws Exception {
+        User user = createUser(EMAIL, PHONE);
+        mockMvc.perform(get("/api/v1/user/me").with(customer(user.getKeycloakId()))).andExpect(status().isOk());
+
+        updateActive(user.getId(), false, admin()).andExpect(status().isOk());
+
+        // Same token as before the block: it has not expired, but the user is blocked.
+        mockMvc.perform(get("/api/v1/user/me").with(customer(user.getKeycloakId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("User blocked"));
+        updatePhone(user, "+52", "5587654321").andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/user/register/me/verify-email").with(customer(user.getKeycloakId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("User blocked"));
+
+        assertThat(userInDb(user).getPhoneNumber()).isEqualTo(PHONE);
+    }
+
+    @Test
+    void shouldAcceptRequestsAgainAfterUnblock() throws Exception {
+        User user = createUser(EMAIL, PHONE);
+        updateActive(user.getId(), false, admin()).andExpect(status().isOk());
+
+        updateActive(user.getId(), true, admin()).andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/user/me").with(customer(user.getKeycloakId()))).andExpect(status().isOk());
     }
 
     @Test

@@ -49,4 +49,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
+
+    // Checked on every authenticated request by RegisterStatusFilter; keycloak_id is UNIQUE (indexed).
+    boolean existsByKeycloakIdAndActiveFalse(String keycloakId);
 }

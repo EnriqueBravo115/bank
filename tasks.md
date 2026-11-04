@@ -40,8 +40,8 @@
   - `TransactionCreationController` (`/create/transfer`, `/purchase`, `/service-payment`): llama a account-service por Feign; requiere mockear `AccountClient` o WireMock.
   - `/analytics/type-summary`, `/average-days`, `/partition-by-amount` y `/max-by-type` (este último marcado `// FIX: Internal Server Error`).
 
-- [ ] **Perfil `test` de `transaction-service` obsoleto**
-  - `src/main/resources/application-test.yml` apunta a `user_db`, a un realm `bank-realm` inexistente e incluye la contraseña de Gmail; con ese perfil `SecurityConfig` (y el bean `ModelMapper`) no se carga. Ningún test lo usa ya.
+- [x] **Perfil `test` de `transaction-service` obsoleto**
+  - Eliminados `application-test.yml` (apuntaba a `user_db`, a un realm `bank-realm` inexistente e incluía la contraseña de Gmail) y `TestSecurityConfig`; nada activaba el perfil. `SecurityConfig` ya no lleva `@Profile("!test")`.
 
 - [ ] **`TransactionQueryServiceTest` levanta un contenedor PostgreSQL que no usa**
   - Es un test unitario con Mockito; el `@Container` y el `@DynamicPropertySource` sobran y alargan el build.
@@ -84,7 +84,7 @@
 
 - [x] **`kong.yml` y `realm-export.json` duplicados**
   - Se eliminaron `kong/` y `keycloak/` de la raíz; `docker-compose.yml` monta `k8s/kong/kong.yml` y `k8s/keycloak/realm-export.json`.
-  - Nota: los tests de `user-service` usan su propio realm (`user-service/src/main/resources/keycloak/realm-export.json`), distinto al de despliegue.
+  - Nota: los tests de `user-service` usan su propio realm (`user-service/src/test/resources/keycloak/realm-export.json`), distinto al de despliegue.
 
 - [ ] **Datos de Kafka efímeros**
   - El broker no tiene volumen (igual que en docker-compose); los tópicos se pierden si el pod se reinicia.
@@ -97,7 +97,7 @@
 
 - [ ] **Contraseña de aplicación de Gmail en el repositorio**
   - Ya se quitó de `user-service` (no usaba el correo) y de `config-server/.../user-service.yml`.
-  - Sigue en `transaction-service/src/main/resources/application-test.yml` y en el historial de git: **hay que revocarla** en la cuenta de Google.
+  - También se eliminó `transaction-service/src/main/resources/application-test.yml`, pero sigue en el historial de git: **hay que revocarla** en la cuenta de Google.
 
 ## user-service
 
@@ -130,22 +130,22 @@
   - Paginación (`page`, `size` de 1 a 100) en `get-active`, `profile/search` y `profile/get-by-status`; responden `{content, page}`.
   - Validaciones: CURP y RFC (persona física) con regex, `birthday` como `LocalDate` (`dd/MM/yyyy`, fechas imposibles rechazadas) y mayoría de edad (`@Adult`).
   - Verificación de email: Keycloak la envía al registrarse (Mailpit en local: http://localhost:8025), se puede reenviar con `POST /register/me/verify-email` y el KYC la exige.
+  - Corte inmediato del bloqueo: `RegisterStatusFilter` consulta `active` en cada petición autenticada (incluidos los pasos del registro) y responde `403 {"error": "User blocked"}` aunque el access token no haya expirado. Los usuarios sin fila en `user_db` (admins de Keycloak) no se ven afectados.
+    - account-service y transaction-service siguen aceptando el token hasta que expira, pero la cuenta queda `FROZEN` y los movimientos (`/movement/*` de account-service) rechazan con `422` cualquier cuenta origen o destino que no esté `OPEN`; transaction-service registra la operación como `DECLINED` con el motivo.
+    - El circuit breaker de transaction-service ya no cuenta los `422`/`404` de account-service como fallos (antes, unos cuantos rechazos de negocio lo abrían y todas las operaciones fallaban 10 s con "Service unavailable").
 
 - [ ] **Pendientes que salieron de lo anterior**
-  - Un usuario bloqueado conserva su access token hasta que expira (5 min); si hace falta corte inmediato, validar `active` en `RegisterStatusFilter` o reducir la vida del token.
   - Antes del KYC el usuario no puede corregir un email mal escrito (los endpoints de contacto exigen el registro completo).
   - No se comprueba que CURP/RFC coincidan entre sí ni con `birthday`.
   - Revisar/reintentar eventos `FAILED` del outbox y limpiar los `SENT` antiguos.
 
-- [ ] **Configuración de tests dentro de `src/main`**
-  - `TestKeycloakConfig`, `TestPostgresConfig` y `application-test-*.yml` se empaquetan en la imagen; moverlos a `src/test`.
+- [x] **Configuración de tests dentro de `src/main`**
+  - `TestKeycloakConfig`, `TestPostgresConfig`, `application-test-*.yml` y el `realm-export.json` de los tests se movieron a `src/test`; ya no se empaquetan en la imagen.
 
 ## Otros
 
-- [ ] **`eureka.instance.hostname` de user-service apunta a `eureka-server`**
-  - En `config-server/src/main/resources/config/user-service.yml`: `instance.hostname: ${EUREKA_HOST:localhost}`.
-  - user-service se registra en Eureka con el hostname de Eureka; si otro servicio lo llamara por Feign, la llamada iría a Eureka.
-  - En Kubernetes se mitiga con `EUREKA_INSTANCE_PREFER_IP_ADDRESS=true`; en compose debería usar `prefer-ip-address: true` como los demás servicios.
+- [x] **`eureka.instance.hostname` de user-service y config-server apuntaba a `eureka-server`**
+  - Se registraban en Eureka con el hostname de Eureka; ahora usan `prefer-ip-address: true` como los demás servicios.
 
 - [ ] **Mensaje de error incorrecto en `account-service` `get-by-email`**
   - Responde `"Account not found with number: <email>"`.

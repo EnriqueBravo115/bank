@@ -9,15 +9,18 @@ import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
 import dev.enrique.bank.commons.dto.request.ClientWithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
+import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.BalanceType;
 import dev.enrique.bank.commons.enums.LimitType;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.exception.AccountBalanceNotFoundException;
 import dev.enrique.bank.commons.exception.AccountNotFoundException;
+import dev.enrique.bank.commons.exception.AccountNotOperableException;
 import dev.enrique.bank.commons.exception.InsufficientFundsException;
 import dev.enrique.bank.commons.exception.TransactionLimitExceededException;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
+import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
 import dev.enrique.bank.service.FundsValidationService;
 import dev.enrique.bank.service.MovementService;
@@ -37,6 +40,7 @@ public class MovementServiceImpl implements MovementService {
     @Transactional
     public MovementResultResponse processTransfer(ClientTransferRequest request) {
         validate(request.sourceAccountNumber(), request.amount(), LimitType.TRANSFER, false);
+        requireOpen(request.targetAccountNumber());
         transfer(request.sourceAccountNumber(), request.targetAccountNumber(), request.amount());
         return new MovementResultResponse(TransactionStatus.COMPLETED, "Valid Transaction");
     }
@@ -67,9 +71,7 @@ public class MovementServiceImpl implements MovementService {
 
     private void validate(String accountNumber, BigDecimal amount,
             LimitType limitType, boolean checkHolds) {
-        if (!accountRepository.existsByAccountNumber(accountNumber)) {
-            throw new AccountNotFoundException(accountNumber);
-        }
+        requireOpen(accountNumber);
 
         if (!fundsValidationService.hasSufficientFunds(accountNumber, amount)) {
             throw new InsufficientFundsException(accountNumber, amount);
@@ -85,6 +87,15 @@ public class MovementServiceImpl implements MovementService {
 
         if (!fundsValidationService.isWithinDailyLimit(accountNumber, amount, limitType)) {
             throw new TransactionLimitExceededException("Amount exceeds the allowed transaction limit");
+        }
+    }
+
+    // A blocked user's account is FROZEN by the user-status-changed event; it must not move money.
+    private void requireOpen(String accountNumber) {
+        Account account = accountRepository.findEntityByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+        if (account.getAccountStatus() != AccountStatus.OPEN) {
+            throw new AccountNotOperableException(accountNumber, account.getAccountStatus());
         }
     }
 

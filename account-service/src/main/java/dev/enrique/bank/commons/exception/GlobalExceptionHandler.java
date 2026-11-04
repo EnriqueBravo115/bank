@@ -46,4 +46,23 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
+
+    @ExceptionHandler(AccountNotOperableException.class)
+    public ResponseEntity<ErrorResponse> handleAccountNotOperable(AccountNotOperableException ex) {
+        return unprocessable(ex);
+    }
+
+    @ExceptionHandler(TransactionLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionLimitExceeded(TransactionLimitExceededException ex) {
+        return unprocessable(ex);
+    }
+
+    // transaction-service records a 422 as a DECLINED transaction with this message as the reason.
+    private static ResponseEntity<ErrorResponse> unprocessable(RuntimeException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+    }
 }
