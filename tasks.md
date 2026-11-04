@@ -120,8 +120,10 @@
   - Un email que solo existe en Keycloak (p. ej. un admin creado en la consola) también responde `409` en vez de `500`.
   - Si dos registros simultáneos pasan las comprobaciones, la restricción `UNIQUE` de la BD responde `409` y se borra el usuario de Keycloak.
 
-- [ ] **Evento `CreateAccountEvent` fuera de la transacción**
-  - Se envía a Kafka en el paso KYC aunque la BD no haya hecho commit; si Kafka falla, el usuario queda sin cuenta. Usar `@TransactionalEventListener(AFTER_COMMIT)` o el patrón outbox.
+- [x] **Evento `CreateAccountEvent` con patrón outbox**
+  - El KYC guarda el evento en `outbox_event` en la misma transacción; `OutboxScheduler` lo publica cada 2 s (`FOR UPDATE SKIP LOCKED`), espera el ack de Kafka y lo marca `SENT`. Si Kafka falla queda `PENDING` y se reintenta; tras 10 intentos pasa a `FAILED`.
+  - account-service ignora solicitudes repetidas (`existsByUserId`) y `account.user_id` es `UNIQUE`.
+  - Pendiente: revisar/reintentar los eventos `FAILED` (hoy solo a mano en la tabla) y limpiar los `SENT` antiguos.
 
 - [ ] **Funcionalidad que falta**
   - Actualizar datos de contacto después del onboarding (teléfono/email, sincronizado con Keycloak).

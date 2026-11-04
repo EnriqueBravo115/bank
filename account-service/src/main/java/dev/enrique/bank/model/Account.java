@@ -36,7 +36,7 @@ public class Account {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, unique = true)
     private String userId;
 
     @Column(name = "email", nullable = false, unique = true)

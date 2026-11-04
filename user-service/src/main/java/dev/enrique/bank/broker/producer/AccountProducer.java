@@ -1,26 +1,31 @@
 package dev.enrique.bank.broker.producer;
 
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
-import dev.enrique.bank.broker.ProducerUtil;
 import dev.enrique.bank.broker.event.CreateAccountEvent;
-import dev.enrique.bank.commons.enums.AccountType;
-import dev.enrique.bank.commons.enums.Currency;
-import dev.enrique.bank.commons.util.BasicMapper;
-import dev.enrique.bank.model.User;
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
 public class AccountProducer {
-    private final KafkaTemplate<String, CreateAccountEvent> kafkaTemplate;
-    private final BasicMapper basicMapper;
+    public static final String ACCOUNT_REQUESTED_TOPIC = "user-service.account-requested";
 
-    public void sendCreateAccountEvent(User user, String authId) {
-        CreateAccountEvent createAccountEvent = basicMapper.convertToResponse(user, CreateAccountEvent.class);
-        createAccountEvent.setCurrency(Currency.MX);
-        createAccountEvent.setAccountType(AccountType.SAVING);
-        kafkaTemplate.send(ProducerUtil.authHeaderWrapper("user-service.account-requested", createAccountEvent, authId));
+    private final KafkaTemplate<String, CreateAccountEvent> kafkaTemplate;
+
+    // Keyed by the user's Keycloak id so all events of a user land in the same partition, in order.
+    public CompletableFuture<SendResult<String, CreateAccountEvent>> sendCreateAccountEvent(
+            CreateAccountEvent event, String authId, UUID eventId) {
+        ProducerRecord<String, CreateAccountEvent> record =
+                new ProducerRecord<>(ACCOUNT_REQUESTED_TOPIC, authId, event);
+        record.headers().add("auth-user-id", authId.getBytes(StandardCharsets.UTF_8));
+        record.headers().add("event-id", eventId.toString().getBytes(StandardCharsets.UTF_8));
+        return kafkaTemplate.send(record);
     }
 }

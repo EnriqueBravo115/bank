@@ -1,6 +1,6 @@
 CREATE TABLE account (
     id              BIGSERIAL       NOT NULL,
-    user_id         VARCHAR(255)    NOT NULL,
+    user_id         VARCHAR(255)    NOT NULL UNIQUE,
     email           VARCHAR(255)    NOT NULL UNIQUE,
     clabe           VARCHAR(18)     NOT NULL UNIQUE,
     account_number  VARCHAR(20)     NOT NULL,

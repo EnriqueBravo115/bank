@@ -25,6 +25,10 @@ spring:
     bootstrap-servers: ${KAFKA_HOST:localhost}:9092
     producer:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        # Fail fast when the broker is down: the outbox publisher retries on its next run.
+        max.block.ms: 5000
     consumer:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       group-id: user-service-group

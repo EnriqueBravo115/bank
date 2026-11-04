@@ -13,7 +13,9 @@ import dev.enrique.bank.model.Account;
 import dev.enrique.bank.service.AccountService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
@@ -21,7 +23,14 @@ public class AccountServiceImpl implements AccountService {
     private final ClabeGenerator clabeGenerator;
 
     @Override
+    @Transactional
     public void createAccount(CreateAccountEvent createAccountEvent, String authId) {
+        // user-service publishes through an outbox (at-least-once), so the same request can arrive twice.
+        if (accountRepository.existsByUserId(authId)) {
+            log.info("Account already exists for user {}, ignoring repeated account request", authId);
+            return;
+        }
+
         Account account = new Account();
         account.setUserId(authId);
         account.setEmail(createAccountEvent.getEmail());

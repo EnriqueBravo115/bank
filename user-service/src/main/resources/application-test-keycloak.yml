@@ -26,3 +26,7 @@ keycloak:
 eureka:
   client:
     enabled: false
+
+outbox:
+  publisher:
+    enabled: false

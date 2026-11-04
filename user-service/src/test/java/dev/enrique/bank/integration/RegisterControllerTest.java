@@ -12,8 +12,10 @@ import dev.enrique.bank.commons.enums.Gender;
 import dev.enrique.bank.commons.enums.IncomeSource;
 import dev.enrique.bank.commons.enums.MaritalStatus;
 import dev.enrique.bank.commons.enums.OccupationType;
+import dev.enrique.bank.commons.enums.OutboxStatus;
 import dev.enrique.bank.commons.enums.RegisterStatus;
 import dev.enrique.bank.commons.enums.UserRole;
+import dev.enrique.bank.dao.OutboxEventRepository;
 import dev.enrique.bank.dao.UserFinancialInfoRepository;
 import dev.enrique.bank.dao.UserKycRepository;
 import dev.enrique.bank.dao.UserProfileRepository;
@@ -48,6 +50,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -73,6 +76,8 @@ public class RegisterControllerTest extends FullContainerConfig {
     @Autowired
     private KeycloakUserService keycloakUserService;
     @Autowired
+    private OutboxEventRepository outboxEventRepository;
+    @Autowired
     private UserProfileRepository userProfileRepository;
     @Autowired
     private UserKycRepository userKycRepository;
@@ -94,6 +99,7 @@ public class RegisterControllerTest extends FullContainerConfig {
 
     @BeforeEach
     void cleanUp() {
+        outboxEventRepository.deleteAll();
         userFinancialInfoRepository.deleteAll();
         userKycRepository.deleteAll();
         userProfileRepository.deleteAll();
@@ -141,6 +147,15 @@ public class RegisterControllerTest extends FullContainerConfig {
 
         User user = userOf(EMAIL);
         assertThat(user.getRegisterStatus()).isEqualTo(RegisterStatus.KYC);
+
+        // The account request is stored in the outbox, not sent directly to Kafka.
+        assertThat(outboxEventRepository.findAll()).singleElement().satisfies(event -> {
+            assertThat(event.getStatus()).isEqualTo(OutboxStatus.PENDING);
+            assertThat(event.getTopic()).isEqualTo(AccountProducer.ACCOUNT_REQUESTED_TOPIC);
+            assertThat(event.getAggregateId()).isEqualTo(user.getKeycloakId());
+            assertThat(objectMapper.readTree(event.getPayload()).get("email").asText()).isEqualTo(EMAIL);
+        });
+        verifyNoInteractions(accountProducer);
         assertThat(user.getRole()).isEqualTo(UserRole.CUSTOMER_BASIC);
         assertThat(keycloak.realm(realm).users().get(user.getKeycloakId()).roles().realmLevel().listAll())
                 .extracting(RoleRepresentation::getName)
@@ -254,6 +269,7 @@ public class RegisterControllerTest extends FullContainerConfig {
                 .andExpect(jsonPath("$.message").value("A user with this CURP is already registered"));
 
         assertThat(registerStatusOf(OTHER_EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+        assertThat(outboxEventRepository.count()).as("only the first KYC requests an account").isEqualTo(1);
     }
 
     @Test

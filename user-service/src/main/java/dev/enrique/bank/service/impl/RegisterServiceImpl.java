@@ -14,7 +14,7 @@ import dev.enrique.bank.dao.UserFinancialInfoRepository;
 import dev.enrique.bank.dao.UserKycRepository;
 import dev.enrique.bank.dao.UserProfileRepository;
 import dev.enrique.bank.dao.UserRepository;
-import dev.enrique.bank.broker.producer.AccountProducer;
+import dev.enrique.bank.broker.outbox.AccountRequestOutbox;
 import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
 import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
@@ -37,7 +37,7 @@ public class RegisterServiceImpl implements RegisterService {
     private final UserKycRepository userKycRepository;
     private final UserFinancialInfoRepository userFinancialInfoRepository;
     private final KeycloakUserService keycloakUserService;
-    private final AccountProducer accountProducer;
+    private final AccountRequestOutbox accountRequestOutbox;
     private final BasicMapper basicMapper;
 
     @Override
@@ -102,6 +102,7 @@ public class RegisterServiceImpl implements RegisterService {
     }
 
     @Override
+    @Transactional
     public void updateKycData(String keycloakId, UserKycDataRequest request) {
         User user = findByKeycloakId(keycloakId);
 
@@ -128,10 +129,13 @@ public class RegisterServiceImpl implements RegisterService {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
+        // Same transaction as the KYC: the account is requested only if the KYC is committed.
+        accountRequestOutbox.enqueue(user);
+        // Hit the DB constraints before touching Keycloak; if Keycloak fails, everything above rolls back.
+        userRepository.flush();
+
         keycloakUserService.assignRole(user.getKeycloakId(), UserRole.CUSTOMER_BASIC);
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.KYC.name());
-
-        accountProducer.sendCreateAccountEvent(user, user.getKeycloakId());
     }
 
     @Override
