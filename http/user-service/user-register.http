@@ -27,6 +27,15 @@ grant_type=password
 POST http://localhost:8000/api/v1/user/register/me/verify-email
 Authorization: Bearer {{register_token}}
 
+### PUT fix a mistyped email (before KYC). Sends a new verification email; log in again with the new email.
+PUT http://localhost:8000/api/v1/user/register/me/email
+Authorization: Bearer {{register_token}}
+Content-Type: application/json
+
+{
+  "email": "ana.martinez92@gmail.com"
+}
+
 ### PUT update profile
 PUT http://localhost:8000/api/v1/user/register/me/profile
 Authorization: Bearer {{register_token}}

@@ -354,6 +354,56 @@ public class RegisterControllerTest extends FullContainerConfig {
         assertThat(mailbox.countTo(EMAIL)).as("only the one sent at registration").isEqualTo(1);
     }
 
+    // ---- email correction before KYC ----
+
+    @Test
+    void shouldFixMistypedEmailBeforeKyc() throws Exception {
+        stepRegister(EMAIL, PHONE);
+        String token = login(EMAIL);
+
+        emailRequest(token, OTHER_EMAIL)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(OTHER_EMAIL));
+
+        assertThat(userOf(OTHER_EMAIL).getRegisterStatus()).isEqualTo(RegisterStatus.REGISTER);
+        UserRepresentation keycloakUser = keycloakUser(OTHER_EMAIL);
+        assertThat(keycloakUser.getUsername()).isEqualTo(OTHER_EMAIL);
+        assertThat(keycloakUser.isEmailVerified()).isFalse();
+        assertThat(mailbox.countTo(OTHER_EMAIL)).isEqualTo(1);
+        assertThat(outboxEventRepository.count()).as("no account exists yet").isZero();
+
+        // The user verifies the new address, logs in with it and finishes KYC: the account gets the new email.
+        markEmailVerified(OTHER_EMAIL);
+        String newToken = login(OTHER_EMAIL);
+        stepUpdateProfile(newToken);
+        stepUpdateKyc(newToken);
+        assertThat(outboxEventRepository.findAll()).singleElement().satisfies(event -> {
+            assertThat(event.getTopic()).isEqualTo(Topics.ACCOUNT_REQUESTED);
+            assertThat(objectMapper.readTree(event.getPayload()).get("email").asText()).isEqualTo(OTHER_EMAIL);
+        });
+    }
+
+    @Test
+    void shouldRejectFixingEmailToOneAlreadyRegistered() throws Exception {
+        stepRegister(OTHER_EMAIL, OTHER_PHONE);
+        stepRegister(EMAIL, PHONE);
+        String token = login(EMAIL);
+
+        emailRequest(token, OTHER_EMAIL)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A user with this email is already registered"));
+
+        assertThat(userOf(EMAIL).getEmail()).isEqualTo(EMAIL);
+        assertThat(keycloakUser(EMAIL).getUsername()).isEqualTo(EMAIL);
+    }
+
+    @Test
+    void shouldRejectInvalidEmailFix() throws Exception {
+        stepRegister(EMAIL, PHONE);
+
+        emailRequest(login(EMAIL), "not-an-email").andExpect(status().isBadRequest());
+    }
+
     // ---- format validations ----
 
     @Test
@@ -422,6 +472,13 @@ public class RegisterControllerTest extends FullContainerConfig {
 
     private void stepRegister(String email, String phone) throws Exception {
         registerRequest(email, phone).andExpect(status().isOk());
+    }
+
+    private ResultActions emailRequest(String token, String email) throws Exception {
+        return mockMvc.perform(put("/api/v1/user/register/me/email")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\": \"" + email + "\"}"));
     }
 
     private ResultActions kycRequest(String token, UserKycDataRequest request) throws Exception {

@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
 import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
+import dev.enrique.bank.commons.dto.request.UserEmailUpdateRequest;
 import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
+import dev.enrique.bank.commons.dto.response.UserDetailedResponse;
 import dev.enrique.bank.commons.dto.response.UserRegisterResponse;
 import dev.enrique.bank.service.RegisterService;
+import dev.enrique.bank.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RegisterController {
     private final RegisterService registerService;
+    private final UserService userService;
 
     @PostMapping
     public ResponseEntity<UserRegisterResponse> register(@Valid @RequestBody UserRegisterRequest request) {
@@ -53,6 +57,15 @@ public class RegisterController {
             @Valid @RequestBody UserFinancialInfoRequest request) {
         registerService.updateFinancialInfo(jwt.getSubject(), request);
         return ResponseEntity.noContent().build();
+    }
+
+    // Lets a user who mistyped the email fix it before KYC, which requires the email to be verified.
+    // Same logic as PUT /user/me/email, which needs CUSTOMER_BASIC (granted at KYC).
+    @PutMapping("/me/email")
+    public ResponseEntity<UserDetailedResponse> updateEmail(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody UserEmailUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateEmail(jwt.getSubject(), request.getEmail()));
     }
 
     @PostMapping("/me/verify-email")

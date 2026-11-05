@@ -109,7 +109,7 @@
 
 - [x] **Pasos del registro protegidos con JWT**
   - Antes `PUT /register/{userId}/profile|kyc|financial` era `permitAll` con ids secuenciales: cualquiera podía completar el onboarding de otro usuario.
-  - Ahora solo `POST /register` es público. Tras registrarse, el cliente inicia sesión y los pasos usan `PUT /register/me/profile|kyc|financial`, resueltos con el `sub` del JWT. `RegisterStatusFilter` no aplica a `/register/**`, pero sigue bloqueando el resto de endpoints mientras el registro esté incompleto.
+  - Ahora solo `POST /register` es público. Tras registrarse, el cliente inicia sesión y los pasos usan `PUT /register/me/profile|kyc|financial`, resueltos con el `sub` del JWT. En `/register/**`, `RegisterStatusFilter` solo rechaza a los usuarios bloqueados; en el resto de endpoints además exige que el registro haya llegado al KYC.
 
 - [x] **Rol asignado en el KYC y cambio de nivel de cliente**
   - `users.role` es `NULL` hasta el KYC; ahí se asigna `CUSTOMER_BASIC` en `user_db` y en Keycloak a la vez.
@@ -130,12 +130,12 @@
   - Paginación (`page`, `size` de 1 a 100) en `get-active`, `profile/search` y `profile/get-by-status`; responden `{content, page}`.
   - Validaciones: CURP y RFC (persona física) con regex, `birthday` como `LocalDate` (`dd/MM/yyyy`, fechas imposibles rechazadas) y mayoría de edad (`@Adult`).
   - Verificación de email: Keycloak la envía al registrarse (Mailpit en local: http://localhost:8025), se puede reenviar con `POST /register/me/verify-email` y el KYC la exige.
+  - Corrección del email durante el registro (`PUT /register/me/email`): misma lógica que `/user/me/email` (duplicados, `username` de Keycloak, nueva verificación), sin exigir `CUSTOMER_BASIC`. Antes del KYC no publica `user-email-changed` porque aún no hay cuenta; el KYC la pide con el email vigente.
   - Corte inmediato del bloqueo: `RegisterStatusFilter` consulta `active` en cada petición autenticada (incluidos los pasos del registro) y responde `403 {"error": "User blocked"}` aunque el access token no haya expirado. Los usuarios sin fila en `user_db` (admins de Keycloak) no se ven afectados.
     - account-service y transaction-service siguen aceptando el token hasta que expira, pero la cuenta queda `FROZEN` y los movimientos (`/movement/*` de account-service) rechazan con `422` cualquier cuenta origen o destino que no esté `OPEN`; transaction-service registra la operación como `DECLINED` con el motivo.
     - El circuit breaker de transaction-service ya no cuenta los `422`/`404` de account-service como fallos (antes, unos cuantos rechazos de negocio lo abrían y todas las operaciones fallaban 10 s con "Service unavailable").
 
 - [ ] **Pendientes que salieron de lo anterior**
-  - Antes del KYC el usuario no puede corregir un email mal escrito (los endpoints de contacto exigen el registro completo).
   - No se comprueba que CURP/RFC coincidan entre sí ni con `birthday`.
   - Revisar/reintentar eventos `FAILED` del outbox y limpiar los `SENT` antiguos.
 

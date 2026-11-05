@@ -117,8 +117,11 @@ public class UserServiceImpl implements UserService {
         user.setEmail(email);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-        // account-service keeps a copy of the email on the account.
-        eventOutbox.enqueue(Topics.USER_EMAIL_CHANGED, user.getKeycloakId(), new UserEmailChangedEvent(email));
+        // account-service keeps a copy of the email on the account. Before KYC there is no account yet:
+        // the KYC step requests it with the current email.
+        if (hasAccountRequested(user)) {
+            eventOutbox.enqueue(Topics.USER_EMAIL_CHANGED, user.getKeycloakId(), new UserEmailChangedEvent(email));
+        }
         userRepository.flush();
 
         // Also the login username; answers 409 if Keycloak already has that email. Rolls back the DB on failure.
@@ -163,5 +166,9 @@ public class UserServiceImpl implements UserService {
     private static UserDetailedResponse toResponse(User user) {
         return new UserDetailedResponse(
                 user.getId(), user.getEmail(), user.isActive(), user.getRole(), user.getRegisterStatus());
+    }
+
+    private static boolean hasAccountRequested(User user) {
+        return user.getRegisterStatus() == RegisterStatus.KYC || user.getRegisterStatus() == RegisterStatus.COMPLETE;
     }
 }
