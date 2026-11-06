@@ -52,8 +52,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -77,7 +79,7 @@ public class RegisterControllerTest extends FullContainerConfig {
     private ObjectMapper objectMapper;
     @MockitoSpyBean
     private UserRepository userRepository;
-    @Autowired
+    @MockitoSpyBean
     private KeycloakUserService keycloakUserService;
     @Autowired
     private OutboxEventRepository outboxEventRepository;
@@ -167,6 +169,32 @@ public class RegisterControllerTest extends FullContainerConfig {
         assertThat(keycloak.realm(realm).users().get(user.getKeycloakId()).roles().realmLevel().listAll())
                 .extracting(RoleRepresentation::getName)
                 .contains(UserRole.CUSTOMER_BASIC.name());
+    }
+
+    @Test
+    void shouldUndoKeycloakRoleWhenKycFailsHalfway() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token);
+        User user = userOf(EMAIL);
+        // assignRole already went through when this fails.
+        doThrow(new IllegalStateException("Keycloak down"))
+                .when(keycloakUserService).updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.KYC.name());
+
+        assertThatThrownBy(() -> kycRequest(token, buildKycRequest())).hasRootCauseMessage("Keycloak down");
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+        assertThat(userOf(EMAIL).getRole()).isNull();
+        assertThat(outboxEventRepository.count()).as("account request rolled back").isZero();
+        assertThat(keycloak.realm(realm).users().get(user.getKeycloakId()).roles().realmLevel().listAll())
+                .extracting(RoleRepresentation::getName)
+                .doesNotContain(UserRole.CUSTOMER_BASIC.name());
+        assertThat(keycloakUser(EMAIL).getAttributes().get("registration_status"))
+                .containsExactly(RegisterStatus.PROFILE.name());
+
+        // Keycloak is back: the step can be retried.
+        reset(keycloakUserService);
+        stepUpdateKyc(token);
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.KYC);
     }
 
     @Test

@@ -115,6 +115,22 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
                 .add(List.of(role));
     }
 
+    // Keycloak ignores removing a role the user does not have.
+    @Override
+    public void removeRole(String keycloakId, UserRole roleName) {
+        RealmResource realmResource = keycloak.realm(realm);
+
+        RoleRepresentation role = realmResource.roles()
+                .get(roleName.toString())
+                .toRepresentation();
+
+        realmResource.users()
+                .get(keycloakId)
+                .roles()
+                .realmLevel()
+                .remove(List.of(role));
+    }
+
     // CUSTOMER_BASIC is the base customer role every endpoint checks, so it is always kept;
     // PREMIUM/BUSINESS are tiers on top of it and only one of them can be active.
     @Override
@@ -174,11 +190,21 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
     // The username is the email, so both change together; the new email has to be verified again.
     @Override
     public void updateEmail(String keycloakId, String email) {
+        setEmail(keycloakId, email, false);
+    }
+
+    // Undoes updateEmail, keeping whether the previous email had been verified.
+    @Override
+    public void restoreEmail(String keycloakId, String email, boolean emailVerified) {
+        setEmail(keycloakId, email, emailVerified);
+    }
+
+    private void setEmail(String keycloakId, String email, boolean emailVerified) {
         UserResource userResource = keycloak.realm(realm).users().get(keycloakId);
         UserRepresentation user = userResource.toRepresentation();
         user.setUsername(email);
         user.setEmail(email);
-        user.setEmailVerified(false);
+        user.setEmailVerified(emailVerified);
 
         try {
             userResource.update(user);

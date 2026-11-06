@@ -20,6 +20,7 @@ import dev.enrique.bank.commons.exception.EmailDeliveryException;
 import dev.enrique.bank.commons.exception.InvalidRegistrationStepException;
 import dev.enrique.bank.commons.exception.InvalidRoleChangeException;
 import dev.enrique.bank.commons.exception.UserNotFoundException;
+import dev.enrique.bank.commons.util.RollbackCompensation;
 import dev.enrique.bank.dao.UserRepository;
 import dev.enrique.bank.model.User;
 import dev.enrique.bank.service.KeycloakUserService;
@@ -73,11 +74,16 @@ public class UserServiceImpl implements UserService {
         }
 
         if (user.getRole() != role) {
+            UserRole previousRole = user.getRole();
             user.setRole(role);
             user.setUpdatedAt(LocalDateTime.now());
             userRepository.saveAndFlush(user);
-            // Runs inside the transaction: if Keycloak fails, the DB change is rolled back.
-            keycloakUserService.setCustomerTier(user.getKeycloakId(), role);
+            // Runs inside the transaction: if Keycloak fails, the DB change is rolled back
+            // and the tier is put back in Keycloak (setCustomerTier may fail halfway).
+            String keycloakId = user.getKeycloakId();
+            RollbackCompensation.onRollback("restore role " + previousRole + " of user " + keycloakId,
+                    () -> keycloakUserService.setCustomerTier(keycloakId, previousRole));
+            keycloakUserService.setCustomerTier(keycloakId, role);
         }
 
         return toResponse(user);
@@ -95,8 +101,12 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
             eventOutbox.enqueue(Topics.USER_STATUS_CHANGED, user.getKeycloakId(), new UserStatusChangedEvent(active));
             userRepository.flush();
-            // If Keycloak fails, the DB change and the event are rolled back.
-            keycloakUserService.setEnabled(user.getKeycloakId(), active);
+            // If Keycloak fails, the DB change and the event are rolled back,
+            // and Keycloak goes back to the previous state.
+            String keycloakId = user.getKeycloakId();
+            RollbackCompensation.onRollback("restore enabled=" + !active + " of user " + keycloakId,
+                    () -> keycloakUserService.setEnabled(keycloakId, !active));
+            keycloakUserService.setEnabled(keycloakId, active);
         }
 
         return toResponse(user);
@@ -114,6 +124,7 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateUserDataException("email");
         }
 
+        String previousEmail = user.getEmail();
         user.setEmail(email);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
@@ -124,7 +135,11 @@ public class UserServiceImpl implements UserService {
         }
         userRepository.flush();
 
-        // Also the login username; answers 409 if Keycloak already has that email. Rolls back the DB on failure.
+        // Also the login username; answers 409 if Keycloak already has that email. Rolls back the DB on failure,
+        // and Keycloak gets the previous email (and its verification) back.
+        boolean previousVerified = keycloakUserService.isEmailVerified(keycloakId);
+        RollbackCompensation.onRollback("restore email of user " + keycloakId,
+                () -> keycloakUserService.restoreEmail(keycloakId, previousEmail, previousVerified));
         keycloakUserService.updateEmail(user.getKeycloakId(), email);
         try {
             keycloakUserService.sendVerificationEmail(user.getKeycloakId());

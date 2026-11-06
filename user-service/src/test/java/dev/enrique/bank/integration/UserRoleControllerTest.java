@@ -1,6 +1,8 @@
 package dev.enrique.bank.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doAnswer;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -52,7 +55,7 @@ class UserRoleControllerTest extends FullContainerConfig {
     private UserKycRepository userKycRepository;
     @Autowired
     private UserFinancialInfoRepository userFinancialInfoRepository;
-    @Autowired
+    @MockitoSpyBean
     private KeycloakUserService keycloakUserService;
     @Autowired
     private Keycloak keycloak;
@@ -109,6 +112,24 @@ class UserRoleControllerTest extends FullContainerConfig {
         assertThat(keycloakRoles(user))
                 .contains("CUSTOMER_BASIC")
                 .doesNotContain("CUSTOMER_PREMIUM", "CUSTOMER_BUSINESS");
+    }
+
+    @Test
+    void shouldRestoreKeycloakTierWhenRoleChangeFails() throws Exception {
+        User user = createUser(RegisterStatus.COMPLETE);
+        // Keycloak applies the change, but the request still fails (e.g. the response is lost).
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new IllegalStateException("Keycloak down");
+        }).when(keycloakUserService).setCustomerTier(user.getKeycloakId(), UserRole.CUSTOMER_PREMIUM);
+
+        assertThatThrownBy(() -> changeRole(user.getId(), "CUSTOMER_PREMIUM", admin()))
+                .hasRootCauseMessage("Keycloak down");
+
+        assertThat(roleInDb(user)).isEqualTo(UserRole.CUSTOMER_BASIC);
+        assertThat(keycloakRoles(user))
+                .contains("CUSTOMER_BASIC")
+                .doesNotContain("CUSTOMER_PREMIUM");
     }
 
     @Test

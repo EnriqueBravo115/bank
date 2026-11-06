@@ -33,6 +33,7 @@ import dev.enrique.bank.model.UserProfile;
 import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.service.RegisterService;
 import dev.enrique.bank.commons.util.BasicMapper;
+import dev.enrique.bank.commons.util.RollbackCompensation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,8 +52,10 @@ public class RegisterServiceImpl implements RegisterService {
     @Override
     @Transactional
     public UserRegisterResponse register(UserRegisterRequest request) {
-        // Checked before Keycloak so a duplicate never creates (and then has to delete) a Keycloak user.
-        // A concurrent duplicate still hits the DB unique constraint and is compensated below.
+        // Checked before Keycloak so a duplicate never creates (and then has to delete)
+        // a Keycloak user.
+        // A concurrent duplicate still hits the DB unique constraint and is compensated
+        // below.
         if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new DuplicateUserDataException("email");
         }
@@ -75,7 +78,8 @@ public class RegisterServiceImpl implements RegisterService {
             userRepository.saveAndFlush(user);
             keycloakUserService.updateRegistrationStatus(keycloakId, RegisterStatus.REGISTER.name());
         } catch (RuntimeException ex) {
-            // Compensate: avoid an orphan Keycloak user that would block re-registration with the same email.
+            // Compensate: avoid an orphan Keycloak user that would block re-registration
+            // with the same email.
             keycloakUserService.deleteUser(keycloakId);
             throw ex;
         }
@@ -111,7 +115,9 @@ public class RegisterServiceImpl implements RegisterService {
 
         user.setRegisterStatus(RegisterStatus.PROFILE);
         user.setUpdatedAt(LocalDateTime.now());
-        // Hit the DB before touching Keycloak; if Keycloak fails, the step is rolled back and can be retried.
+
+        // Hit the DB before touching Keycloak; if Keycloak fails, the step is rolled
+        // back and can be retried.
         userRepository.saveAndFlush(user);
 
         keycloakUserService.updateUser(user.getKeycloakId(), request);
@@ -151,15 +157,25 @@ public class RegisterServiceImpl implements RegisterService {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // Same transaction as the KYC: the account is requested only if the KYC is committed.
+        // Same transaction as the KYC: the account is requested only if the KYC is
+        // committed.
         eventOutbox.enqueue(Topics.ACCOUNT_REQUESTED, user.getKeycloakId(), CreateAccountEvent.builder()
                 .email(user.getEmail())
                 .accountType(AccountType.SAVING)
                 .currency(Currency.MX)
                 .build());
-        // Hit the DB constraints before touching Keycloak; if Keycloak fails, everything above rolls back.
+
+        // Hit the DB constraints before touching Keycloak; if Keycloak fails,
+        // everything above rolls back.
         userRepository.flush();
 
+        // The DB rollback does not reach Keycloak: without this, a failure after assignRole
+        // leaves CUSTOMER_BASIC (accepted by every service) on a user that never passed KYC.
+        String userKeycloakId = user.getKeycloakId();
+        RollbackCompensation.onRollback("undo KYC of user " + userKeycloakId, () -> {
+            keycloakUserService.removeRole(userKeycloakId, UserRole.CUSTOMER_BASIC);
+            keycloakUserService.updateRegistrationStatus(userKeycloakId, RegisterStatus.PROFILE.name());
+        });
         keycloakUserService.assignRole(user.getKeycloakId(), UserRole.CUSTOMER_BASIC);
         keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.KYC.name());
     }

@@ -13,6 +13,8 @@ public interface KeycloakUserService {
 
     void assignRole(String keycloakId, UserRole roleName);
 
+    void removeRole(String keycloakId, UserRole roleName);
+
     void setCustomerTier(String keycloakId, UserRole tier);
 
     void updateRegistrationStatus(String keycloakId, String status);
@@ -20,6 +22,8 @@ public interface KeycloakUserService {
     void setEnabled(String keycloakId, boolean enabled);
 
     void updateEmail(String keycloakId, String email);
+
+    void restoreEmail(String keycloakId, String email, boolean emailVerified);
 
     void sendVerificationEmail(String keycloakId);
 

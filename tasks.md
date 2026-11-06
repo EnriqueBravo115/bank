@@ -1,23 +1,135 @@
 # Tareas pendientes
 
+## account-service
+
+### Seguridad (crítico)
+
+- [ ] **Cualquier cliente puede mover dinero de cualquier cuenta**
+  - `/api/v1/account/movement/*` es accesible vía Kong (ruta `/api/v1/account`) para cualquier `CUSTOMER_BASIC`, y nadie comprueba que la cuenta origen pertenezca al `sub` del JWT (`MovementController`).
+  - Restringir los movimientos a transaction-service (rol de servicio con client credentials o bloquear la ruta en Kong) y validar la propiedad de la cuenta.
+
+- [ ] **Montos sin validar en los movimientos**
+  - Los `Client*Request` no tienen `@Valid`/`@Positive`: una transferencia con monto negativo resta dinero a la cuenta destino.
+
+- [ ] **IDOR en consultas de cuenta**
+  - `get-by-account-number`, `get-by-clabe` y `get-by-email` devuelven la cuenta de cualquier usuario a un `CUSTOMER_BASIC`.
+  - Añadir `GET /me` (resuelto con el `sub` del JWT) y dejar las consultas por identificador solo a `ADMIN`.
+
+### Funcionalidad
+
+- [ ] **No se crea saldo al abrir la cuenta**
+  - `createAccount` no inserta `account_balance`; todo movimiento falla con "balance not found" y hoy solo funciona con SQL manual.
+
+- [ ] **Depósitos / abonos**
+  - `AccountBalanceController` está comentado y `AccountBalanceServiceImpl.createAccountBalance` lanza `UnsupportedOperationException`.
+
+- [ ] **Tarjetas**
+  - `Card` solo existe como modelo y tabla: no hay service ni endpoints.
+  - La compra recibe `sourceCardNumber` y `cvv` y los ignora.
+  - No guardar el CVV en BD (PCI-DSS).
+
+- [ ] **Límites de transacción incompletos**
+  - No hay forma de crearlos.
+  - `isWithinDailyLimit` compara el monto de una sola operación, no la suma del día.
+  - `max_transactions` no se usa.
+
+- [ ] **Campos del movimiento ignorados**
+  - `transactionFee` en el retiro, `SecurityVerificationMethod` y la moneda (se puede transferir entre cuentas de monedas distintas).
+
+### Consistencia
+
+- [ ] **Condición de carrera en el saldo**
+  - El modelo "último registro de `account_balance`" no tiene bloqueo (`SELECT ... FOR UPDATE` o `@Version`): dos débitos simultáneos leen el mismo saldo (doble gasto).
+
+- [ ] **Tipos de saldo mal modelados**
+  - Todos los movimientos se guardan como `INTRADAY`, pero `hasSufficientFundsIncludingHolds` busca `AVAILABLE`/`ON_HOLD`; `checkHolds` siempre es `false`; "el último por fecha" mezcla tipos.
+
+- [ ] **Movimientos sin idempotencia**
+  - No aceptan idempotency key; ver la tarea de inconsistencia distribuida en transaction-service.
+
+- [ ] **Identificadores de cuenta**
+  - `account_number = "ACC-" + millis` no es `UNIQUE` y puede repetirse.
+  - `ClabeGenerator` debería calcular el dígito de control real.
+
+### Calidad
+
+- [ ] **Código muerto**
+  - `AccountServiceImpl.updateEmail(accountNumber, …)` (`// TODO`, sin uso; ya lo cubre `updateEmailByUserId`).
+  - `FeignConfiguration` sin ningún cliente Feign.
+
+- [ ] **Mensaje de error incorrecto en `get-by-email`**
+  - Responde `"Account not found with number: <email>"`.
+
+- [ ] **Tests**
+  - Solo 12 tests unitarios con Mockito; faltan tests de integración (controllers, consumers de Kafka, Testcontainers).
+
+## transaction-service
+
+### Seguridad y consistencia (crítico)
+
+- [ ] **Inconsistencia distribuida al crear transacciones**
+  - `AbstractTransactionProcessor.process` mueve el dinero en account-service y después guarda en su BD:
+    - si el guardado falla, el dinero se movió sin registro;
+    - si Feign hace timeout pero account-service ya hizo commit, se registra `FAILED` aunque el dinero se movió.
+  - Guardar primero `PENDING`, enviar `transactionCode` como idempotency key a account-service y conciliar (o saga por Kafka).
+
+- [ ] **IDOR en consultas y creación**
+  - Historial, consultas y analítica de cliente aceptan cualquier `sourceIdentifier`.
+  - La creación no verifica que el origen pertenezca al usuario (TODO en `TransactionQueryController`, `/{transactionCode}`).
+
+- [ ] **`IdentifierType` no se respeta**
+  - Acepta `CLABE`, `ACCOUNT` y `CARD`, pero account-service solo busca por `accountNumber`.
+
+### Funcionalidad
+
+- [ ] **Endpoint de retiro**
+  - El servicio y `WithdrawalTransactionProcessor` existen, pero `TransactionCreationController` no lo expone.
+
+- [ ] **Cancelación y reversa**
+  - `cancelTransaction` está vacío y `reverseTransfer` es un TODO.
+
+### Bugs
+
+- [ ] **Consultas devuelven `transactionCode` y `description` en `null`** (`// FIX`)
+  - `/all`, `/by-sources`, `/max`, `/date-range`, `/amount-range`, `/identifier-type`.
+
+- [ ] **`/analytics/max-by-type` responde 500** (`// FIX: Internal Server Error`).
+
+- [ ] **`process` envuelve todo en `RuntimeException`**
+  - Cualquier error termina en un 500 genérico.
+
+### Calidad
+
+- [ ] **Código muerto**
+  - `spring-kafka` en el pom sin uso; `KafkaTopicConstants` y `TestConstants` (este en `src/main`) sin referencias.
+
+- [ ] **Datos de prueba en migraciones de producción**
+  - `V2__populate_transactions.sql` siembra datos de ejemplo; moverlo a `src/test` o a una migración solo de desarrollo (los tests actuales dependen de él).
+
+- [ ] **Endpoints sin cubrir en los tests**
+  - `TransactionCreationController` (`/create/transfer`, `/purchase`, `/service-payment`): llama a account-service por Feign; requiere mockear `AccountClient` o WireMock.
+  - `/analytics/type-summary`, `/average-days`, `/partition-by-amount` y `/max-by-type`.
+
+- [ ] **`TransactionQueryServiceTest` levanta un contenedor PostgreSQL que no usa**
+  - Es un test unitario con Mockito; el `@Container` y el `@DynamicPropertySource` sobran y alargan el build.
+
+## user-service
+
+- [x] **Fallo parcial en Keycloak**
+  - En el KYC, si `assignRole` funciona y falla `updateRegistrationStatus`, la BD hace rollback pero el rol queda asignado en Keycloak. Mismo riesgo en `updateEmail` y en el cambio de rol.
+  - Corregido con `RollbackCompensation`: antes de llamar a Keycloak se registra cómo deshacerlo y se ejecuta si la transacción hace rollback (por un fallo de Keycloak o del commit). Cubre KYC (quita `CUSTOMER_BASIC` y vuelve `registration_status` a `PROFILE`), cambio de rol (restaura el nivel anterior), cambio de email (restaura email, `username` y su verificación) y bloqueo/desbloqueo (restaura `enabled`; las sesiones cerradas no vuelven).
+  - Si la compensación también falla, solo queda un `log.error`: no hay reintento automático.
+
+- [ ] **Mantenimiento del outbox**
+  - Revisar/reintentar eventos `FAILED` (endpoint de admin o job) y purgar los `SENT` antiguos.
+
+- [ ] **CURP/RFC no se cruzan**
+  - No se comprueba que coincidan entre sí ni con `birthday`.
+
+- [ ] **(Opcional) Cierre / baja de usuario**
+  - Con su evento para cerrar la cuenta en account-service.
+
 ## Build / Docker
-
-- [x] **Instalar `docker-buildx`**
-  - Los Dockerfiles usan `RUN --mount=type=cache,target=/root/.m2`, que requiere BuildKit.
-  - Sin buildx, Docker usa el builder legacy y falla con:
-    `the --mount option requires BuildKit`.
-  - Solución (Arch): `sudo pacman -S docker-buildx`.
-
-- [x] **Verificar que las 5 imágenes se construyen**
-  - `docker compose up --build` levanta toda la arquitectura; todos los contenedores quedan `healthy`.
-
-- [x] **Puertos de `account-service` y `transaction-service` desalineados en `docker-compose.yml`**
-  - Config Server les asigna `8082` y `8081`, pero compose mapeaba `808x:8080` y el healthcheck consultaba `8080`.
-  - Resultado: ambos quedaban `unhealthy` y no eran accesibles desde el host (Kong sí funcionaba porque usa los puertos reales).
-  - Corregido: mapeo `8081:8081` / `8082:8082`, healthcheck al puerto real y `EXPOSE` en sus Dockerfiles.
-
-- [x] **Agregar `.dockerignore`**
-  - El contexto enviado al daemon bajó de ~451 MB a ~640 KB: solo `pom.xml` y `src` de cada servicio.
 
 - [ ] **(Opcional) Cambiar el `context` de cada servicio en `docker-compose.yml` a su propia carpeta**
   - Ahora que cada servicio es independiente, puede ser `context: ./account-service`.
@@ -31,21 +143,6 @@
   - El cache mount de `/root/.m2` en los Dockerfiles no persiste en runners efímeros: si cambia el `src` de un servicio, su imagen vuelve a descargar las dependencias.
   - Al armarlo: Trivy primero en modo solo-reporte y luego bloqueante; construir solo los servicios que cambiaron (`dorny/paths-filter`).
 
-- [x] **Tests de `transaction-service` fallaban**
-  - `TransactionControllerTest` probaba endpoints que ya no existen: se reemplazó por `TransactionQueryControllerTest`, `TransactionAnalyticsControllerTest` y `TransactionSupportControllerTest` (PostgreSQL con Testcontainers, datos de Flyway `V2`, `SecurityConfig` real y JWT simulado).
-  - `TransactionQueryServiceTest.getTransactionsInDateRange` usaba el repositorio mock como si fuera real; se reescribió con mocks.
-  - Se eliminaron los scripts obsoletos `db/sql-test/` (referenciaban tablas inexistentes).
-
-- [ ] **Endpoints sin cubrir en los tests de `transaction-service`**
-  - `TransactionCreationController` (`/create/transfer`, `/purchase`, `/service-payment`): llama a account-service por Feign; requiere mockear `AccountClient` o WireMock.
-  - `/analytics/type-summary`, `/average-days`, `/partition-by-amount` y `/max-by-type` (este último marcado `// FIX: Internal Server Error`).
-
-- [x] **Perfil `test` de `transaction-service` obsoleto**
-  - Eliminados `application-test.yml` (apuntaba a `user_db`, a un realm `bank-realm` inexistente e incluía la contraseña de Gmail) y `TestSecurityConfig`; nada activaba el perfil. `SecurityConfig` ya no lleva `@Profile("!test")`.
-
-- [ ] **`TransactionQueryServiceTest` levanta un contenedor PostgreSQL que no usa**
-  - Es un test unitario con Mockito; el `@Container` y el `@DynamicPropertySource` sobran y alargan el build.
-
 ## Maven
 
 - [ ] **Compilación local con JDK 25 falla por Lombok**
@@ -57,34 +154,15 @@
     - Agregar `<maven.compiler.proc>full</maven.compiler.proc>` en `<properties>` de cada pom.
     - Usar JDK 17/21 localmente.
 
-- [x] **`mvnw` y `.mvn/` quedaron en la raíz sin `pom.xml`**
-  - Eliminados: el build se hace con Docker (imagen `maven:3.9.5-eclipse-temurin-17`) o con Maven instalado localmente.
-
 - [ ] **Versiones duplicadas entre servicios**
-  - Spring Boot `3.5.8`, Spring Cloud `2025.0.0`, `modelmapper 3.2.0` y `testcontainers 1.21.4` ahora están repetidas en cada pom.
+  - Spring Boot `3.5.8`, Spring Cloud `2025.0.0`, `modelmapper 3.2.0` y `testcontainers 1.21.4` están repetidas en cada pom.
   - Al actualizar hay que cambiarlas en todos, o mover testcontainers a su BOM (`testcontainers-bom`).
-
-## Dependencias innecesarias
-
-- [x] **Quitar `spring-boot-starter-data-jpa` de `eureka-server` y `config-server`**
-  - Solo la tenían porque el pom raíz la imponía a todos los módulos.
-  - Por eso ambas clases main usan `@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)`.
-  - Al quitar la dependencia, eliminar también ese `exclude`.
-
-- [x] **Revisar `lombok` y `spring-boot-starter-web` en `eureka-server` y `config-server`**
-  - También venían heredadas del pom raíz.
-  - Ninguno de los dos servicios usa Lombok.
-  - `spring-cloud-starter-netflix-eureka-server` y `spring-cloud-config-server` ya traen la capa web.
 
 ## Kubernetes (`k8s/`)
 
 - [ ] **Secretos en texto plano en `k8s/kustomization.yaml`**
   - Las credenciales de PostgreSQL y del admin de Keycloak están como `literals` en el `secretGenerator`.
   - Para algo más allá de desarrollo local: Sealed Secrets, External Secrets o SOPS.
-
-- [x] **`kong.yml` y `realm-export.json` duplicados**
-  - Se eliminaron `kong/` y `keycloak/` de la raíz; `docker-compose.yml` monta `k8s/kong/kong.yml` y `k8s/keycloak/realm-export.json`.
-  - Nota: los tests de `user-service` usan su propio realm (`user-service/src/test/resources/keycloak/realm-export.json`), distinto al de despliegue.
 
 - [ ] **Datos de Kafka efímeros**
   - El broker no tiene volumen (igual que en docker-compose); los tópicos se pierden si el pod se reinicia.
@@ -95,57 +173,5 @@
 
 ## Seguridad
 
-- [ ] **Contraseña de aplicación de Gmail en el repositorio**
-  - Ya se quitó de `user-service` (no usaba el correo) y de `config-server/.../user-service.yml`.
-  - También se eliminó `transaction-service/src/main/resources/application-test.yml`, pero sigue en el historial de git: **hay que revocarla** en la cuenta de Google.
-
-## user-service
-
-- [x] **Recorte de endpoints de consulta (de ~37 a 15)**
-  - Se eliminaron los filtros sin caso de uso (por género, país, estado civil, ocupación, fuente/rango de ingreso, tipo de documento), los `get-all-detailed`/`get-active` duplicados por tabla, los `exists/{userId}`, `get-full-name`, `get-by-role` y el endpoint de depuración `/test-jwt`.
-  - IDOR corregido: un `CUSTOMER_BASIC` podía leer el perfil, el KYC (RFC/CURP) y los ingresos de cualquier usuario por id. Ahora el cliente usa `GET .../me` (resuelto con el `sub` del JWT) y las consultas por id/email/RFC/CURP son solo `ADMIN`.
-  - Eliminado código muerto: `EmailService`/`EmailConfig`, `UserNotFoundEmailException`, `PersonalInfoResponse`, `FinancialProfileResponse` y las dependencias `mail`, `openfeign`, `resilience4j` y `oauth2-client`.
-  - Registro: si falla el guardado en BD después de crear el usuario en Keycloak, se borra el usuario de Keycloak (antes quedaba huérfano y bloqueaba el email). Las violaciones de unicidad responden `409`.
-
-- [x] **Pasos del registro protegidos con JWT**
-  - Antes `PUT /register/{userId}/profile|kyc|financial` era `permitAll` con ids secuenciales: cualquiera podía completar el onboarding de otro usuario.
-  - Ahora solo `POST /register` es público. Tras registrarse, el cliente inicia sesión y los pasos usan `PUT /register/me/profile|kyc|financial`, resueltos con el `sub` del JWT. En `/register/**`, `RegisterStatusFilter` solo rechaza a los usuarios bloqueados; en el resto de endpoints además exige que el registro haya llegado al KYC.
-
-- [x] **Rol asignado en el KYC y cambio de nivel de cliente**
-  - `users.role` es `NULL` hasta el KYC; ahí se asigna `CUSTOMER_BASIC` en `user_db` y en Keycloak a la vez.
-  - `PUT /api/v1/user/{userId}/role` (`ADMIN`) cambia entre `CUSTOMER_BASIC`, `CUSTOMER_PREMIUM` y `CUSTOMER_BUSINESS`. En Keycloak `CUSTOMER_BASIC` se conserva siempre (todos los endpoints lo exigen) y el nivel se agrega encima. `ADMIN` no se puede otorgar por la API (400) y los usuarios sin KYC responden 409.
-
-- [x] **Validar duplicados antes de crear el usuario en Keycloak**
-  - `POST /register` comprueba email (sin distinguir mayúsculas) y teléfono en `user_db` antes de llamar a Keycloak; el paso KYC comprueba CURP y RFC. Todos responden `409` con el campo duplicado.
-  - Un email que solo existe en Keycloak (p. ej. un admin creado en la consola) también responde `409` en vez de `500`.
-  - Si dos registros simultáneos pasan las comprobaciones, la restricción `UNIQUE` de la BD responde `409` y se borra el usuario de Keycloak.
-
-- [x] **Evento `CreateAccountEvent` con patrón outbox**
-  - El KYC guarda el evento en `outbox_event` en la misma transacción; `OutboxScheduler` lo publica cada 2 s (`FOR UPDATE SKIP LOCKED`), espera el ack de Kafka y lo marca `SENT`. Si Kafka falla queda `PENDING` y se reintenta; tras 10 intentos pasa a `FAILED`.
-  - account-service ignora solicitudes repetidas (`existsByUserId`) y `account.user_id` es `UNIQUE`.
-
-- [x] **Funcionalidad que faltaba**
-  - Bloquear/desbloquear (`PUT /api/v1/user/{userId}/active`, `ADMIN`): actualiza `active`, deshabilita el usuario en Keycloak (y cierra sus sesiones) y avisa por outbox a account-service, que congela (`FROZEN`) o reabre la cuenta.
-  - Cambio de contacto (`PUT /api/v1/user/me/email` y `/me/phone`, cliente): valida duplicados; el email cambia también el `username` de Keycloak, vuelve a pedir verificación y se propaga a account-service por outbox. El usuario ya no puede editar `username`/`email` desde la consola de cuenta de Keycloak.
-  - Paginación (`page`, `size` de 1 a 100) en `get-active`, `profile/search` y `profile/get-by-status`; responden `{content, page}`.
-  - Validaciones: CURP y RFC (persona física) con regex, `birthday` como `LocalDate` (`dd/MM/yyyy`, fechas imposibles rechazadas) y mayoría de edad (`@Adult`).
-  - Verificación de email: Keycloak la envía al registrarse (Mailpit en local: http://localhost:8025), se puede reenviar con `POST /register/me/verify-email` y el KYC la exige.
-  - Corrección del email durante el registro (`PUT /register/me/email`): misma lógica que `/user/me/email` (duplicados, `username` de Keycloak, nueva verificación), sin exigir `CUSTOMER_BASIC`. Antes del KYC no publica `user-email-changed` porque aún no hay cuenta; el KYC la pide con el email vigente.
-  - Corte inmediato del bloqueo: `RegisterStatusFilter` consulta `active` en cada petición autenticada (incluidos los pasos del registro) y responde `403 {"error": "User blocked"}` aunque el access token no haya expirado. Los usuarios sin fila en `user_db` (admins de Keycloak) no se ven afectados.
-    - account-service y transaction-service siguen aceptando el token hasta que expira, pero la cuenta queda `FROZEN` y los movimientos (`/movement/*` de account-service) rechazan con `422` cualquier cuenta origen o destino que no esté `OPEN`; transaction-service registra la operación como `DECLINED` con el motivo.
-    - El circuit breaker de transaction-service ya no cuenta los `422`/`404` de account-service como fallos (antes, unos cuantos rechazos de negocio lo abrían y todas las operaciones fallaban 10 s con "Service unavailable").
-
-- [ ] **Pendientes que salieron de lo anterior**
-  - No se comprueba que CURP/RFC coincidan entre sí ni con `birthday`.
-  - Revisar/reintentar eventos `FAILED` del outbox y limpiar los `SENT` antiguos.
-
-- [x] **Configuración de tests dentro de `src/main`**
-  - `TestKeycloakConfig`, `TestPostgresConfig`, `application-test-*.yml` y el `realm-export.json` de los tests se movieron a `src/test`; ya no se empaquetan en la imagen.
-
-## Otros
-
-- [x] **`eureka.instance.hostname` de user-service y config-server apuntaba a `eureka-server`**
-  - Se registraban en Eureka con el hostname de Eureka; ahora usan `prefer-ip-address: true` como los demás servicios.
-
-- [ ] **Mensaje de error incorrecto en `account-service` `get-by-email`**
-  - Responde `"Account not found with number: <email>"`.
+- [ ] **Contraseña de aplicación de Gmail en el historial de git**
+  - Ya no está en el código, pero sigue en el historial: **hay que revocarla** en la cuenta de Google.

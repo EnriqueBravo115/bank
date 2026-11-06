@@ -1,6 +1,8 @@
 package dev.enrique.bank.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doAnswer;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -71,7 +74,7 @@ class UserAccountManagementControllerTest extends FullContainerConfig {
     private UserFinancialInfoRepository userFinancialInfoRepository;
     @Autowired
     private OutboxEventRepository outboxEventRepository;
-    @Autowired
+    @MockitoSpyBean
     private KeycloakUserService keycloakUserService;
     @Autowired
     private Keycloak keycloak;
@@ -164,6 +167,22 @@ class UserAccountManagementControllerTest extends FullContainerConfig {
     }
 
     @Test
+    void shouldReEnableKeycloakUserWhenBlockFails() throws Exception {
+        User user = createUser(EMAIL, PHONE);
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new IllegalStateException("Keycloak down");
+        }).when(keycloakUserService).setEnabled(user.getKeycloakId(), false);
+
+        assertThatThrownBy(() -> updateActive(user.getId(), false, admin())).hasRootCauseMessage("Keycloak down");
+
+        assertThat(userInDb(user).isActive()).isTrue();
+        assertThat(keycloakUser(user).isEnabled()).isTrue();
+        assertThat(loginStatus(EMAIL).is2xxSuccessful()).isTrue();
+        assertThat(outboxEventRepository.count()).as("event rolled back").isZero();
+    }
+
+    @Test
     void shouldNotEmitEventWhenStatusDoesNotChange() throws Exception {
         User user = createUser(EMAIL, PHONE);
 
@@ -237,6 +256,28 @@ class UserAccountManagementControllerTest extends FullContainerConfig {
 
         assertThat(userInDb(user).getEmail()).as("DB change rolled back").isEqualTo(EMAIL);
         assertThat(keycloakUser(user).getEmail()).isEqualTo(EMAIL);
+        assertThat(outboxEventRepository.count()).as("event rolled back").isZero();
+    }
+
+    @Test
+    void shouldRestoreKeycloakEmailWhenEmailChangeFails() throws Exception {
+        User user = createUser(EMAIL, PHONE);
+        UserRepresentation verified = keycloakUser(user);
+        verified.setEmailVerified(true);
+        keycloak.realm(realm).users().get(user.getKeycloakId()).update(verified);
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new IllegalStateException("Keycloak down");
+        }).when(keycloakUserService).updateEmail(user.getKeycloakId(), NEW_EMAIL);
+
+        assertThatThrownBy(() -> updateEmail(user, NEW_EMAIL)).hasRootCauseMessage("Keycloak down");
+
+        assertThat(userInDb(user).getEmail()).isEqualTo(EMAIL);
+        UserRepresentation inKeycloak = keycloakUser(user);
+        assertThat(inKeycloak.getEmail()).isEqualTo(EMAIL);
+        assertThat(inKeycloak.getUsername()).isEqualTo(EMAIL);
+        assertThat(inKeycloak.isEmailVerified()).as("previous email stays verified").isTrue();
+        assertThat(loginStatus(EMAIL).is2xxSuccessful()).isTrue();
         assertThat(outboxEventRepository.count()).as("event rolled back").isZero();
     }
 
