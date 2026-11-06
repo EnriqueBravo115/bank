@@ -106,14 +106,14 @@
   - `TestConstants` movido a `src/test`.
 
 - [ ] **Datos de prueba en migraciones de producción**
-  - `V2__populate_transactions.sql` siembra datos de ejemplo; moverlo a `src/test` o a una migración solo de desarrollo (los tests actuales dependen de él).
+  - `V2__populate_transactions.sql` siembra datos de ejemplo; moverlo a `src/test` o a una migración solo de desarrollo. Los tests ya no dependen de él (cada clase borra y crea sus datos).
+  - Ojo: borrar una migración ya aplicada hace fallar la validación de Flyway en las BD existentes; mejor una `V3` que borre esas filas o `spring.flyway.locations` distintas por perfil.
 
-- [ ] **Endpoints sin cubrir en los tests**
-  - `TransactionCreationController` (`/create/transfer`, `/purchase`, `/service-payment`): llama a account-service por Feign; requiere mockear `AccountClient` o WireMock.
-  - `/analytics/type-summary`, `/average-days`, `/partition-by-amount` y `/max-by-type`.
-
-- [ ] **`TransactionQueryServiceTest` levanta un contenedor PostgreSQL que no usa**
-  - Es un test unitario con Mockito; el `@Container` y el `@DynamicPropertySource` sobran y alargan el build.
+- [x] **Tests al patrón de user-service**
+  - Tests de integración por controller con PostgreSQL real; cada clase crea sus datos (`TransactionFixtures`) en vez de usar la semilla `V2`.
+  - Eliminados los tests unitarios de services con Mockito (`TransactionQueryServiceTest` levantaba un contenedor que no usaba) y `TransactionServiceTestHelper`.
+  - Nuevos: `TransactionCreationControllerTest` (`@MockitoBean AccountClient`: lo que se envía a account-service y lo que se guarda con COMPLETED/DECLINED, validación 400, 401/403) y `AccountClientFallbackTest` (422 → DECLINED con el mensaje, 404/401/5xx → FAILED); analítica `type-summary`, `average-days` y `partition-by-amount`.
+  - Pendiente: `/max-by-type` (500) y las aserciones de los bugs conocidos, al corregirlos. Que el `@CircuitBreaker` realmente invoque el fallback ante un error de Feign requeriría WireMock.
 
 ## user-service
 

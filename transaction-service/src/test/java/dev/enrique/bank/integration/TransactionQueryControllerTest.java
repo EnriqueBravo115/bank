@@ -1,14 +1,26 @@
 package dev.enrique.bank.integration;
 
 import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_QUERY;
+import static dev.enrique.bank.commons.enums.TransactionStatus.COMPLETED;
+import static dev.enrique.bank.commons.enums.TransactionStatus.FAILED;
+import static dev.enrique.bank.commons.enums.TransactionType.PURCHASE;
+import static dev.enrique.bank.commons.enums.TransactionType.SERVICE;
+import static dev.enrique.bank.commons.enums.TransactionType.TRANSFER;
 import static dev.enrique.bank.util.JwtTestUtils.admin;
 import static dev.enrique.bank.util.JwtTestUtils.customer;
 import static dev.enrique.bank.util.JwtTestUtils.tokenWithRole;
+import static dev.enrique.bank.util.TransactionFixtures.CARD;
+import static dev.enrique.bank.util.TransactionFixtures.CLABE;
+import static dev.enrique.bank.util.TransactionFixtures.transaction;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,19 +28,32 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.util.PostgresContainerConfig;
 
-/**
- * Uses the seed data from db/migration/V2__populate_transactions.sql:
- * CLABE 646180110400000001 has one COMPLETED TRANSFER (TXN-2024-001, 1500.00, 2024-01-15).
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 class TransactionQueryControllerTest extends PostgresContainerConfig {
-    private static final String CLABE = "646180110400000001";
-
     @Autowired
     private MockMvc mockMvc;
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @BeforeEach
+    void setUp() {
+        transactionRepository.deleteAll();
+        transactionRepository.saveAll(List.of(
+                transaction("TXN-001", CLABE, TRANSFER, COMPLETED, "1500.00", "Pago de renta enero",
+                        LocalDateTime.of(2024, 1, 15, 9, 30)),
+                transaction("TXN-002", CLABE, SERVICE, COMPLETED, "300.00", "Pago de luz",
+                        LocalDateTime.of(2024, 3, 10, 11, 0)),
+                transaction("TXN-003", CLABE, TRANSFER, FAILED, "50.00", "Transferencia rechazada",
+                        LocalDateTime.of(2023, 6, 1, 8, 0)),
+                transaction("TXN-004", CARD, PURCHASE, COMPLETED, "200.00", "Compra en tienda",
+                        LocalDateTime.of(2024, 2, 1, 18, 45))));
+    }
+
+    // ---- security ----
 
     @Test
     void history_withoutToken_returns401() throws Exception {
@@ -48,43 +73,55 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$.error").value("Registration incomplete"));
     }
 
+    // ---- queries ----
+
     @Test
-    void history_returnsTransactions() throws Exception {
+    void history_returnsTransactionsOfStatusNewestFirst() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
                 .with(customer()))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].transactionCode").value("TXN-002"))
+                .andExpect(jsonPath("$[1].transactionCode").value("TXN-001"))
+                .andExpect(jsonPath("$[1].amount").value(1500.00))
+                .andExpect(jsonPath("$[1].transactionType").value("TRANSFER"));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "FAILED")
+                .with(customer()))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].transactionCode").value("TXN-2024-001"))
-                .andExpect(jsonPath("$[0].amount").value(1500.00))
-                .andExpect(jsonPath("$[0].transactionType").value("TRANSFER"));
+                .andExpect(jsonPath("$[0].transactionCode").value("TXN-003"));
     }
 
     @Test
-    void all_returnsPagedTransactions() throws Exception {
+    void all_paginatesTransactions() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/all")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
                 .param("page", "0")
-                .param("size", "10")
+                .param("size", "1")
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(1)))
-                .andExpect(jsonPath("$.items[0].amount").value(1500.00))
-                .andExpect(jsonPath("$.headers['page-total-count'][0]").value("1"));
+                .andExpect(jsonPath("$.items[0].amount").value(300.00))
+                .andExpect(jsonPath("$.headers['page-total-count'][0]").value("2"));
     }
 
     @Test
-    void statusYear_filtersByYear() throws Exception {
+    void statusYear_filtersByYearAndStatus() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/status-year")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
                 .param("year", "2024")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$", hasSize(2)));
 
+        // The only 2023 transaction is FAILED
         mockMvc.perform(get(TRANSACTION_QUERY + "/status-year")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
@@ -95,13 +132,13 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void bySources_asAdmin_returnsTransactions() throws Exception {
+    void bySources_asAdmin_returnsCompletedTransactionsOfAllSources() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/by-sources")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("[\"" + CLABE + "\", \"4111111111111111\"]")
+                .content("[\"" + CLABE + "\", \"" + CARD + "\"]")
                 .with(admin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$", hasSize(3)));
     }
 
     @Test
@@ -132,7 +169,8 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .param("endDate", "2024-01-31T23:59:59")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].amount").value(1500.00));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/date-range")
                 .param("sourceIdentifier", CLABE)
@@ -145,16 +183,17 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void amountRange_filtersByAmount() throws Exception {
+    void amountRange_filtersByAmountAndStatus() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/amount-range")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
-                .param("minAmount", "500.00")
+                .param("minAmount", "100.00")
                 .param("maxAmount", "2000.00")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$", hasSize(2)));
 
+        // The 50.00 transfer is FAILED
         mockMvc.perform(get(TRANSACTION_QUERY + "/amount-range")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
@@ -167,12 +206,13 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
 
     @Test
     void byTransactionCode_returnsTransaction() throws Exception {
-        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-2024-001")
+        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-001")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.transactionCode").value("TXN-2024-001"))
+                .andExpect(jsonPath("$.transactionCode").value("TXN-001"))
                 .andExpect(jsonPath("$.description").value("Pago de renta enero"))
-                .andExpect(jsonPath("$.amount").value(1500.00));
+                .andExpect(jsonPath("$.amount").value(1500.00))
+                .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
     }
 
     @Test
@@ -183,15 +223,23 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .param("identifierType", "CLABE")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$", hasSize(2)));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/identifier-type")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "COMPLETED")
+                .param("identifierType", "CARD")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
-    void keyword_searchesDescription() throws Exception {
+    void keyword_searchesDescriptionIgnoringCase() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/keyword")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
-                .param("keyword", "renta")
+                .param("keyword", "RENTA")
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
