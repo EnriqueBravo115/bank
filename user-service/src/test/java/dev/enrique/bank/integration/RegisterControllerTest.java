@@ -297,7 +297,7 @@ public class RegisterControllerTest extends FullContainerConfig {
         String secondToken = registerAndLogin(OTHER_EMAIL, OTHER_PHONE);
         stepUpdateProfile(secondToken);
         UserKycDataRequest sameCurp = buildKycRequest();
-        sameCurp.setRfc("OARO900101XY2");
+        sameCurp.setRfc("DOEJ900101XY2");
 
         kycRequest(secondToken, sameCurp)
                 .andExpect(status().isConflict())
@@ -316,7 +316,7 @@ public class RegisterControllerTest extends FullContainerConfig {
         String secondToken = registerAndLogin(OTHER_EMAIL, OTHER_PHONE);
         stepUpdateProfile(secondToken);
         UserKycDataRequest sameRfc = buildKycRequest();
-        sameRfc.setCurp("OARO900101HDFLNS01");
+        sameRfc.setCurp("DOEJ900101HDFLNS01");
 
         kycRequest(secondToken, sameRfc)
                 .andExpect(status().isConflict())
@@ -445,6 +445,41 @@ public class RegisterControllerTest extends FullContainerConfig {
 
         request.setCurp("doej900101hdflns09"); // lowercase
         kycRequest(token, request).andExpect(status().isBadRequest());
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+    }
+
+    @Test
+    void shouldRejectKycThatDoesNotMatchBirthday() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token); // born 01/01/1990
+        UserKycDataRequest request = buildKycRequest();
+        request.setCurp("DOEJ900102HDFLNS09");
+
+        kycRequest(token, request)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("CURP birth date does not match the birthday of the profile"));
+
+        request = buildKycRequest();
+        request.setRfc("DOEJ910101AB1");
+        kycRequest(token, request)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("RFC birth date does not match the birthday of the profile"));
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+        assertThat(outboxEventRepository.count()).isZero();
+    }
+
+    @Test
+    void shouldRejectCurpAndRfcOfDifferentPeople() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token);
+        UserKycDataRequest request = buildKycRequest();
+        request.setRfc("OARO900101AB1");
+
+        kycRequest(token, request)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("CURP and RFC do not belong to the same person"));
+
         assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
     }
 

@@ -130,8 +130,10 @@
 - [ ] **Orden de eventos del outbox con varias réplicas**
   - `FOR UPDATE SKIP LOCKED` evita enviar dos veces la misma fila, pero si dos réplicas publican a la vez pueden enviar dos eventos del mismo usuario en distinto orden. Opciones: un advisory lock para que publique una sola réplica, o lock por `aggregate_id`.
 
-- [ ] **CURP/RFC no se cruzan**
+- [x] **CURP/RFC no se cruzan**
   - No se comprueba que coincidan entre sí ni con `birthday`.
+  - `KycConsistency` en el paso KYC (`400` con el motivo): la fecha `YYMMDD` de CURP y RFC debe ser la de `birthday`, el carácter 17 de la CURP debe cuadrar con el siglo (dígito hasta 1999, letra desde 2000) y las 4 letras deben coincidir (acepta Ñ→X en la CURP y la palabra inconveniente, que la CURP cambia en la 2.ª letra y el RFC en la 4.ª).
+  - Pendiente, si se quiere más: dígito verificador de la CURP, sexo de la CURP contra `gender` y las 4 letras contra nombre y apellidos (reglas de nombres compuestos como MARÍA/JOSÉ y partículas DE/LA).
 
 - [ ] **(Opcional) Cierre / baja de usuario**
   - Con su evento para cerrar la cuenta en account-service.

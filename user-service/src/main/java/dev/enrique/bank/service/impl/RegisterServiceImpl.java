@@ -34,6 +34,7 @@ import dev.enrique.bank.service.KeycloakUserService;
 import dev.enrique.bank.service.RegisterService;
 import dev.enrique.bank.commons.util.BasicMapper;
 import dev.enrique.bank.commons.util.RollbackCompensation;
+import dev.enrique.bank.commons.validation.KycConsistency;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -135,6 +136,11 @@ public class RegisterServiceImpl implements RegisterService {
         if (!keycloakUserService.isEmailVerified(user.getKeycloakId())) {
             throw new EmailNotVerifiedException();
         }
+
+        // The profile step (birthday) is done: validateStep only lets PROFILE users through.
+        UserProfile profile = userProfileRepository.findById(user.getId())
+                .orElseThrow(() -> new IllegalStateException("User " + user.getId() + " has no profile"));
+        KycConsistency.check(request.getCurp(), request.getRfc(), profile.getBirthday());
 
         if (userKycRepository.existsByCurpIgnoreCase(request.getCurp())) {
             throw new DuplicateUserDataException("CURP");
