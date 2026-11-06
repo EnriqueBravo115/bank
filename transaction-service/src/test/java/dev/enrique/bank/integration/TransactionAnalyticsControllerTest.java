@@ -122,6 +122,15 @@ class TransactionAnalyticsControllerTest extends PostgresContainerConfig {
     }
 
     @Test
+    void maxByType_returnsHighestTransactionOfEachType() throws Exception {
+        mockMvc.perform(completed("/max-by-type").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.TRANSFER", hasSize(1)))
+                .andExpect(jsonPath("$.TRANSFER[0].amount").value(1500.00))
+                .andExpect(jsonPath("$.SERVICE[0].amount").value(300.00));
+    }
+
+    @Test
     void countByMonth_returnsCountPerMonth() throws Exception {
         mockMvc.perform(completed("/count-by-month").with(customer()))
                 .andExpect(status().isOk())

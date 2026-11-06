@@ -9,6 +9,7 @@ public record PurchaseRequest(
         BigDecimal amount,
         String description,
         TransactionType transactionType,
+        String sourceAccountNumber,
         String sourceCardNumber,
         String merchantCode,
         String merchantCategory,

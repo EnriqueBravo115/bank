@@ -5,7 +5,6 @@ import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_QUERY
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -45,7 +44,6 @@ public class TransactionQueryController {
                 TransactionDetailedResponse.class));
     }
 
-    // FIX: return null on "transactionCode" & "description"
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/all")
     public ResponseEntity<HeaderResponse<TransactionCommonResponse>> getAllTransactions(
@@ -68,7 +66,6 @@ public class TransactionQueryController {
                 TransactionDetailedResponse.class));
     }
 
-    // FIX: return null on "transactionCode" & "description"
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-sources")
     public ResponseEntity<List<TransactionCommonResponse>> getTransactionsBySourceIdentifiers(
@@ -78,18 +75,16 @@ public class TransactionQueryController {
                 TransactionCommonResponse.class));
     }
 
-    // FIX: return null on "transactionCode" & "description"
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/max")
-    public ResponseEntity<Optional<TransactionCommonResponse>> getMaxTransaction(
+    public ResponseEntity<TransactionCommonResponse> getMaxTransaction(
             @RequestParam String sourceIdentifier,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(basicMapper.convertOptionalResponse(
+        return ResponseEntity.ok(basicMapper.convertToResponse(
                 transactionQueryService.getMaxTransaction(sourceIdentifier, status),
                 TransactionCommonResponse.class));
     }
 
-    // FIX: return null on "transactionCode" & "description"
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/date-range")
     public ResponseEntity<List<TransactionCommonResponse>> getTransactionInDateRange(
@@ -102,7 +97,6 @@ public class TransactionQueryController {
                 TransactionCommonResponse.class));
     }
 
-    // FIX: return null on "transactionCode" & "description"
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/amount-range")
     public ResponseEntity<List<TransactionCommonResponse>> getAllByAmountRangeAndStatus(
@@ -119,14 +113,13 @@ public class TransactionQueryController {
     // TODO: requires validation on sourceIdentifier 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/{transactionCode}")
-    public ResponseEntity<Optional<TransactionDetailedResponse>> getTransactionByTransactionCode(
+    public ResponseEntity<TransactionDetailedResponse> getTransactionByTransactionCode(
             @PathVariable String transactionCode) {
-        return ResponseEntity.ok(basicMapper.convertOptionalResponse(
+        return ResponseEntity.ok(basicMapper.convertToResponse(
                 transactionQueryService.getTransactionByCode(transactionCode),
                 TransactionDetailedResponse.class));
     }
 
-    // FIX: return null on "transactionCode" & "description"
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/identifier-type")
     public ResponseEntity<List<TransactionCommonResponse>> getAllByIdentifierTypeAndStatus(

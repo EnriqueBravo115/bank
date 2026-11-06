@@ -8,6 +8,7 @@ import dev.enrique.bank.client.AccountClient;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
+import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.ServiceTransaction;
@@ -43,6 +44,8 @@ public class ServiceTransactionProcessor extends AbstractTransactionProcessor<Se
     protected Transaction buildTransaction(String code, ServiceRequest request, MovementResultResponse response) {
         return Transaction.builder()
                 .transactionCode(code)
+                .sourceIdentifier(request.sourceAccountNumber())
+                .identifierType(IdentifierType.ACCOUNT)
                 .amount(request.amount())
                 .description(request.description())
                 .reason(response.reason())

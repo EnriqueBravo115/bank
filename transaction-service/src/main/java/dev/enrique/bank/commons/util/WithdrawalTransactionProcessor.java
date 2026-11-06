@@ -8,6 +8,7 @@ import dev.enrique.bank.client.AccountClient;
 import dev.enrique.bank.commons.dto.request.ClientWithdrawalRequest;
 import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
+import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Transaction;
@@ -29,6 +30,7 @@ public class WithdrawalTransactionProcessor
     @Override
     protected MovementResultResponse callAccountClient(WithdrawalRequest request) {
         ClientWithdrawalRequest clientRequest = new ClientWithdrawalRequest(
+                request.sourceAccountNumber(),
                 request.amount(),
                 request.securityVerificationMethod(),
                 request.transactionFee());
@@ -53,6 +55,8 @@ public class WithdrawalTransactionProcessor
     protected Transaction buildTransaction(String code, WithdrawalRequest request, MovementResultResponse response) {
         return Transaction.builder()
                 .transactionCode(code)
+                .sourceIdentifier(request.sourceAccountNumber())
+                .identifierType(IdentifierType.ACCOUNT)
                 .amount(request.amount())
                 .description(request.description())
                 .reason(response.reason())

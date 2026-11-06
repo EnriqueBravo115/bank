@@ -1,6 +1,7 @@
 package dev.enrique.bank.service.impl;
 
 import dev.enrique.bank.commons.enums.IdentifierType;
+import dev.enrique.bank.commons.exception.TransactionNotFoundException;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.dao.projection.TransactionCommonProjection;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,11 +37,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionDetailedProjection> getTransactionsByYear(
             String sourceIdentifier, TransactionStatus status, Integer year) {
-        return transactionRepository
-                .findAllBySourceIdentifierAndStatus(sourceIdentifier, status, TransactionDetailedProjection.class)
-                .stream()
-                .filter(n -> n.getTransactionDate().getYear() == year)
-                .toList();
+        return transactionRepository.findAllBySourceIdentifierAndYear(sourceIdentifier, year, status);
     }
 
     // This function must be executed with "ADMIN" authorities
@@ -52,11 +48,11 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     }
 
     @Override
-    public Optional<TransactionCommonProjection> getMaxTransaction(String sourceIdentifier, TransactionStatus status) {
+    public TransactionCommonProjection getMaxTransaction(String sourceIdentifier, TransactionStatus status) {
         return transactionRepository
-                .findAllCompletedBySourceIdentifier(sourceIdentifier, TransactionCommonProjection.class)
-                .stream()
-                .reduce((t1, t2) -> t1.getAmount().compareTo(t2.getAmount()) > 0 ? t1 : t2);
+                .findFirstBySourceIdentifierAndTransactionStatusOrderByAmountDesc(sourceIdentifier, status)
+                .orElseThrow(() -> new TransactionNotFoundException(
+                        "No " + status + " transactions found for: " + sourceIdentifier));
     }
 
     @Override
@@ -67,8 +63,10 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     }
 
     @Override
-    public Optional<TransactionDetailedProjection> getTransactionByCode(String transactionCode) {
-        return transactionRepository.findByTransactionCode(transactionCode);
+    public TransactionDetailedProjection getTransactionByCode(String transactionCode) {
+        return transactionRepository.findByTransactionCode(transactionCode)
+                .orElseThrow(() -> new TransactionNotFoundException(
+                        "Transaction not found with code: " + transactionCode));
     }
 
     @Override

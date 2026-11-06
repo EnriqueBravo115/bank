@@ -90,13 +90,31 @@
 
 ### Bugs
 
-- [ ] **Consultas devuelven `transactionCode` y `description` en `null`** (`// FIX`)
-  - `/all`, `/by-sources`, `/max`, `/date-range`, `/amount-range`, `/identifier-type`.
+- [x] **Consultas devuelven `transactionCode` y `description` en `null`**
+  - `TransactionCommonProjection` no tenía esos getters; ModelMapper no tenía de dónde copiarlos.
 
-- [ ] **`/analytics/max-by-type` responde 500** (`// FIX: Internal Server Error`).
+- [x] **`/analytics/max-by-type` responde 500**
+  - `BasicMapper.convertToResponseList` hacía `lists.contains(null)`, que lanza `NullPointerException` en las listas de `List.of(...)`.
+
+- [x] **Compras, pagos de servicio y retiros no guardaban `sourceIdentifier`**
+  - No aparecían en ninguna consulta. Ahora se guarda la cuenta de origen con `identifierType = ACCOUNT`.
+
+- [x] **Compras y retiros no enviaban la cuenta a account-service**
+  - `PurchaseRequest` y `WithdrawalRequest` piden `sourceAccountNumber`, y `ClientPurchaseRequest`/`ClientWithdrawalRequest` ya coinciden con los de account-service. La tarjeta se sigue guardando solo en `purchase_transaction`, hasta que account-service resuelva tarjeta → cuenta.
+
+- [x] **Filtros ignorados**
+  - `/date-range` no filtraba por `status`; `/max` siempre usaba `COMPLETED`; `/status-year` filtraba en memoria (ahora usa `findAllBySourceIdentifierAndYear`).
+
+- [x] **`/{transactionCode}` y `/max` respondían `200` con `null`**
+  - `GlobalExceptionHandler` con `TransactionNotFoundException` → `404` y `{status, message, timestamp}`, como user-service.
 
 - [ ] **`process` envuelve todo en `RuntimeException`**
   - Cualquier error termina en un 500 genérico.
+
+- [ ] **Se guarda el CVV** en `purchase_transaction.cvv` (PCI-DSS).
+
+- [ ] **Configuración de Resilience4j**
+  - `feign.circuitbreaker.enabled` es el nombre antiguo (`spring.cloud.openfeign.circuitbreaker.enabled`); `resilience4j.retry` no se usa (no hay `@Retry`) y lista excepciones de `RestTemplate`. Verificar con WireMock que el fallback se ejecuta.
 
 ### Calidad
 
@@ -113,7 +131,7 @@
   - Tests de integración por controller con PostgreSQL real; cada clase crea sus datos (`TransactionFixtures`) en vez de usar la semilla `V2`.
   - Eliminados los tests unitarios de services con Mockito (`TransactionQueryServiceTest` levantaba un contenedor que no usaba) y `TransactionServiceTestHelper`.
   - Nuevos: `TransactionCreationControllerTest` (`@MockitoBean AccountClient`: lo que se envía a account-service y lo que se guarda con COMPLETED/DECLINED, validación 400, 401/403) y `AccountClientFallbackTest` (422 → DECLINED con el mensaje, 404/401/5xx → FAILED); analítica `type-summary`, `average-days` y `partition-by-amount`.
-  - Pendiente: `/max-by-type` (500) y las aserciones de los bugs conocidos, al corregirlos. Que el `@CircuitBreaker` realmente invoque el fallback ante un error de Feign requeriría WireMock.
+  - Que el `@CircuitBreaker` realmente invoque el fallback ante un error de Feign requeriría WireMock.
 
 ## user-service
 

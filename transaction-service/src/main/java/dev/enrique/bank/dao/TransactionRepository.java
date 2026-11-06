@@ -75,7 +75,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("""
             SELECT t FROM Transaction t
             WHERE t.sourceIdentifier = :sourceIdentifier
+            AND t.transactionStatus = :status
             AND t.transactionDate BETWEEN :startDate AND :endDate
+            ORDER BY t.transactionDate DESC
             """)
     List<TransactionCommonProjection> findAllBySourceIdentifierAndDateRangeAndStatus(
             @Param("sourceIdentifier") String sourceIdentifier,
@@ -129,4 +131,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("keyword") String keyword);
 
     Optional<TransactionDetailedProjection> findByTransactionCode(String transactionCode);
+
+    Optional<TransactionCommonProjection> findFirstBySourceIdentifierAndTransactionStatusOrderByAmountDesc(
+            String sourceIdentifier, TransactionStatus status);
 }

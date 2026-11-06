@@ -8,6 +8,7 @@ import dev.enrique.bank.client.AccountClient;
 import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
+import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.PurchaseTransaction;
@@ -28,6 +29,7 @@ public class PurchaseTransactionProcessor extends AbstractTransactionProcessor<P
     @Override
     protected MovementResultResponse callAccountClient(PurchaseRequest request) {
         ClientPurchaseRequest clientRequest = new ClientPurchaseRequest(
+                request.sourceAccountNumber(),
                 request.amount(),
                 request.sourceCardNumber(),
                 request.cvv());
@@ -49,6 +51,8 @@ public class PurchaseTransactionProcessor extends AbstractTransactionProcessor<P
     protected Transaction buildTransaction(String code, PurchaseRequest request, MovementResultResponse response) {
         return Transaction.builder()
                 .transactionCode(code)
+                .sourceIdentifier(request.sourceAccountNumber())
+                .identifierType(IdentifierType.ACCOUNT)
                 .amount(request.amount())
                 .description(request.description())
                 .reason(response.reason())

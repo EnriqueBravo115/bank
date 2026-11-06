@@ -12,6 +12,7 @@ import static dev.enrique.bank.util.JwtTestUtils.tokenWithRole;
 import static dev.enrique.bank.util.TransactionFixtures.CARD;
 import static dev.enrique.bank.util.TransactionFixtures.CLABE;
 import static dev.enrique.bank.util.TransactionFixtures.transaction;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -108,6 +109,8 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(1)))
                 .andExpect(jsonPath("$.items[0].amount").value(300.00))
+                .andExpect(jsonPath("$.items[0].transactionCode").value("TXN-002"))
+                .andExpect(jsonPath("$.items[0].description").value("Pago de luz"))
                 .andExpect(jsonPath("$.headers['page-total-count'][0]").value("2"));
     }
 
@@ -151,13 +154,33 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void max_returnsHighestAmount() throws Exception {
+    void max_returnsHighestAmountOfStatus() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/max")
                 .param("sourceIdentifier", CLABE)
                 .param("status", "COMPLETED")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.amount").value(1500.00));
+                .andExpect(jsonPath("$.amount").value(1500.00))
+                .andExpect(jsonPath("$.transactionCode").value("TXN-001"));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/max")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "FAILED")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.amount").value(50.00))
+                .andExpect(jsonPath("$.transactionCode").value("TXN-003"));
+    }
+
+    @Test
+    void max_withoutTransactions_returns404() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/max")
+                .param("sourceIdentifier", "000000000000000000")
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message")
+                        .value("No COMPLETED transactions found for: 000000000000000000"));
     }
 
     @Test
@@ -170,7 +193,18 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].amount").value(1500.00));
+                .andExpect(jsonPath("$[0].amount").value(1500.00))
+                .andExpect(jsonPath("$[0].transactionCode").value("TXN-001"));
+
+        // The FAILED transfer of June 2023 is in range but has another status
+        mockMvc.perform(get(TRANSACTION_QUERY + "/date-range")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "COMPLETED")
+                .param("startDate", "2023-01-01T00:00:00")
+                .param("endDate", "2023-12-31T23:59:59")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/date-range")
                 .param("sourceIdentifier", CLABE)
@@ -216,6 +250,14 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     }
 
     @Test
+    void byTransactionCode_whenMissing_returns404() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-999")
+                .with(customer()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Transaction not found with code: TXN-999"));
+    }
+
+    @Test
     void identifierType_filtersByType() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/identifier-type")
                 .param("sourceIdentifier", CLABE)
@@ -223,7 +265,8 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .param("identifierType", "CLABE")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[*].transactionCode", containsInAnyOrder("TXN-001", "TXN-002")));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/identifier-type")
                 .param("sourceIdentifier", CLABE)

@@ -25,6 +25,7 @@ Content-Type: application/json
   "amount": 349.99,
   "description": "Compra en Liverpool",
   "transactionType": "PURCHASE",
+  "sourceAccountNumber": "ACC-1774713408076",
   "sourceCardNumber": "4111111111111111",
   "merchantCode": "MERC-LIV-001",
   "merchantCategory": "RETAIL_CLOTHING",

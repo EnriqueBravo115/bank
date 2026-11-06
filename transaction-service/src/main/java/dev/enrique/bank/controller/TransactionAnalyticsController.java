@@ -86,7 +86,6 @@ public class TransactionAnalyticsController {
                 sourceIdentifier, status));
     }
 
-    // FIX: Internal Server Error
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/max-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionBasicResponse>>> getMaxByTransactionType(

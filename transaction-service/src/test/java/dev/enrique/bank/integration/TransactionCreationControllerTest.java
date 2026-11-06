@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.enrique.bank.client.AccountClient;
+import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
@@ -53,6 +54,7 @@ import dev.enrique.bank.util.PostgresContainerConfig;
 @AutoConfigureMockMvc
 class TransactionCreationControllerTest extends PostgresContainerConfig {
     private static final String TARGET_CLABE = "002180700148685530";
+    private static final String ACCOUNT_NUMBER = "ACC-1700000000000";
     private static final MovementResultResponse COMPLETED =
             new MovementResultResponse(TransactionStatus.COMPLETED, "Valid Transaction");
 
@@ -160,7 +162,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         when(accountClient.processService(any())).thenReturn(COMPLETED);
 
         ServiceRequest request = new ServiceRequest(new BigDecimal("875.50"), "Pago de CFE",
-                TransactionType.SERVICE, CLABE, "CFE-RPT-0099", ServiceType.ELECTRICITY, Currency.MX);
+                TransactionType.SERVICE, ACCOUNT_NUMBER, "CFE-RPT-0099", ServiceType.ELECTRICITY, Currency.MX);
 
         mockMvc.perform(post(TRANSACTION_CREATE + "/service-payment")
                 .with(customer())
@@ -170,9 +172,11 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$.transactionType").value("SERVICE"))
                 .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
 
-        verify(accountClient).processService(new ClientServiceRequest(CLABE, new BigDecimal("875.50")));
+        verify(accountClient).processService(new ClientServiceRequest(ACCOUNT_NUMBER, new BigDecimal("875.50")));
 
         Transaction saved = singleSavedTransaction();
+        assertThat(saved.getSourceIdentifier()).isEqualTo(ACCOUNT_NUMBER);
+        assertThat(saved.getIdentifierType()).isEqualTo(IdentifierType.ACCOUNT);
         assertThat(saved.getTransactionType()).isEqualTo(TransactionType.SERVICE);
         assertThat(saved.getAmount()).isEqualByComparingTo("875.50");
         assertThat(saved.getServiceTransaction().getPaymentReference()).isEqualTo("CFE-RPT-0099");
@@ -186,7 +190,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         when(accountClient.processPurchase(any())).thenReturn(COMPLETED);
 
         PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Compra en tienda",
-                TransactionType.PURCHASE, CARD, "MERC-001", "RETAIL", "POS-001", "123", Currency.MX);
+                TransactionType.PURCHASE, ACCOUNT_NUMBER, CARD, "MERC-001", "RETAIL", "POS-001", "123", Currency.MX);
 
         mockMvc.perform(post(TRANSACTION_CREATE + "/purchase")
                 .with(customer())
@@ -196,8 +200,14 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$.transactionType").value("PURCHASE"))
                 .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
 
+        verify(accountClient).processPurchase(
+                new ClientPurchaseRequest(ACCOUNT_NUMBER, new BigDecimal("349.99"), CARD, "123"));
+
         Transaction saved = singleSavedTransaction();
+        assertThat(saved.getSourceIdentifier()).isEqualTo(ACCOUNT_NUMBER);
+        assertThat(saved.getIdentifierType()).isEqualTo(IdentifierType.ACCOUNT);
         assertThat(saved.getTransactionType()).isEqualTo(TransactionType.PURCHASE);
+        assertThat(saved.getPurchaseTransaction().getSourceCardNumber()).isEqualTo(CARD);
         assertThat(saved.getPurchaseTransaction().getMerchantCode()).isEqualTo("MERC-001");
         assertThat(saved.getPurchaseTransaction().getPosId()).isEqualTo("POS-001");
     }

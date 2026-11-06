@@ -10,7 +10,6 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface TransactionQueryService {
     List<TransactionDetailedProjection> getTransactionHistory(String sourceIdentifier, TransactionStatus status);
@@ -22,12 +21,12 @@ public interface TransactionQueryService {
 
     List<TransactionCommonProjection> getAllTransactionsBySourceIdentifiers(List<String> sourceIdentifiers);
 
-    Optional<TransactionCommonProjection> getMaxTransaction(String sourceIdentifier, TransactionStatus status);
+    TransactionCommonProjection getMaxTransaction(String sourceIdentifier, TransactionStatus status);
 
     List<TransactionCommonProjection> getTransactionsInDateRange(String sourceIdentifier, TransactionStatus status,
                                                                  LocalDateTime startDate, LocalDateTime endDate);
 
-    Optional<TransactionDetailedProjection> getTransactionByCode(String transactionCode);
+    TransactionDetailedProjection getTransactionByCode(String transactionCode);
 
     List<TransactionCommonProjection> getAllTransactionByAmountRangeAndStatus(String sourceIdentifier, TransactionStatus status,
                                                                               BigDecimal minAmount, BigDecimal maxAmount);

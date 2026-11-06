@@ -9,6 +9,7 @@ import dev.enrique.bank.commons.enums.WithdrawalMethod;
 public record WithdrawalRequest(
         BigDecimal amount,
         String description,
+        String sourceAccountNumber,
         String atmLocation,
         String atmSessionId,
         String receiptNumber,
