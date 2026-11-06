@@ -5,7 +5,6 @@ import java.time.Month;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
@@ -13,7 +12,6 @@ import dev.enrique.bank.commons.enums.TransactionType;
 import dev.enrique.bank.dao.projection.TransactionBasicProjection;
 import dev.enrique.bank.dao.projection.TransactionDetailedProjection;
 
-@Service
 public interface TransactionAnalyticsService {
     Map<TransactionType, List<TransactionDetailedProjection>> groupTransactionsByType(String sourceIdentifier,
             TransactionStatus transactionStatus);

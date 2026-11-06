@@ -11,5 +11,4 @@ public interface TransactionCreationService {
     TransactionResultResponse purchase(PurchaseRequest purchaseRequest);
     TransactionResultResponse servicePayment(ServiceRequest purchaseRequest);
     TransactionResultResponse withdrawal(WithdrawalRequest withdrawalRequest);
-    void cancelTransaction(Long transactionId);
 }

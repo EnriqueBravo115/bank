@@ -42,8 +42,4 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
     public TransactionResultResponse withdrawal(WithdrawalRequest withdrawalRequest) {
         return withdrawalTransactionProcessor.process(withdrawalRequest);
     }
-
-    @Override
-    public void cancelTransaction(Long transactionId) {
-    }
 }

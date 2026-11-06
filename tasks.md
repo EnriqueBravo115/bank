@@ -100,8 +100,10 @@
 
 ### Calidad
 
-- [ ] **Código muerto**
-  - `spring-kafka` en el pom sin uso; `KafkaTopicConstants` y `TestConstants` (este en `src/main`) sin referencias.
+- [x] **Código muerto**
+  - Eliminados: `TransactionHelper`, `KafkaTopicConstants`, `ErrorMessage`, `AccountServiceException`, `ApiRequestException`, `AccountStatus`, `TransferResponse`, los 8 `FilterStatus*Request`, `TransferTransactionRepository`, `cancelTransaction` vacío y `@Service` en las interfaces.
+  - Dependencias quitadas: `spring-kafka`, `spring-kafka-test` y `spring-boot-starter-oauth2-client`.
+  - `TestConstants` movido a `src/test`.
 
 - [ ] **Datos de prueba en migraciones de producción**
   - `V2__populate_transactions.sql` siembra datos de ejemplo; moverlo a `src/test` o a una migración solo de desarrollo (los tests actuales dependen de él).
