@@ -53,6 +53,9 @@ public class OutboxEvent {
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
+    @Column(name = "next_attempt_at", nullable = false)
+    private LocalDateTime nextAttemptAt;
+
     public static OutboxEvent pending(String aggregateId, String topic, String payload) {
         OutboxEvent event = new OutboxEvent();
         event.id = UUID.randomUUID();
@@ -61,6 +64,7 @@ public class OutboxEvent {
         event.payload = payload;
         event.status = OutboxStatus.PENDING;
         event.createdAt = LocalDateTime.now();
+        event.nextAttemptAt = event.createdAt;
         return event;
     }
 
@@ -70,11 +74,19 @@ public class OutboxEvent {
         lastError = null;
     }
 
-    public void registerFailure(String error, int maxAttempts) {
+    public void registerFailure(String error, int maxAttempts, LocalDateTime nextAttemptAt) {
         attempts++;
         lastError = error == null ? null : error.substring(0, Math.min(error.length(), MAX_ERROR_LENGTH));
+        this.nextAttemptAt = nextAttemptAt;
         if (attempts >= maxAttempts) {
             status = OutboxStatus.FAILED;
         }
+    }
+
+    // Manual retry of an event that ran out of attempts; lastError is kept until it is sent.
+    public void retry(LocalDateTime now) {
+        status = OutboxStatus.PENDING;
+        attempts = 0;
+        nextAttemptAt = now;
     }
 }

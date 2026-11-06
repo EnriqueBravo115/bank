@@ -5,11 +5,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +34,8 @@ import dev.enrique.bank.broker.producer.UserEventProducer;
 import dev.enrique.bank.commons.enums.AccountType;
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.OutboxStatus;
+import dev.enrique.bank.commons.exception.OutboxEventNotFoundException;
+import dev.enrique.bank.commons.exception.OutboxEventNotRetryableException;
 import dev.enrique.bank.dao.OutboxEventRepository;
 import dev.enrique.bank.model.OutboxEvent;
 import dev.enrique.bank.util.PostgresContainerConfig;
@@ -127,7 +134,7 @@ class EventOutboxTest extends PostgresContainerConfig {
         outbox.publishPending();
 
         brokerAccepts();
-        outbox.publishPending();
+        outbox.publishPending(LocalDateTime.now().plusMinutes(1));
 
         OutboxEvent event = eventOf("kc-1");
         assertThat(event.getStatus()).isEqualTo(OutboxStatus.SENT);
@@ -140,14 +147,127 @@ class EventOutboxTest extends PostgresContainerConfig {
         brokerFails();
         outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
 
-        for (int i = 0; i < EventOutbox.MAX_ATTEMPTS + 2; i++) {
-            outbox.publishPending();
-        }
+        exhaustAttempts();
 
         OutboxEvent event = eventOf("kc-1");
         assertThat(event.getStatus()).isEqualTo(OutboxStatus.FAILED);
         assertThat(event.getAttempts()).isEqualTo(EventOutbox.MAX_ATTEMPTS);
         verify(userEventProducer, times(EventOutbox.MAX_ATTEMPTS)).send(any(), any(), any(), any());
+    }
+
+    @Test
+    void shouldWaitWithExponentialBackoffBetweenAttempts() {
+        brokerFails();
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
+        // PostgreSQL keeps microseconds.
+        LocalDateTime start = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+
+        outbox.publishPending(start);
+        assertThat(eventOf("kc-1").getNextAttemptAt()).isEqualTo(start.plusSeconds(5));
+
+        outbox.publishPending(start.plusSeconds(4));
+        verify(userEventProducer, times(1)).send(any(), any(), any(), any());
+
+        outbox.publishPending(start.plusSeconds(5));
+        verify(userEventProducer, times(2)).send(any(), any(), any(), any());
+        assertThat(eventOf("kc-1").getNextAttemptAt()).isEqualTo(start.plusSeconds(15));
+    }
+
+    @Test
+    void shouldHoldBackLaterEventsOfSameUserWhileEarlierOneIsInBackoff() {
+        brokerFails();
+        outbox.enqueue(Topics.USER_STATUS_CHANGED, "kc-1", new UserStatusChangedEvent(false));
+        outbox.publishPending();
+        outbox.enqueue(Topics.USER_STATUS_CHANGED, "kc-1", new UserStatusChangedEvent(true));
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-2", accountRequested("two@test.com"));
+
+        brokerAccepts();
+        clearInvocations(userEventProducer);
+        outbox.publishPending();
+
+        // Other users are not blocked by kc-1's backoff, but kc-1's unblock cannot overtake its block.
+        verify(userEventProducer).send(eq(Topics.ACCOUNT_REQUESTED), eq("kc-2"), any(), any());
+        verify(userEventProducer, never()).send(any(), eq("kc-1"), any(), any());
+    }
+
+    @Test
+    void shouldHoldBackLaterEventsOfSameUserUntilFailedOneIsRetried() {
+        brokerFails();
+        outbox.enqueue(Topics.USER_STATUS_CHANGED, "kc-1", new UserStatusChangedEvent(false));
+        exhaustAttempts();
+        outbox.enqueue(Topics.USER_STATUS_CHANGED, "kc-1", new UserStatusChangedEvent(true));
+
+        brokerAccepts();
+        clearInvocations(userEventProducer);
+        outbox.publishPending(LocalDateTime.now().plusDays(30));
+        verify(userEventProducer, never()).send(any(), any(), any(), any());
+
+        OutboxEvent failed = outboxEventRepository.findAll().stream()
+                .filter(event -> event.getStatus() == OutboxStatus.FAILED)
+                .findFirst()
+                .orElseThrow();
+        outbox.retry(failed.getId());
+        outbox.publishPending();
+
+        InOrder order = inOrder(userEventProducer);
+        order.verify(userEventProducer).send(eq(Topics.USER_STATUS_CHANGED), eq("kc-1"),
+                argThat(e -> e instanceof UserStatusChangedEvent changed && !changed.isActive()), any());
+        order.verify(userEventProducer).send(eq(Topics.USER_STATUS_CHANGED), eq("kc-1"),
+                argThat(e -> e instanceof UserStatusChangedEvent changed && changed.isActive()), any());
+        assertThat(outboxEventRepository.findAll()).allSatisfy(event -> {
+            assertThat(event.getStatus()).isEqualTo(OutboxStatus.SENT);
+            assertThat(event.getLastError()).isNull();
+        });
+    }
+
+    @Test
+    void shouldResetAttemptsWhenRetryingFailedEvent() {
+        brokerFails();
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
+        exhaustAttempts();
+
+        outbox.retry(eventOf("kc-1").getId());
+
+        OutboxEvent event = eventOf("kc-1");
+        assertThat(event.getStatus()).isEqualTo(OutboxStatus.PENDING);
+        assertThat(event.getAttempts()).isZero();
+        assertThat(event.getLastError()).as("kept until it is sent").contains("broker down");
+    }
+
+    @Test
+    void shouldOnlyRetryFailedEvents() {
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
+        UUID pendingId = eventOf("kc-1").getId();
+
+        assertThatThrownBy(() -> outbox.retry(pendingId)).isInstanceOf(OutboxEventNotRetryableException.class);
+        assertThatThrownBy(() -> outbox.retry(UUID.randomUUID())).isInstanceOf(OutboxEventNotFoundException.class);
+    }
+
+    @Test
+    void shouldPurgeOnlyOldSentEvents() {
+        brokerAccepts();
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-1", accountRequested("one@test.com"));
+        outbox.publishPending();
+        brokerFails();
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-2", accountRequested("two@test.com"));
+        exhaustAttempts();
+        outbox.enqueue(Topics.ACCOUNT_REQUESTED, "kc-3", accountRequested("three@test.com"));
+
+        assertThat(outbox.purgeSent(LocalDateTime.now().minusDays(7))).as("sent too recently").isZero();
+        assertThat(outbox.purgeSent(LocalDateTime.now().plusSeconds(1))).isEqualTo(1);
+
+        assertThat(outboxEventRepository.findAll())
+                .extracting(OutboxEvent::getAggregateId)
+                .containsExactlyInAnyOrder("kc-2", "kc-3");
+    }
+
+    // Publishes until the head event runs out of attempts, each run after its backoff has elapsed.
+    private void exhaustAttempts() {
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < EventOutbox.MAX_ATTEMPTS + 2; i++) {
+            outbox.publishPending(now);
+            now = now.plusHours(1);
+        }
     }
 
     private void brokerAccepts() {

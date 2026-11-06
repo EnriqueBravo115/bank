@@ -6,4 +6,5 @@ public class PathConstants {
     public static final String PROFILE = USER + "/profile";
     public static final String KYC = USER + "/kyc";
     public static final String FINANCIAL = USER + "/financial-info";
+    public static final String OUTBOX = USER + "/outbox";
 }

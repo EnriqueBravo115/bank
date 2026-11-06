@@ -120,8 +120,15 @@
   - Corregido con `RollbackCompensation`: antes de llamar a Keycloak se registra cómo deshacerlo y se ejecuta si la transacción hace rollback (por un fallo de Keycloak o del commit). Cubre KYC (quita `CUSTOMER_BASIC` y vuelve `registration_status` a `PROFILE`), cambio de rol (restaura el nivel anterior), cambio de email (restaura email, `username` y su verificación) y bloqueo/desbloqueo (restaura `enabled`; las sesiones cerradas no vuelven).
   - Si la compensación también falla, solo queda un `log.error`: no hay reintento automático.
 
-- [ ] **Mantenimiento del outbox**
+- [x] **Mantenimiento del outbox**
   - Revisar/reintentar eventos `FAILED` (endpoint de admin o job) y purgar los `SENT` antiguos.
+  - Endpoints `ADMIN`: `GET /api/v1/user/outbox/failed` (paginado) y `POST /api/v1/user/outbox/{id}/retry` (vuelve a `PENDING` con los intentos en 0; `409` si no está `FAILED`, `404` si no existe).
+  - Limpieza diaria (`outbox.cleanup.cron`, 03:00 por defecto) de los `SENT` con más de `outbox.cleanup.sent-retention` (`P7D`).
+  - Backoff exponencial entre intentos (5 s, 10 s, 20 s… hasta 15 min): un evento pasa a `FAILED` tras unos 40 min fallando, no tras ~20 s de Kafka caído.
+  - Orden por usuario: mientras un evento está `FAILED` o esperando su backoff, los siguientes del mismo usuario esperan. Antes se publicaban y al reintentar el viejo se aplicaba fuera de orden (p. ej. un bloqueo después del desbloqueo).
+
+- [ ] **Orden de eventos del outbox con varias réplicas**
+  - `FOR UPDATE SKIP LOCKED` evita enviar dos veces la misma fila, pero si dos réplicas publican a la vez pueden enviar dos eventos del mismo usuario en distinto orden. Opciones: un advisory lock para que publique una sola réplica, o lock por `aggregate_id`.
 
 - [ ] **CURP/RFC no se cruzan**
   - No se comprueba que coincidan entre sí ni con `birthday`.

@@ -22,6 +22,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(OutboxEventNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOutboxEventNotFound(OutboxEventNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(OutboxEventNotRetryableException.class)
+    public ResponseEntity<ErrorResponse> handleOutboxEventNotRetryable(OutboxEventNotRetryableException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(InvalidRegistrationStepException.class)
     public ResponseEntity<ErrorResponse> handleInvalidStep(InvalidRegistrationStepException ex) {
         ErrorResponse error = new ErrorResponse(
