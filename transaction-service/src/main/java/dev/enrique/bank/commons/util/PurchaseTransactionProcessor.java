@@ -20,9 +20,8 @@ public class PurchaseTransactionProcessor extends AbstractTransactionProcessor<P
 
     public PurchaseTransactionProcessor(
             TransactionRepository repo,
-            AccountClient accountClient,
-            BasicMapper mapper) {
-        super(repo, mapper);
+            AccountClient accountClient) {
+        super(repo);
         this.accountClient = accountClient;
     }
 
@@ -40,7 +39,6 @@ public class PurchaseTransactionProcessor extends AbstractTransactionProcessor<P
     protected PurchaseTransaction buildSubTransaction(PurchaseRequest request) {
         return PurchaseTransaction.builder()
                 .sourceCardNumber(request.sourceCardNumber())
-                .cvv(request.cvv())
                 .merchantCode(request.merchantCode())
                 .merchantCategory(request.merchantCategory())
                 .posId(request.posId())

@@ -1,19 +1,21 @@
 package dev.enrique.bank.commons.dto.request;
 
-import dev.enrique.bank.commons.enums.Currency;
-import dev.enrique.bank.commons.enums.TransactionType;
-
 import java.math.BigDecimal;
 
+import dev.enrique.bank.commons.enums.Currency;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
+// The cvv is forwarded to account-service and never stored.
 public record PurchaseRequest(
-        BigDecimal amount,
-        String description,
-        TransactionType transactionType,
-        String sourceAccountNumber,
-        String sourceCardNumber,
-        String merchantCode,
+        @NotNull @Positive BigDecimal amount,
+        @NotBlank String description,
+        @NotBlank String sourceAccountNumber,
+        @NotBlank String sourceCardNumber,
+        @NotBlank String merchantCode,
         String merchantCategory,
         String posId,
-        String cvv,
-        Currency currency) {
+        @NotBlank String cvv,
+        @NotNull Currency currency) {
 }

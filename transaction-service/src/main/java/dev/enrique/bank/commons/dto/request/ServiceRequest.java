@@ -1,17 +1,18 @@
 package dev.enrique.bank.commons.dto.request;
 
-import dev.enrique.bank.commons.enums.Currency;
-import dev.enrique.bank.commons.enums.ServiceType;
-import dev.enrique.bank.commons.enums.TransactionType;
-
 import java.math.BigDecimal;
 
+import dev.enrique.bank.commons.enums.Currency;
+import dev.enrique.bank.commons.enums.ServiceType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 public record ServiceRequest(
-        BigDecimal amount,
-        String description,
-        TransactionType transactionType,
-        String sourceAccountNumber,
-        String paymentReference,
-        ServiceType serviceType,
-        Currency currency) {
+        @NotNull @Positive BigDecimal amount,
+        @NotBlank String description,
+        @NotBlank String sourceAccountNumber,
+        @NotBlank String paymentReference,
+        @NotNull ServiceType serviceType,
+        @NotNull Currency currency) {
 }

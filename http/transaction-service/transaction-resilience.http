@@ -12,7 +12,3 @@ GET http://localhost:8000/transaction/actuator/circuitbreakers
 Accept: application/json
 Authorization: Bearer {{tokenAdmin}}
 
-### Retries check transaction-service
-GET http://localhost:8000/transaction/actuator/retries
-Accept: application/json
-Authorization: Bearer {{tokenAdmin}}

@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import dev.enrique.bank.dao.TransactionRepository;
@@ -107,11 +106,30 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .param("size", "1")
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items", hasSize(1)))
-                .andExpect(jsonPath("$.items[0].amount").value(300.00))
-                .andExpect(jsonPath("$.items[0].transactionCode").value("TXN-002"))
-                .andExpect(jsonPath("$.items[0].description").value("Pago de luz"))
-                .andExpect(jsonPath("$.headers['page-total-count'][0]").value("2"));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].amount").value(300.00))
+                .andExpect(jsonPath("$.content[0].transactionCode").value("TXN-002"))
+                .andExpect(jsonPath("$.content[0].description").value("Pago de luz"))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.size").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(2))
+                .andExpect(jsonPath("$.page.totalPages").value(2));
+    }
+
+    @Test
+    void all_rejectsInvalidPageParams() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/all")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "COMPLETED")
+                .param("size", "101")
+                .with(customer()))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get(TRANSACTION_QUERY + "/all")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "COMPLETED")
+                .param("page", "-1")
+                .with(customer()))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -137,8 +155,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void bySources_asAdmin_returnsCompletedTransactionsOfAllSources() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/by-sources")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[\"" + CLABE + "\", \"" + CARD + "\"]")
+                .param("sourceIdentifiers", CLABE, CARD)
                 .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)));
@@ -147,8 +164,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void bySources_asCustomer_returns403() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/by-sources")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[\"" + CLABE + "\"]")
+                .param("sourceIdentifiers", CLABE)
                 .with(customer()))
                 .andExpect(status().isForbidden());
     }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
+import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.TransactionResultResponse;
 import dev.enrique.bank.service.TransactionCreationService;
 import jakarta.validation.Valid;
@@ -39,5 +40,12 @@ public class TransactionCreationController {
     @PostMapping("/service-payment")
     public ResponseEntity<TransactionResultResponse> servicePayment(@Valid @RequestBody ServiceRequest serviceRequest) {
         return ResponseEntity.ok(transactionCreationService.servicePayment(serviceRequest));
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
+    @PostMapping("/withdrawal")
+    public ResponseEntity<TransactionResultResponse> withdrawal(
+            @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
+        return ResponseEntity.ok(transactionCreationService.withdrawal(withdrawalRequest));
     }
 }

@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record TransferRequest(
-        @Positive BigDecimal amount,
+        @NotNull @Positive BigDecimal amount,
         @NotBlank String description,
         @NotNull Currency currency,
         @NotBlank String sourceIdentifier,

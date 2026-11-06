@@ -93,7 +93,7 @@ class TransactionAnalyticsControllerTest extends PostgresContainerConfig {
         mockMvc.perform(completed("/partition-by-amount").param("amount", "500").with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$['true']", hasSize(1)))
-                .andExpect(jsonPath("$['true'][0].amount").value(1500.00))
+                .andExpect(jsonPath("$['true'][0].transactionCode").value("TXN-001"))
                 .andExpect(jsonPath("$['false']", hasSize(2)));
     }
 
@@ -125,9 +125,9 @@ class TransactionAnalyticsControllerTest extends PostgresContainerConfig {
     void maxByType_returnsHighestTransactionOfEachType() throws Exception {
         mockMvc.perform(completed("/max-by-type").with(admin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.TRANSFER", hasSize(1)))
-                .andExpect(jsonPath("$.TRANSFER[0].amount").value(1500.00))
-                .andExpect(jsonPath("$.SERVICE[0].amount").value(300.00));
+                .andExpect(jsonPath("$.TRANSFER.transactionCode").value("TXN-001"))
+                .andExpect(jsonPath("$.TRANSFER.amount").value(1500.00))
+                .andExpect(jsonPath("$.SERVICE.amount").value(300.00));
     }
 
     @Test

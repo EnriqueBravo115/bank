@@ -2,43 +2,38 @@ package dev.enrique.bank.commons.util;
 
 import java.util.UUID;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.dto.response.TransactionResultResponse;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Transaction;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Moves the money in account-service and records the transaction with the status it answered.
+ * Business rejections come back as a DECLINED/FAILED {@link MovementResultResponse} (see the
+ * AccountClient fallback); any other error propagates and rolls back the transaction.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public abstract class AbstractTransactionProcessor<RQ, SUB> {
     protected final TransactionRepository transactionRepository;
-    protected final BasicMapper basicMapper;
 
     @Transactional
     public TransactionResultResponse process(RQ request) {
         String transactionCode = UUID.randomUUID().toString();
-        log.debug("Start transaction: {} for request: {}", transactionCode, request);
 
-        try {
-            MovementResultResponse response = callAccountClient(request);
-            SUB subEntity = buildSubTransaction(request);
+        MovementResultResponse movement = callAccountClient(request);
 
-            Transaction transaction = buildTransaction(transactionCode, request, response);
-            link(transaction, subEntity);
+        Transaction transaction = buildTransaction(transactionCode, request, movement);
+        link(transaction, buildSubTransaction(request));
+        transactionRepository.save(transaction);
 
-            transactionRepository.save(transaction);
-
-            TransactionResultResponse transactionResultResponse = basicMapper
-                    .convertToResponse(transaction, TransactionResultResponse.class);
-
-            transactionResultResponse.setReason(response.reason());
-
-            return transactionResultResponse;
-        } catch (Exception e) {
-            throw new RuntimeException("Unexpected error processing transaction", e);
-        }
+        log.info("Transaction {} ({}) recorded as {}: {}", transactionCode, transaction.getTransactionType(),
+                movement.transactionStatus(), movement.reason());
+        return TransactionResultResponse.from(transaction);
     }
 
     protected abstract MovementResultResponse callAccountClient(RQ request);

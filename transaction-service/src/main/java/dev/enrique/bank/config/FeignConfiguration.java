@@ -15,9 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @Slf4j
 public class FeignConfiguration {
+    // BASIC: method, URL, status and time. FULL would log the bodies, card number and cvv included.
     @Bean
     public Logger.Level feignLoggerLevel() {
-        return Logger.Level.FULL;
+        return Logger.Level.BASIC;
     }
 
     @Bean

@@ -19,9 +19,8 @@ public class TransferTransactionProcessor extends AbstractTransactionProcessor<T
 
     public TransferTransactionProcessor(
             TransactionRepository repo,
-            AccountClient accountClient,
-            BasicMapper mapper) {
-        super(repo, mapper);
+            AccountClient accountClient) {
+        super(repo);
         this.accountClient = accountClient;
     }
 

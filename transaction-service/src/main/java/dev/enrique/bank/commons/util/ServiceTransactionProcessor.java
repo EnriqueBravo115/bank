@@ -20,9 +20,8 @@ public class ServiceTransactionProcessor extends AbstractTransactionProcessor<Se
 
     public ServiceTransactionProcessor(
             TransactionRepository repo,
-            AccountClient accountClient,
-            BasicMapper mapper) {
-        super(repo, mapper);
+            AccountClient accountClient) {
+        super(repo);
         this.accountClient = accountClient;
     }
 

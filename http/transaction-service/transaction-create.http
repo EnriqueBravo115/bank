@@ -24,7 +24,6 @@ Content-Type: application/json
 {
   "amount": 349.99,
   "description": "Compra en Liverpool",
-  "transactionType": "PURCHASE",
   "sourceAccountNumber": "ACC-1774713408076",
   "sourceCardNumber": "4111111111111111",
   "merchantCode": "MERC-LIV-001",
@@ -42,9 +41,26 @@ Content-Type: application/json
 {
   "amount": 875.50,
   "description": "Pago de CFE marzo",
-  "transactionType": "SERVICE",
   "sourceAccountNumber": "ACC-1775669092278",
   "paymentReference": "CFE-RPT-20240317-0100",
   "serviceType": "ELECTRICITY",
   "currency": "MX"
+}
+
+### Withdrawal - ATM(ADMIN-CUSTOMER_BASIC)
+POST {{baseUrl}}/withdrawal
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "amount": 1000.00,
+  "description": "Retiro en cajero",
+  "sourceAccountNumber": "ACC-1774713408076",
+  "atmLocation": "Av. Insurgentes Sur 1234, CDMX",
+  "atmSessionId": "ATM-SESSION-20240118-4521",
+  "receiptNumber": "RCP-20240118-0056",
+  "transactionFee": 25.00,
+  "currency": "MX",
+  "securityVerificationMethod": "PIN",
+  "withdrawalMethod": "DEBIT_CARD"
 }

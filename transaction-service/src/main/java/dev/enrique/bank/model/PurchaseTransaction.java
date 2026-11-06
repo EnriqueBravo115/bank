@@ -30,9 +30,6 @@ public class PurchaseTransaction {
     @Column(name = "source_card_number")
     private String sourceCardNumber;
 
-    @Column(name = "cvv")
-    private String cvv;
-
     @Column(name = "merchant_code")
     private String merchantCode;
 

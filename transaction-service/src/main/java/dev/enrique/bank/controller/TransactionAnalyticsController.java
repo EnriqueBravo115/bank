@@ -14,12 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.enrique.bank.commons.dto.response.TransactionBasicResponse;
-import dev.enrique.bank.commons.dto.response.TransactionDetailedResponse;
+import dev.enrique.bank.commons.dto.response.TransactionResponse;
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
-import dev.enrique.bank.commons.util.BasicMapper;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;
 
@@ -28,16 +26,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TransactionAnalyticsController {
     private final TransactionAnalyticsService transactionAnalyticsService;
-    private final BasicMapper mapper;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/group-by-type")
-    public ResponseEntity<Map<TransactionType, List<TransactionDetailedResponse>>> groupTransactionsByType(
+    public ResponseEntity<Map<TransactionType, List<TransactionResponse>>> groupTransactionsByType(
             @RequestParam String sourceIdentifier,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(mapper.convertToResposeMap(
-                transactionAnalyticsService.groupTransactionsByType(sourceIdentifier, status),
-                TransactionDetailedResponse.class));
+        return ResponseEntity.ok(transactionAnalyticsService.groupTransactionsByType(sourceIdentifier, status));
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
@@ -50,13 +45,12 @@ public class TransactionAnalyticsController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/partition-by-amount")
-    public ResponseEntity<Map<Boolean, List<TransactionBasicResponse>>> partitionTransactionsByAmount(
+    public ResponseEntity<Map<Boolean, List<TransactionResponse>>> partitionTransactionsByAmount(
             @RequestParam String sourceIdentifier,
             @RequestParam TransactionStatus status,
             @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(mapper.convertToResposeMap(
-                transactionAnalyticsService.partitionTransactionsByAmount(sourceIdentifier, status, amount),
-                TransactionBasicResponse.class));
+        return ResponseEntity.ok(
+                transactionAnalyticsService.partitionTransactionsByAmount(sourceIdentifier, status, amount));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -88,12 +82,10 @@ public class TransactionAnalyticsController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/max-by-type")
-    public ResponseEntity<Map<TransactionType, List<TransactionBasicResponse>>> getMaxByTransactionType(
+    public ResponseEntity<Map<TransactionType, TransactionResponse>> getMaxByTransactionType(
             @RequestParam String sourceIdentifier,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(mapper.convertToResposeMap(
-                transactionAnalyticsService.getMaxTransactionByType(sourceIdentifier, status),
-                TransactionBasicResponse.class));
+        return ResponseEntity.ok(transactionAnalyticsService.getMaxTransactionByType(sourceIdentifier, status));
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")

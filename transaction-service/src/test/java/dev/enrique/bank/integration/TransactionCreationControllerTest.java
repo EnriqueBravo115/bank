@@ -6,6 +6,7 @@ import static dev.enrique.bank.util.JwtTestUtils.tokenWithRole;
 import static dev.enrique.bank.util.TransactionFixtures.CARD;
 import static dev.enrique.bank.util.TransactionFixtures.CLABE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,13 +37,17 @@ import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
+import dev.enrique.bank.commons.dto.request.ClientWithdrawalRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
+import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.IdentifierType;
+import dev.enrique.bank.commons.enums.SecurityVerificationMethod;
 import dev.enrique.bank.commons.enums.ServiceType;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.commons.enums.WithdrawalMethod;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.util.PostgresContainerConfig;
@@ -64,6 +70,8 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     private ObjectMapper objectMapper;
     @Autowired
     private TransactionRepository transactionRepository;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @MockitoBean
     private AccountClient accountClient;
@@ -84,6 +92,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(buildTransferRequest("250.00"))))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionCode").isNotEmpty())
                 .andExpect(jsonPath("$.amount").value(250.00))
                 .andExpect(jsonPath("$.transactionType").value("TRANSFER"))
                 .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"))
@@ -135,6 +144,21 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     }
 
     @Test
+    void shouldNotRecordTransactionWhenProcessingFailsUnexpectedly() {
+        // The AccountClient fallback turns account-service errors into DECLINED/FAILED; anything
+        // else is a bug and must roll back instead of being recorded.
+        when(accountClient.processTransfer(any())).thenThrow(new IllegalStateException("boom"));
+
+        assertThatThrownBy(() -> mockMvc.perform(post(TRANSACTION_CREATE + "/transfer")
+                .with(customer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildTransferRequest("250.00")))))
+                .hasRootCauseMessage("boom");
+
+        assertThat(transactionRepository.count()).isZero();
+    }
+
+    @Test
     void shouldRejectTransferOfIncompleteRegistration() throws Exception {
         mockMvc.perform(post(TRANSACTION_CREATE + "/transfer")
                 .with(tokenWithRole("CUSTOMER_BASIC", "PROFILE"))
@@ -162,7 +186,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         when(accountClient.processService(any())).thenReturn(COMPLETED);
 
         ServiceRequest request = new ServiceRequest(new BigDecimal("875.50"), "Pago de CFE",
-                TransactionType.SERVICE, ACCOUNT_NUMBER, "CFE-RPT-0099", ServiceType.ELECTRICITY, Currency.MX);
+                ACCOUNT_NUMBER, "CFE-RPT-0099", ServiceType.ELECTRICITY, Currency.MX);
 
         mockMvc.perform(post(TRANSACTION_CREATE + "/service-payment")
                 .with(customer())
@@ -190,7 +214,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         when(accountClient.processPurchase(any())).thenReturn(COMPLETED);
 
         PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Compra en tienda",
-                TransactionType.PURCHASE, ACCOUNT_NUMBER, CARD, "MERC-001", "RETAIL", "POS-001", "123", Currency.MX);
+                ACCOUNT_NUMBER, CARD, "MERC-001", "RETAIL", "POS-001", "123", Currency.MX);
 
         mockMvc.perform(post(TRANSACTION_CREATE + "/purchase")
                 .with(customer())
@@ -210,6 +234,52 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         assertThat(saved.getPurchaseTransaction().getSourceCardNumber()).isEqualTo(CARD);
         assertThat(saved.getPurchaseTransaction().getMerchantCode()).isEqualTo("MERC-001");
         assertThat(saved.getPurchaseTransaction().getPosId()).isEqualTo("POS-001");
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM information_schema.columns "
+                + "WHERE table_name = 'purchase_transaction' AND column_name = 'cvv'", Integer.class))
+                .as("the cvv is never stored").isZero();
+    }
+
+    @Test
+    void shouldRejectPurchaseWithoutSourceAccount() throws Exception {
+        PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Compra en tienda",
+                null, CARD, "MERC-001", "RETAIL", "POS-001", "123", Currency.MX);
+
+        mockMvc.perform(post(TRANSACTION_CREATE + "/purchase")
+                .with(customer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(accountClient);
+    }
+
+    // ---- withdrawal ----
+
+    @Test
+    void shouldRegisterWithdrawal() throws Exception {
+        when(accountClient.processWithdrawal(any())).thenReturn(COMPLETED);
+
+        WithdrawalRequest request = new WithdrawalRequest(new BigDecimal("1000.00"), "Retiro en cajero",
+                ACCOUNT_NUMBER, "Av. Insurgentes Sur 1234", "ATM-SESSION-1", "RCP-1", null, null,
+                new BigDecimal("25.00"), Currency.MX, SecurityVerificationMethod.PIN, WithdrawalMethod.DEBIT_CARD);
+
+        mockMvc.perform(post(TRANSACTION_CREATE + "/withdrawal")
+                .with(customer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionType").value("WITHDRAWAL"))
+                .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
+
+        verify(accountClient).processWithdrawal(new ClientWithdrawalRequest(ACCOUNT_NUMBER,
+                new BigDecimal("1000.00"), SecurityVerificationMethod.PIN, new BigDecimal("25.00")));
+
+        Transaction saved = singleSavedTransaction();
+        assertThat(saved.getSourceIdentifier()).isEqualTo(ACCOUNT_NUMBER);
+        assertThat(saved.getTransactionType()).isEqualTo(TransactionType.WITHDRAWAL);
+        assertThat(saved.getWithdrawalTransaction().getAtmLocation()).isEqualTo("Av. Insurgentes Sur 1234");
+        assertThat(saved.getWithdrawalTransaction().getTransactionFee()).isEqualByComparingTo("25.00");
+        assertThat(saved.getWithdrawalTransaction().getWithdrawalMethod()).isEqualTo(WithdrawalMethod.DEBIT_CARD);
     }
 
     private Transaction singleSavedTransaction() {

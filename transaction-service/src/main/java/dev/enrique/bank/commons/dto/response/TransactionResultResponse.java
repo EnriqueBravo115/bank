@@ -5,21 +5,23 @@ import java.time.LocalDateTime;
 
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import dev.enrique.bank.model.Transaction;
 
-@Builder
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class TransactionResultResponse {
-    private BigDecimal amount;
-    private TransactionType transactionType;
-    private TransactionStatus transactionStatus;
-    private String reason;
-    private LocalDateTime transactionDate;
+public record TransactionResultResponse(
+        String transactionCode,
+        BigDecimal amount,
+        TransactionType transactionType,
+        TransactionStatus transactionStatus,
+        String reason,
+        LocalDateTime transactionDate) {
+
+    public static TransactionResultResponse from(Transaction transaction) {
+        return new TransactionResultResponse(
+                transaction.getTransactionCode(),
+                transaction.getAmount(),
+                transaction.getTransactionType(),
+                transaction.getTransactionStatus(),
+                transaction.getReason(),
+                transaction.getTransactionDate());
+    }
 }

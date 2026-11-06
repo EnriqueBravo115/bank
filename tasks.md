@@ -82,11 +82,11 @@
 
 ### Funcionalidad
 
-- [ ] **Endpoint de retiro**
-  - El servicio y `WithdrawalTransactionProcessor` existen, pero `TransactionCreationController` no lo expone.
+- [x] **Endpoint de retiro**
+  - `POST /api/v1/transaction/create/withdrawal`, con validación (`@Positive`, `@NotBlank`, `@NotNull`) igual que compra y pago de servicio.
 
 - [ ] **Cancelación y reversa**
-  - `cancelTransaction` está vacío y `reverseTransfer` es un TODO.
+  - No hay nada implementado (el `cancelTransaction` vacío se eliminó). Requiere en account-service un movimiento de reversa idempotente; ver la tarea de inconsistencia distribuida.
 
 ### Bugs
 
@@ -108,13 +108,15 @@
 - [x] **`/{transactionCode}` y `/max` respondían `200` con `null`**
   - `GlobalExceptionHandler` con `TransactionNotFoundException` → `404` y `{status, message, timestamp}`, como user-service.
 
-- [ ] **`process` envuelve todo en `RuntimeException`**
-  - Cualquier error termina en un 500 genérico.
+- [x] **`process` envuelve todo en `RuntimeException`**
+  - Ya no: los rechazos de account-service llegan como DECLINED/FAILED por el fallback y cualquier otro error se propaga y hace rollback (no se registra la transacción).
 
-- [ ] **Se guarda el CVV** en `purchase_transaction.cvv` (PCI-DSS).
+- [x] **Se guardaba el CVV** en `purchase_transaction.cvv` (PCI-DSS)
+  - `V3` borra la columna; el CVV solo se reenvía a account-service. Feign pasa de log `FULL` (que escribía los bodies, tarjeta y CVV incluidos) a `BASIC`.
 
-- [ ] **Configuración de Resilience4j**
-  - `feign.circuitbreaker.enabled` es el nombre antiguo (`spring.cloud.openfeign.circuitbreaker.enabled`); `resilience4j.retry` no se usa (no hay `@Retry`) y lista excepciones de `RestTemplate`. Verificar con WireMock que el fallback se ejecuta.
+- [x] **Configuración de Resilience4j**
+  - `AccountServiceIntegrationTest` levanta un account-service falso (HTTP real, sin dependencias nuevas) y comprueba que el `@CircuitBreaker` de `AccountClient` sí ejecuta el fallback: 422 → DECLINED con el mensaje, 404 y 5xx → FAILED, y el JSON que se envía.
+  - Quitados `feign.circuitbreaker.enabled` (nombre antiguo y no necesario: el fallback es del aspecto de Resilience4j) y el bloque `resilience4j.retry`, que nadie usaba.
 
 ### Calidad
 
@@ -123,15 +125,20 @@
   - Dependencias quitadas: `spring-kafka`, `spring-kafka-test` y `spring-boot-starter-oauth2-client`.
   - `TestConstants` movido a `src/test`.
 
-- [ ] **Datos de prueba en migraciones de producción**
-  - `V2__populate_transactions.sql` siembra datos de ejemplo; moverlo a `src/test` o a una migración solo de desarrollo. Los tests ya no dependen de él (cada clase borra y crea sus datos).
-  - Ojo: borrar una migración ya aplicada hace fallar la validación de Flyway en las BD existentes; mejor una `V3` que borre esas filas o `spring.flyway.locations` distintas por perfil.
+- [x] **Datos de prueba en migraciones de producción**
+  - `V3__remove_seed_data_and_cvv.sql` borra las filas de `V2` y reajusta la secuencia de `transactions.id`: `V2` insertaba ids explícitos sin moverla, así que las primeras inserciones reales chocaban con ellos.
+  - También añade `UNIQUE (transaction_code)` y el índice `(source_identifier, transaction_status, transaction_date)` que usan todas las consultas.
+
+- [x] **Respuestas al estilo de user-service**
+  - Records como proyección directa de JPQL (`TransactionResponse`, `TransactionSummaryResponse`, `TransactionResultResponse.from`); eliminados las 3 proyecciones, sus 3 DTOs, `BasicMapper`, ModelMapper y `HeaderResponse`.
+  - `/query/all` devuelve `PagedModel` con `page`/`size` validados (`Paging`, máximo 100) como user-service. `/analytics/max-by-type` devuelve una transacción por tipo, no una lista.
+  - `/query/by-sources` pasa de `GET` con body a `?sourceIdentifiers=a,b`.
+  - `PurchaseRequest` y `ServiceRequest` ya no llevan `transactionType` (se ignoraba).
 
 - [x] **Tests al patrón de user-service**
   - Tests de integración por controller con PostgreSQL real; cada clase crea sus datos (`TransactionFixtures`) en vez de usar la semilla `V2`.
   - Eliminados los tests unitarios de services con Mockito (`TransactionQueryServiceTest` levantaba un contenedor que no usaba) y `TransactionServiceTestHelper`.
   - Nuevos: `TransactionCreationControllerTest` (`@MockitoBean AccountClient`: lo que se envía a account-service y lo que se guarda con COMPLETED/DECLINED, validación 400, 401/403) y `AccountClientFallbackTest` (422 → DECLINED con el mensaje, 404/401/5xx → FAILED); analítica `type-summary`, `average-days` y `partition-by-amount`.
-  - Que el `@CircuitBreaker` realmente invoque el fallback ante un error de Feign requeriría WireMock.
 
 ## user-service
 

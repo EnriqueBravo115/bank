@@ -14,11 +14,8 @@ GET {{baseUrl}}/status-year?sourceIdentifier=646180110400000001&status=COMPLETED
 Authorization: {{token}}
 
 ### By sources - ADMIN only(ADMIN)
-GET {{baseUrl}}/by-sources
+GET {{baseUrl}}/by-sources?sourceIdentifiers=646180110400000001,4111111111111111,646180110400000003
 Authorization: {{token}}
-Content-Type: application/json
-
-["646180110400000001", "4111111111111111", "646180110400000003", "4532015112830366"]
 
 ### Max transaction - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
 GET {{baseUrl}}/max?sourceIdentifier=646180110400000001&status=COMPLETED
