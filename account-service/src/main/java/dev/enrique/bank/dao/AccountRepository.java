@@ -38,6 +38,15 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             """)
     Optional<AccountDetailedResponse> findByEmail(String email);
 
+    @Query("""
+            SELECT new dev.enrique.bank.commons.dto.response.AccountDetailedResponse(
+                a.id, a.userId, a.email, a.clabe, a.accountNumber,
+                a.accountType, a.accountStatus, a.currency, a.creationDate)
+            FROM Account a
+            WHERE a.userId = :userId
+            """)
+    Optional<AccountDetailedResponse> findByUserId(String userId);
+
     Optional<Account> findEntityByAccountNumber(String accountNumber);
 
     Optional<Account> findEntityByUserId(String userId);

@@ -36,6 +36,22 @@ public class Transaction {
     @Column(name = "source_identifier")
     private String sourceIdentifier;
 
+    // Keycloak id of the owner of the source account
+    @Column(name = "owner_id")
+    private String ownerId;
+
+    // Source account as resolved by account-service
+    @Column(name = "account_number")
+    private String accountNumber;
+
+    // Calls to account-service while the transaction was PENDING (answer unknown)
+    @Column(name = "attempts", nullable = false)
+    @Builder.Default
+    private int attempts = 0;
+
+    @Column(name = "next_attempt_at")
+    private LocalDateTime nextAttemptAt;
+
     @Column(name = "identifier_type")
     @Enumerated(EnumType.STRING)
     private IdentifierType identifierType;
@@ -78,4 +94,20 @@ public class Transaction {
 
     @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
     private WithdrawalTransaction withdrawalTransaction;
+
+    public boolean isPending() {
+        return transactionStatus == TransactionStatus.PENDING;
+    }
+
+    /** Records the answer of account-service; a PENDING answer schedules another attempt. */
+    public void registerAttempt(TransactionStatus status, String reason, LocalDateTime nextAttemptAt) {
+        this.transactionStatus = status;
+        this.reason = reason;
+        if (status == TransactionStatus.PENDING) {
+            this.attempts++;
+            this.nextAttemptAt = nextAttemptAt;
+        } else {
+            this.nextAttemptAt = null;
+        }
+    }
 }

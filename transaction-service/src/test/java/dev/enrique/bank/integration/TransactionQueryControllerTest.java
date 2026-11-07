@@ -1,5 +1,6 @@
 package dev.enrique.bank.integration;
 
+import static dev.enrique.bank.util.JwtTestUtils.OTHER_USER;
 import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_QUERY;
 import static dev.enrique.bank.commons.enums.TransactionStatus.COMPLETED;
 import static dev.enrique.bank.commons.enums.TransactionStatus.FAILED;
@@ -303,5 +304,28 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].description").value("Pago de renta enero"));
+    }
+
+    // ---- owner scope ----
+
+    @Test
+    void customer_onlySeesOwnTransactions_adminSeesAll() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "COMPLETED")
+                .with(customer(OTHER_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-001").with(customer(OTHER_USER)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", CLABE)
+                .param("status", "COMPLETED")
+                .with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-001").with(admin()))
+                .andExpect(status().isOk());
     }
 }

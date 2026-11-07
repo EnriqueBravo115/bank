@@ -4,16 +4,15 @@
 
 ### Seguridad (crítico)
 
-- [ ] **Cualquier cliente puede mover dinero de cualquier cuenta**
-  - `/api/v1/account/movement/*` es accesible vía Kong (ruta `/api/v1/account`) para cualquier `CUSTOMER_BASIC`, y nadie comprueba que la cuenta origen pertenezca al `sub` del JWT (`MovementController`).
-  - Restringir los movimientos a transaction-service (rol de servicio con client credentials o bloquear la ruta en Kong) y validar la propiedad de la cuenta.
+- [x] **Cualquier cliente puede mover dinero de cualquier cuenta**
+  - `/api/v1/account/movement/*` era accesible vía Kong para cualquier `CUSTOMER_BASIC`.
+  - Ahora exige el rol `SERVICE`: solo lo tiene el cliente `transaction-service` de Keycloak (client credentials). La propiedad de la cuenta la valida transaction-service antes de mover el dinero.
 
-- [ ] **Montos sin validar en los movimientos**
-  - Los `Client*Request` no tienen `@Valid`/`@Positive`: una transferencia con monto negativo resta dinero a la cuenta destino.
+- [x] **Montos sin validar en los movimientos**
+  - Los `Client*Request` llevan `@NotBlank`/`@NotNull @Positive` (`@PositiveOrZero` la comisión) y el controller `@Valid`: un monto negativo o cero es `400`.
 
-- [ ] **IDOR en consultas de cuenta**
-  - `get-by-account-number`, `get-by-clabe` y `get-by-email` devuelven la cuenta de cualquier usuario a un `CUSTOMER_BASIC`.
-  - Añadir `GET /me` (resuelto con el `sub` del JWT) y dejar las consultas por identificador solo a `ADMIN`.
+- [x] **IDOR en consultas de cuenta**
+  - `GET /me` devuelve la cuenta del `sub` del JWT; `get-by-account-number` y `get-by-clabe` quedan para `ADMIN` y `SERVICE` (transaction-service resuelve con ellas cuentas y dueño), `get-by-email` solo `ADMIN`.
 
 ### Funcionalidad
 
@@ -44,8 +43,9 @@
 - [ ] **Tipos de saldo mal modelados**
   - Todos los movimientos se guardan como `INTRADAY`, pero `hasSufficientFundsIncludingHolds` busca `AVAILABLE`/`ON_HOLD`; `checkHolds` siempre es `false`; "el último por fecha" mezcla tipos.
 
-- [ ] **Movimientos sin idempotencia**
-  - No aceptan idempotency key; ver la tarea de inconsistencia distribuida en transaction-service.
+- [x] **Movimientos sin idempotencia**
+  - Cada movimiento exige el header `Idempotency-Key` y se registra en la tabla `movement` (`V5`, clave `UNIQUE`): repetir la clave devuelve el resultado guardado sin mover el dinero otra vez; dos peticiones simultáneas con la misma clave → `409`. Un rechazo (`422`) no se guarda, así que un reintento se evalúa de nuevo.
+  - `POST /movement/{key}/reverse`: devuelve el dinero de un movimiento `COMPLETED` (`REVERSED`) o, si la clave nunca llegó, la bloquea (`CANCELLED`) para que una petición tardía no se aplique.
 
 - [ ] **Identificadores de cuenta**
   - `account_number = "ACC-" + millis` no es `UNIQUE` y puede repetirse.
@@ -57,36 +57,40 @@
   - `AccountServiceImpl.updateEmail(accountNumber, …)` (`// TODO`, sin uso; ya lo cubre `updateEmailByUserId`).
   - `FeignConfiguration` sin ningún cliente Feign.
 
-- [ ] **Mensaje de error incorrecto en `get-by-email`**
-  - Responde `"Account not found with number: <email>"`.
+- [x] **Mensaje de error incorrecto en `get-by-email`**
+  - Ahora `"Account not found with email: <email>"` (y `clabe`/`userId` en sus consultas).
 
 - [ ] **Tests**
-  - Solo 12 tests unitarios con Mockito; faltan tests de integración (controllers, consumers de Kafka, Testcontainers).
+  - Añadidos `MovementControllerTest` y `AccountControllerTest` (PostgreSQL real con Testcontainers: seguridad, validación, idempotencia, reversa). Faltan los consumers de Kafka.
 
 ## transaction-service
 
 ### Seguridad y consistencia (crítico)
 
-- [ ] **Inconsistencia distribuida al crear transacciones**
-  - `AbstractTransactionProcessor.process` mueve el dinero en account-service y después guarda en su BD:
-    - si el guardado falla, el dinero se movió sin registro;
-    - si Feign hace timeout pero account-service ya hizo commit, se registra `FAILED` aunque el dinero se movió.
-  - Guardar primero `PENDING`, enviar `transactionCode` como idempotency key a account-service y conciliar (o saga por Kafka).
+- [x] **Inconsistencia distribuida al crear transacciones**
+  - `TransactionSettlement` guarda primero la transacción como `PENDING` (commit) y luego llama a account-service con el `transactionCode` como `Idempotency-Key`.
+  - Solo las respuestas que prueban que el dinero no se movió son finales (`422` → `DECLINED`; `404`/`400`/`401`/`403` → `FAILED`). Timeout, 5xx, `409` o circuito abierto la dejan `PENDING`.
+  - `PendingTransactionScheduler` (cada `transaction.reconciliation.interval`, 5 s) reenvía las `PENDING` vencidas con la misma clave y backoff (5 s, 10 s… hasta 15 min), con `FOR UPDATE SKIP LOCKED` para varias réplicas. Migración `V4` (`attempts`, `next_attempt_at`, índice parcial).
+  - Feign con `connectTimeout` 2 s y `readTimeout` 5 s (antes el default de 60 s): pasado ese tiempo la transacción queda `PENDING` y el backoff empieza a contar al terminar el intento.
 
-- [ ] **IDOR en consultas y creación**
-  - Historial, consultas y analítica de cliente aceptan cualquier `sourceIdentifier`.
-  - La creación no verifica que el origen pertenezca al usuario (TODO en `TransactionQueryController`, `/{transactionCode}`).
+- [x] **IDOR en consultas y creación**
+  - Cada transacción guarda `owner_id` (el `userId` de la cuenta origen, según account-service). Todas las consultas, analítica y soporte filtran por el `sub` del JWT salvo para `ADMIN`; `/{transactionCode}` de otro usuario es `404`.
+  - Al crear, la cuenta origen debe ser del usuario (`403`); la destino debe existir (`404`). Si account-service no responde a la consulta, `503` y no se registra nada.
 
-- [ ] **`IdentifierType` no se respeta**
-  - Acepta `CLABE`, `ACCOUNT` y `CARD`, pero account-service solo busca por `accountNumber`.
+- [x] **`IdentifierType` no se respeta**
+  - `AccountResolver` busca por número de cuenta o por CLABE según el tipo y envía a account-service siempre el `accountNumber`. `CARD` responde `400` hasta que account-service tenga tarjetas.
 
 ### Funcionalidad
+
+- [ ] **Las consultas filtran por el identificador con que se creó la transacción**
+  - `sourceIdentifier` guarda lo que mandó el cliente (cuenta o CLABE): consultar por número de cuenta no muestra las transferencias hechas con la CLABE. Ya se guarda `account_number`; las consultas podrían filtrar por él (resolviendo la CLABE a cuenta).
 
 - [x] **Endpoint de retiro**
   - `POST /api/v1/transaction/create/withdrawal`, con validación (`@Positive`, `@NotBlank`, `@NotNull`) igual que compra y pago de servicio.
 
-- [ ] **Cancelación y reversa**
-  - No hay nada implementado (el `cancelTransaction` vacío se eliminó). Requiere en account-service un movimiento de reversa idempotente; ver la tarea de inconsistencia distribuida.
+- [x] **Cancelación y reversa**
+  - `POST /api/v1/transaction/{code}/cancel` (dueño o `ADMIN`): solo `PENDING`; account-service la deshace si llegó a aplicarse o bloquea la clave → `CANCELLED` / `REVERSED`.
+  - `POST /api/v1/transaction/{code}/reverse` (`ADMIN`): solo `COMPLETED` → `REVERSED`. Si la cuenta destino ya no tiene el dinero, `409`; si account-service no responde, `503` y no cambia nada.
 
 ### Bugs
 
@@ -171,6 +175,9 @@
   - Ahora que cada servicio es independiente, puede ser `context: ./account-service`.
   - En ese caso, el Dockerfile tendría que copiar `pom.xml` y `src`, sin el prefijo del servicio.
 
+- [ ] **Kong cachea la IP de los servicios**
+  - Si se recrea o reinicia un solo servicio (`docker compose up -d <servicio>`, `docker stop/start`), cambia su IP y Kong responde `502` hasta reiniciarlo (`docker compose restart kong`). Opción: `KONG_DNS_VALID_TTL` bajo en el servicio `kong`.
+
 - [ ] **Pipeline de CI/CD (GitHub Actions)**
   - Se armó un workflow y se retiró por ahora. Diseño propuesto:
     - `test`: `mvn verify` por servicio con JDK 17 y `actions/setup-java` (`cache: maven`).
@@ -204,6 +211,7 @@
   - El broker no tiene volumen (igual que en docker-compose); los tópicos se pierden si el pod se reinicia.
 
 - [ ] **Probar flujos entre servicios en Kubernetes**
+  - transaction-service necesita llegar a Keycloak (`KEYCLOAK_HOST`) para pedir su token de servicio.
   - Verificado: health, endpoints de los 3 servicios vía Kong con token de Keycloak, registro en Eureka y kafka-ui.
   - Pendiente: flujo de registro (user-service → Kafka → account-service) y Feign (transaction-service → account-service).
 

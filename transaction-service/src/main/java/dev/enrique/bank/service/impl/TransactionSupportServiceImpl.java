@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.commons.dto.response.TransactionResponse;
+import dev.enrique.bank.config.CurrentCaller;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.service.TransactionSupportService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TransactionSupportServiceImpl implements TransactionSupportService {
     private final TransactionRepository transactionRepository;
+    private final CurrentCaller currentCaller;
 
     @Override
     public Set<String> getAllUniqueTransactionDescriptions(String accountNumber) {
@@ -33,7 +35,7 @@ public class TransactionSupportServiceImpl implements TransactionSupportService 
     }
 
     private Stream<String> descriptions(String accountNumber) {
-        return transactionRepository.findAllCompletedBySourceIdentifier(accountNumber).stream()
+        return transactionRepository.findAllCompletedBySourceIdentifier(currentCaller.ownerScope(), accountNumber).stream()
                 .map(TransactionResponse::description)
                 .filter(Objects::nonNull)
                 .filter(desc -> !desc.isBlank());

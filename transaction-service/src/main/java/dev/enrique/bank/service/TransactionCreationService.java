@@ -7,8 +7,15 @@ import dev.enrique.bank.commons.dto.request.WithdrawalRequest;
 import dev.enrique.bank.commons.dto.response.TransactionResultResponse;
 
 public interface TransactionCreationService {
-    TransactionResultResponse transfer(TransferRequest accountTransferRequest);
-    TransactionResultResponse purchase(PurchaseRequest purchaseRequest);
-    TransactionResultResponse servicePayment(ServiceRequest purchaseRequest);
-    TransactionResultResponse withdrawal(WithdrawalRequest withdrawalRequest);
+    TransactionResultResponse transfer(TransferRequest request);
+
+    TransactionResultResponse purchase(PurchaseRequest request);
+
+    TransactionResultResponse servicePayment(ServiceRequest request);
+
+    TransactionResultResponse withdrawal(WithdrawalRequest request);
+
+    TransactionResultResponse cancel(String transactionCode);
+
+    TransactionResultResponse reverse(String transactionCode);
 }

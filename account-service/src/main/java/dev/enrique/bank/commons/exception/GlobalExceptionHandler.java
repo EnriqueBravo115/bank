@@ -2,6 +2,7 @@ package dev.enrique.bank.commons.exception;
 
 import java.time.LocalDateTime;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -55,6 +56,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TransactionLimitExceededException.class)
     public ResponseEntity<ErrorResponse> handleTransactionLimitExceeded(TransactionLimitExceededException ex) {
         return unprocessable(ex);
+    }
+
+    // Two requests with the same Idempotency-Key at once: the second one is rejected and retried later.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Resource already exists or violates a data constraint",
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     // transaction-service records a 422 as a DECLINED transaction with this message as the reason.

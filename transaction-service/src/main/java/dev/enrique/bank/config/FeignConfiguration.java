@@ -3,17 +3,16 @@ package dev.enrique.bank.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 
 import feign.Logger;
 import feign.RequestInterceptor;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 
 @Configuration
-@Slf4j
 public class FeignConfiguration {
     // BASIC: method, URL, status and time. FULL would log the bodies, card number and cvv included.
     @Bean
@@ -21,14 +20,22 @@ public class FeignConfiguration {
         return Logger.Level.BASIC;
     }
 
+    // Caches the token until it expires; works outside of an HTTP request (scheduler).
     @Bean
-    public RequestInterceptor requestInterceptor() {
-        return template -> {
-            RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
-                template.header(HttpHeaders.AUTHORIZATION, request.getHeader(HttpHeaders.AUTHORIZATION));
-            }
-        };
+    public OAuth2AuthorizedClientManager authorizedClientManager(
+            ClientRegistrationRepository clientRegistrationRepository,
+            OAuth2AuthorizedClientService authorizedClientService) {
+        AuthorizedClientServiceOAuth2AuthorizedClientManager manager =
+                new AuthorizedClientServiceOAuth2AuthorizedClientManager(
+                        clientRegistrationRepository, authorizedClientService);
+        manager.setAuthorizedClientProvider(OAuth2AuthorizedClientProviderBuilder.builder()
+                .clientCredentials()
+                .build());
+        return manager;
+    }
+
+    @Bean
+    public RequestInterceptor serviceTokenInterceptor(ServiceTokenProvider serviceTokenProvider) {
+        return template -> template.header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceTokenProvider.token());
     }
 }

@@ -25,6 +25,10 @@
       {
         "name": "ADMIN",
         "description": "Administrator with full access"
+      },
+      {
+        "name": "SERVICE",
+        "description": "Service-to-service calls (client credentials): only transaction-service moves money in account-service"
       }
     ]
   },
@@ -71,6 +75,18 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "transaction-service",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "transaction-service-secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     }
   ],
   "users": [
@@ -81,6 +97,12 @@
       "clientRoles": {
         "realm-management": ["realm-admin", "manage-users", "view-users", "query-users"]
       }
+    },
+    {
+      "username": "service-account-transaction-service",
+      "enabled": true,
+      "serviceAccountClientId": "transaction-service",
+      "realmRoles": ["SERVICE"]
     },
     {
       "username": "admin-user",

@@ -18,7 +18,23 @@ spring:
         jwt:
           # Never called: tests authenticate with spring-security-test's jwt()
           jwk-set-uri: http://localhost/realms/bank/protocol/openid-connect/certs
+      client:
+        registration:
+          account-service:
+            provider: keycloak
+            client-id: transaction-service
+            client-secret: test-secret
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            # Never called: tests replace ServiceTokenProvider or AccountClient
+            token-uri: http://localhost/realms/bank/protocol/openid-connect/token
 
 eureka:
   client:
+    enabled: false
+
+# Tests call TransactionSettlement.retryPending themselves.
+transaction:
+  reconciliation:
     enabled: false

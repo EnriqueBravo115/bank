@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,6 +30,10 @@ public class PurchaseTransaction {
 
     @Column(name = "source_card_number")
     private String sourceCardNumber;
+
+    // Forwarded to account-service on the first attempt and never stored (PCI-DSS).
+    @Transient
+    private String cvv;
 
     @Column(name = "merchant_code")
     private String merchantCode;

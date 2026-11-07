@@ -29,8 +29,10 @@ import dev.enrique.bank.commons.exception.AccountNotFoundException;
 import dev.enrique.bank.commons.exception.AccountNotOperableException;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
+import dev.enrique.bank.dao.MovementRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
+import dev.enrique.bank.model.Movement;
 import dev.enrique.bank.service.FundsValidationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +40,7 @@ class MovementServiceImplTest {
     private static final String SOURCE = "10000000000000000001";
     private static final String TARGET = "10000000000000000002";
     private static final BigDecimal AMOUNT = new BigDecimal("100.00");
+    private static final String KEY = "txn-1";
 
     @Mock
     private FundsValidationService fundsValidationService;
@@ -45,6 +48,8 @@ class MovementServiceImplTest {
     private AccountBalanceRepository accountBalanceRepository;
     @Mock
     private AccountRepository accountRepository;
+    @Mock
+    private MovementRepository movementRepository;
     @InjectMocks
     private MovementServiceImpl movementService;
 
@@ -62,10 +67,22 @@ class MovementServiceImplTest {
         balance(source, "500.00");
         balance(target, "0.00");
 
-        var result = movementService.processTransfer(new ClientTransferRequest(AMOUNT, SOURCE, TARGET));
+        var result = movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET));
 
         assertThat(result.transactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
         verify(accountBalanceRepository, times(2)).save(any());
+    }
+
+    @Test
+    void shouldReturnStoredResultForRepeatedKeyWithoutMovingMoney() {
+        when(movementRepository.findByIdempotencyKey(KEY)).thenReturn(Optional.of(Movement.builder()
+                .idempotencyKey(KEY).status(TransactionStatus.COMPLETED).reason("Valid Transaction").build()));
+
+        var result = movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET));
+
+        assertThat(result.transactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
+        verify(movementRepository, never()).saveAndFlush(any());
+        verify(accountBalanceRepository, never()).save(any());
     }
 
     @ParameterizedTest
@@ -73,7 +90,7 @@ class MovementServiceImplTest {
     void shouldRejectTransferFromAccountThatIsNotOpen(AccountStatus status) {
         account(SOURCE, status);
 
-        assertThatThrownBy(() -> movementService.processTransfer(new ClientTransferRequest(AMOUNT, SOURCE, TARGET)))
+        assertThatThrownBy(() -> movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET)))
                 .isInstanceOf(AccountNotOperableException.class)
                 .hasMessage("Account " + SOURCE + " is " + status + " and cannot operate");
 
@@ -85,7 +102,7 @@ class MovementServiceImplTest {
         account(SOURCE, AccountStatus.OPEN);
         account(TARGET, AccountStatus.FROZEN);
 
-        assertThatThrownBy(() -> movementService.processTransfer(new ClientTransferRequest(AMOUNT, SOURCE, TARGET)))
+        assertThatThrownBy(() -> movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET)))
                 .isInstanceOf(AccountNotOperableException.class)
                 .hasMessageContaining(TARGET);
 
@@ -96,7 +113,7 @@ class MovementServiceImplTest {
     void shouldRejectDebitFromFrozenAccount() {
         account(SOURCE, AccountStatus.FROZEN);
 
-        assertThatThrownBy(() -> movementService.processService(new ClientServiceRequest(SOURCE, AMOUNT)))
+        assertThatThrownBy(() -> movementService.processService(KEY, new ClientServiceRequest(SOURCE, AMOUNT)))
                 .isInstanceOf(AccountNotOperableException.class);
 
         verify(accountBalanceRepository, never()).save(any());
@@ -106,7 +123,7 @@ class MovementServiceImplTest {
     void shouldRejectUnknownAccount() {
         when(accountRepository.findEntityByAccountNumber(SOURCE)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> movementService.processService(new ClientServiceRequest(SOURCE, AMOUNT)))
+        assertThatThrownBy(() -> movementService.processService(KEY, new ClientServiceRequest(SOURCE, AMOUNT)))
                 .isInstanceOf(AccountNotFoundException.class);
     }
 

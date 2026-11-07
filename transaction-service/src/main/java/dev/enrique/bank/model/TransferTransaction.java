@@ -33,6 +33,9 @@ public class TransferTransaction {
     @Column(name = "target_identifier")
     private String targetIdentifier;
 
+    @Column(name = "target_account_number")
+    private String targetAccountNumber;
+
     @Column(name = "target_identifier_type")
     @Enumerated(EnumType.STRING)
     private IdentifierType targetIdentifierType;

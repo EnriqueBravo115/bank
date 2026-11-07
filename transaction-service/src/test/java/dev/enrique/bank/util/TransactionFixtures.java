@@ -19,7 +19,14 @@ public final class TransactionFixtures {
 
     public static Transaction transaction(String code, String source, TransactionType type,
             TransactionStatus status, String amount, String description, LocalDateTime date) {
+        return transaction(JwtTestUtils.OWNER, code, source, type, status, amount, description, date);
+    }
+
+    public static Transaction transaction(String ownerId, String code, String source, TransactionType type,
+            TransactionStatus status, String amount, String description, LocalDateTime date) {
         return Transaction.builder()
+                .ownerId(ownerId)
+                .accountNumber(source)
                 .transactionCode(code)
                 .sourceIdentifier(source)
                 .identifierType(CARD.equals(source) ? IdentifierType.CARD : IdentifierType.CLABE)

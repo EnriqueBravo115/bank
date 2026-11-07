@@ -1,5 +1,6 @@
 package dev.enrique.bank.integration;
 
+import static dev.enrique.bank.util.JwtTestUtils.OTHER_USER;
 import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_ANALYTICS;
 import static dev.enrique.bank.commons.enums.TransactionStatus.COMPLETED;
 import static dev.enrique.bank.commons.enums.TransactionStatus.FAILED;
@@ -144,5 +145,15 @@ class TransactionAnalyticsControllerTest extends PostgresContainerConfig {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.TRANSFER").value(1000.00))
                 .andExpect(jsonPath("$.SERVICE").value(300.00));
+    }
+
+    @Test
+    void customer_onlyAggregatesOwnTransactions() throws Exception {
+        mockMvc.perform(completed("/sum-by-type").with(customer(OTHER_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.TRANSFER").doesNotExist());
+        mockMvc.perform(completed("/sum-by-type").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.TRANSFER").value(2000.00));
     }
 }

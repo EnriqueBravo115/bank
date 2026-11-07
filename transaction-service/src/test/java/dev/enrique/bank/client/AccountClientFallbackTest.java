@@ -1,71 +1,54 @@
 package dev.enrique.bank.client;
 
+import static dev.enrique.bank.client.AccountClient.AWAITING_CONFIRMATION;
+import static dev.enrique.bank.client.AccountClient.toResult;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
-import static org.mockito.Mockito.mock;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import dev.enrique.bank.commons.dto.response.MovementResultResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
-import feign.FeignException;
-import feign.Request;
-import feign.Response;
+import dev.enrique.bank.util.FeignErrors;
 
-/** How an answer of account-service becomes the status stored for the transaction. */
+/**
+ * How an error of account-service becomes the status stored for the transaction: only answers that
+ * prove the money did not move are final; the rest stay PENDING and are retried with the same key.
+ */
 class AccountClientFallbackTest {
-    private final AccountClient client = mock(AccountClient.class, CALLS_REAL_METHODS);
+    private static final MovementResultResponse PENDING =
+            new MovementResultResponse(TransactionStatus.PENDING, AWAITING_CONFIRMATION);
 
     @Test
     void shouldDeclineWithMessageOfAccountServiceOn422() {
-        MovementResultResponse result = client.movementFallback(
-                feignError(422, "{\"status\":422,\"message\":\"Insufficient funds\"}"));
-
-        assertThat(result).isEqualTo(new MovementResultResponse(TransactionStatus.DECLINED, "Insufficient funds"));
+        assertThat(toResult(FeignErrors.status(422, "{\"status\":422,\"message\":\"Insufficient funds\"}")))
+                .isEqualTo(new MovementResultResponse(TransactionStatus.DECLINED, "Insufficient funds"));
     }
 
     @Test
     void shouldDeclineWithGenericReasonWhen422BodyIsUnreadable() {
-        MovementResultResponse result = client.movementFallback(feignError(422, "not json"));
-
-        assertThat(result).isEqualTo(new MovementResultResponse(TransactionStatus.DECLINED, "Transaction declined"));
+        assertThat(toResult(FeignErrors.status(422, "not json")))
+                .isEqualTo(new MovementResultResponse(TransactionStatus.DECLINED, "Transaction declined"));
     }
 
     @Test
-    void shouldFailWhenAccountDoesNotExist() {
-        MovementResultResponse result = client.movementFallback(feignError(404, ""));
-
-        assertThat(result).isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Account not found"));
+    void shouldFailOnAnswersThatProveNothingMoved() {
+        assertThat(toResult(FeignErrors.status(404, "")))
+                .isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Account not found"));
+        assertThat(toResult(FeignErrors.status(400, "")))
+                .isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Invalid movement request"));
+        assertThat(toResult(FeignErrors.status(401, "")))
+                .isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Unauthorized operation"));
+        assertThat(toResult(FeignErrors.status(403, "")))
+                .isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Unauthorized operation"));
     }
 
     @Test
-    void shouldFailWhenUnauthorized() {
-        MovementResultResponse result = client.movementFallback(feignError(401, ""));
-
-        assertThat(result).isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Unauthorized operation"));
-    }
-
-    @Test
-    void shouldFailAsUnavailableOnServerErrorOrConnectionProblem() {
-        assertThat(client.movementFallback(feignError(503, "")))
-                .isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable"));
-        assertThat(client.movementFallback(new RuntimeException("Connection refused")))
-                .isEqualTo(new MovementResultResponse(TransactionStatus.FAILED, "Service unavailable"));
-    }
-
-    private static FeignException feignError(int status, String body) {
-        Request request = Request.create(Request.HttpMethod.POST, "/api/v1/account/movement/transfer",
-                Map.of(), null, StandardCharsets.UTF_8, null);
-        Response response = Response.builder()
-                .status(status)
-                .reason("error")
-                .request(request)
-                .headers(Map.of())
-                .body(body, StandardCharsets.UTF_8)
-                .build();
-        return FeignException.errorStatus("AccountClient#processTransfer", response);
+    void shouldStayPendingWhenTheOutcomeIsUnknown() {
+        assertThat(toResult(FeignErrors.status(500, ""))).isEqualTo(PENDING);
+        assertThat(toResult(FeignErrors.status(503, ""))).isEqualTo(PENDING);
+        // Same key still being processed by account-service.
+        assertThat(toResult(FeignErrors.status(409, ""))).isEqualTo(PENDING);
+        // Timeout, connection refused, open circuit.
+        assertThat(toResult(new RuntimeException("Connection refused"))).isEqualTo(PENDING);
     }
 }

@@ -32,6 +32,12 @@ public class RegisterStatusFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Service accounts (client credentials) have no registration to complete.
+        if (auth.getAuthorities().stream().anyMatch(a -> "ROLE_SERVICE".equals(a.getAuthority()))) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         Jwt jwt = (Jwt) auth.getPrincipal();
         String registrationStatus = jwt.getClaimAsString("registration_status");
 

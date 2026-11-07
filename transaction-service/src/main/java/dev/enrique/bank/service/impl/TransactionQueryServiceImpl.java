@@ -12,6 +12,7 @@ import dev.enrique.bank.commons.dto.response.TransactionResponse;
 import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.exception.TransactionNotFoundException;
+import dev.enrique.bank.config.CurrentCaller;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.service.TransactionQueryService;
 import lombok.RequiredArgsConstructor;
@@ -20,22 +21,23 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TransactionQueryServiceImpl implements TransactionQueryService {
     private final TransactionRepository transactionRepository;
+    private final CurrentCaller currentCaller;
 
     @Override
     public List<TransactionResponse> getTransactionHistory(String sourceIdentifier, TransactionStatus status) {
-        return transactionRepository.findAllBySourceIdentifierAndStatus(sourceIdentifier, status);
+        return transactionRepository.findAllBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status);
     }
 
     @Override
     public Page<TransactionResponse> getAllTransactions(String sourceIdentifier, TransactionStatus status,
             Pageable pageable) {
-        return transactionRepository.findPageBySourceIdentifierAndStatus(sourceIdentifier, status, pageable);
+        return transactionRepository.findPageBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status, pageable);
     }
 
     @Override
     public List<TransactionResponse> getTransactionsByYear(String sourceIdentifier, TransactionStatus status,
             Integer year) {
-        return transactionRepository.findAllBySourceIdentifierAndYear(sourceIdentifier, year, status);
+        return transactionRepository.findAllBySourceIdentifierAndYear(currentCaller.ownerScope(), sourceIdentifier, year, status);
     }
 
     @Override
@@ -45,7 +47,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
 
     @Override
     public TransactionResponse getMaxTransaction(String sourceIdentifier, TransactionStatus status) {
-        return transactionRepository.findMaxBySourceIdentifierAndStatus(sourceIdentifier, status)
+        return transactionRepository.findMaxBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status)
                 .orElseThrow(() -> new TransactionNotFoundException(
                         "No " + status + " transactions found for: " + sourceIdentifier));
     }
@@ -53,13 +55,13 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionResponse> getTransactionsInDateRange(String sourceIdentifier, TransactionStatus status,
             LocalDateTime startDate, LocalDateTime endDate) {
-        return transactionRepository.findAllBySourceIdentifierAndDateRangeAndStatus(
+        return transactionRepository.findAllBySourceIdentifierAndDateRangeAndStatus(currentCaller.ownerScope(), 
                 sourceIdentifier, status, startDate, endDate);
     }
 
     @Override
     public TransactionResponse getTransactionByCode(String transactionCode) {
-        return transactionRepository.findResponseByTransactionCode(transactionCode)
+        return transactionRepository.findResponseByTransactionCode(currentCaller.ownerScope(), transactionCode)
                 .orElseThrow(() -> new TransactionNotFoundException(
                         "Transaction not found with code: " + transactionCode));
     }
@@ -67,18 +69,18 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionResponse> getAllTransactionByAmountRangeAndStatus(String sourceIdentifier,
             TransactionStatus status, BigDecimal minAmount, BigDecimal maxAmount) {
-        return transactionRepository.findAllByAmountRangeAndStatus(sourceIdentifier, status, minAmount, maxAmount);
+        return transactionRepository.findAllByAmountRangeAndStatus(currentCaller.ownerScope(), sourceIdentifier, status, minAmount, maxAmount);
     }
 
     @Override
     public List<TransactionResponse> getAllByIdentifierTypeAndStatus(String sourceIdentifier,
             IdentifierType identifierType, TransactionStatus status) {
-        return transactionRepository.findAllByIdentifierTypeAndStatus(sourceIdentifier, identifierType, status);
+        return transactionRepository.findAllByIdentifierTypeAndStatus(currentCaller.ownerScope(), sourceIdentifier, identifierType, status);
     }
 
     @Override
     public List<TransactionResponse> getTransactionByKeyword(String sourceIdentifier, TransactionStatus status,
             String keyword) {
-        return transactionRepository.searchByKeyword(sourceIdentifier, status, keyword);
+        return transactionRepository.searchByKeyword(currentCaller.ownerScope(), sourceIdentifier, status, keyword);
     }
 }

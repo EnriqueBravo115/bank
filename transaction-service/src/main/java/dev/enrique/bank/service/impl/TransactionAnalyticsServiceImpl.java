@@ -25,15 +25,18 @@ import dev.enrique.bank.commons.dto.response.TransactionResponse;
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.config.CurrentCaller;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;
 
-// Every report works on the transactions of one source identifier with one status.
+// Every report works on the transactions of one source identifier with one status; customers only
+// see their own (CurrentCaller.ownerScope).
 @Service
 @RequiredArgsConstructor
 public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsService {
     private final TransactionRepository transactionRepository;
+    private final CurrentCaller currentCaller;
 
     @Override
     public Map<TransactionType, List<TransactionResponse>> groupTransactionsByType(String sourceIdentifier,
@@ -69,7 +72,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     @Override
     public BigDecimal calculateTotalAmountByStatusAndType(String sourceIdentifier, TransactionStatus status,
             TransactionType type) {
-        return total(transactionRepository.findAllBySourceIdentifierStatusAndType(sourceIdentifier, status, type));
+        return total(transactionRepository.findAllBySourceIdentifierStatusAndType(currentCaller.ownerScope(), sourceIdentifier, status, type));
     }
 
     @Override
@@ -109,7 +112,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     }
 
     private List<TransactionResponse> find(String sourceIdentifier, TransactionStatus status) {
-        return transactionRepository.findAllBySourceIdentifierAndStatus(sourceIdentifier, status);
+        return transactionRepository.findAllBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status);
     }
 
     private static BigDecimal total(List<TransactionResponse> transactions) {

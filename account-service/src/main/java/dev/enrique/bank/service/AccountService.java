@@ -17,4 +17,6 @@ public interface AccountService {
     public AccountDetailedResponse findByClabe(String clabe);
 
     public AccountDetailedResponse findByEmail(String email);
+
+    public AccountDetailedResponse findByUserId(String userId);
 }

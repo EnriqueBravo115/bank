@@ -70,14 +70,21 @@ public class AccountServiceImpl implements AccountService {
     public AccountDetailedResponse findByClabe(String clabe) {
         return accountRepository
                 .findByClabe(clabe)
-                .orElseThrow(() -> new AccountNotFoundException(clabe));
+                .orElseThrow(() -> new AccountNotFoundException("clabe", clabe));
     }
 
     @Override
     public AccountDetailedResponse findByEmail(String email) {
         return accountRepository
                 .findByEmail(email)
-                .orElseThrow(() -> new AccountNotFoundException(email));
+                .orElseThrow(() -> new AccountNotFoundException("email", email));
+    }
+
+    @Override
+    public AccountDetailedResponse findByUserId(String userId) {
+        return accountRepository
+                .findByUserId(userId)
+                .orElseThrow(() -> new AccountNotFoundException("userId", userId));
     }
 
     // Blocking a user freezes the account; unblocking only reopens an account that was frozen,

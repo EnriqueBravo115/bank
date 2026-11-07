@@ -1,5 +1,7 @@
 package dev.enrique.bank.integration;
 
+import static org.hamcrest.Matchers.hasSize;
+import static dev.enrique.bank.util.JwtTestUtils.OTHER_USER;
 import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_SUPPORT;
 import static dev.enrique.bank.commons.enums.TransactionStatus.COMPLETED;
 import static dev.enrique.bank.commons.enums.TransactionStatus.FAILED;
@@ -73,5 +75,13 @@ class TransactionSupportControllerTest extends PostgresContainerConfig {
     void uniqueDescriptions_withoutToken_returns401() throws Exception {
         mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", CLABE))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void customer_onlySeesDescriptionsOfOwnTransactions() throws Exception {
+        mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", CLABE)
+                .with(customer(OTHER_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 }

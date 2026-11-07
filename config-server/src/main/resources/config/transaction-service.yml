@@ -14,6 +14,26 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/bank/protocol/openid-connect/certs
+      # transaction-service's own token (client credentials, role SERVICE) to call account-service
+      client:
+        registration:
+          account-service:
+            provider: keycloak
+            client-id: transaction-service
+            client-secret: transaction-service-secret
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/bank/protocol/openid-connect/token
+  # Without explicit timeouts Feign waits up to 60 s. Past readTimeout the outcome is unknown and
+  # the transaction stays PENDING; the reconciler sends it again with the same idempotency key.
+  cloud:
+    openfeign:
+      client:
+        config:
+          account-service:
+            connectTimeout: 2000
+            readTimeout: 5000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -22,9 +42,9 @@ spring:
     baseline-on-migrate: true
     locations: classpath:db/migration
 
-# The @CircuitBreaker annotations on AccountClient use this instance; when it is open, or
-# account-service answers with an error, AccountClient.movementFallback records the transaction
-# as DECLINED/FAILED instead of failing the request.
+# The @CircuitBreaker annotations on AccountClient use this instance. When it is open, or
+# account-service answers with an error, the fallback (AccountClient.toResult) settles the
+# transaction as DECLINED/FAILED, or leaves it PENDING when the outcome is unknown.
 resilience4j:
   circuitbreaker:
     instances:
@@ -38,11 +58,17 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
         eventConsumerBufferSize: 10
-        # Business rejections (frozen account, insufficient funds, unknown account) are not
-        # account-service failures; they still reach the fallback, which records them as DECLINED/FAILED.
+        # Business rejections (frozen account, insufficient funds, unknown account) and a duplicate
+        # in-flight key are not account-service failures; they still reach the fallback.
         ignoreExceptions:
           - feign.FeignException$UnprocessableEntity
           - feign.FeignException$NotFound
+          - feign.FeignException$Conflict
+
+# PENDING transactions (unknown outcome) are sent again with the same idempotency key.
+transaction:
+  reconciliation:
+    interval: PT5S
 
 management:
   endpoints:
