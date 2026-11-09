@@ -37,8 +37,12 @@ public class Card {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "card_number", length = 16, nullable = false, unique = true)
-    private String cardNumber;
+    // HMAC of the card number (see CardNumberHash): the number itself is not stored
+    @Column(name = "card_number_hash", length = 64, nullable = false, unique = true)
+    private String cardNumberHash;
+
+    @Column(name = "last_four", length = 4, nullable = false)
+    private String lastFour;
 
     @Column(name = "card_holder_name", nullable = false)
     private String cardHolderName;
@@ -69,6 +73,6 @@ public class Card {
 
     /** The last four digits, the only part of the number shown after the card is issued. */
     public String maskedNumber() {
-        return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
+        return "**** **** **** " + lastFour;
     }
 }

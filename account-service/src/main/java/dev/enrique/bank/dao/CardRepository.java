@@ -11,10 +11,10 @@ import dev.enrique.bank.commons.enums.CardStatus;
 import dev.enrique.bank.model.Card;
 
 public interface CardRepository extends JpaRepository<Card, Long> {
-    boolean existsByCardNumber(String cardNumber);
+    boolean existsByCardNumberHash(String cardNumberHash);
 
-    @Query("SELECT c FROM Card c JOIN FETCH c.account WHERE c.cardNumber = :cardNumber")
-    Optional<Card> findByCardNumber(String cardNumber);
+    @Query("SELECT c FROM Card c JOIN FETCH c.account WHERE c.cardNumberHash = :cardNumberHash")
+    Optional<Card> findByCardNumberHash(String cardNumberHash);
 
     @Query("SELECT c FROM Card c JOIN FETCH c.account WHERE c.id = :id")
     Optional<Card> findWithAccountById(Long id);

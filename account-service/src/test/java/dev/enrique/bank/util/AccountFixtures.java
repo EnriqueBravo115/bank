@@ -13,13 +13,18 @@ import dev.enrique.bank.commons.enums.BalanceType;
 import dev.enrique.bank.commons.enums.CardStatus;
 import dev.enrique.bank.commons.enums.CardType;
 import dev.enrique.bank.commons.enums.Currency;
+import dev.enrique.bank.commons.enums.LimitType;
+import dev.enrique.bank.commons.enums.TimePeriod;
+import dev.enrique.bank.commons.util.CardNumberHash;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.CardRepository;
 import dev.enrique.bank.dao.MovementRepository;
+import dev.enrique.bank.dao.TransactionLimitRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
 import dev.enrique.bank.model.Card;
+import dev.enrique.bank.model.TransactionLimit;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +36,9 @@ public class AccountFixtures {
     private final AccountBalanceRepository accountBalanceRepository;
     private final MovementRepository movementRepository;
     private final CardRepository cardRepository;
+    private final TransactionLimitRepository transactionLimitRepository;
     private final EntityManager entityManager;
+    private final CardNumberHash cardNumberHash;
 
     @Transactional
     public void clear() {
@@ -42,8 +49,13 @@ public class AccountFixtures {
         entityManager.createQuery("DELETE FROM Account").executeUpdate();
     }
 
-    @Transactional
     public Account account(String userId, String accountNumber, String clabe, AccountStatus status, String balance) {
+        return account(userId, accountNumber, clabe, status, balance, Currency.MX);
+    }
+
+    @Transactional
+    public Account account(String userId, String accountNumber, String clabe, AccountStatus status, String balance,
+            Currency currency) {
         Account account = accountRepository.save(Account.builder()
                 .userId(userId)
                 .email(userId + "@test.com")
@@ -51,7 +63,7 @@ public class AccountFixtures {
                 .clabe(clabe)
                 .accountType(AccountType.CHECKING)
                 .accountStatus(status)
-                .currency(Currency.MX)
+                .currency(currency)
                 .build());
         accountBalanceRepository.save(AccountBalance.builder()
                 .account(account)
@@ -61,12 +73,27 @@ public class AccountFixtures {
         return account;
     }
 
+    /** A limit of the account for a movement type and period. */
+    @Transactional
+    public TransactionLimit limit(Account account, LimitType type, TimePeriod period, String maxAmount,
+            int maxTransactions) {
+        return transactionLimitRepository.save(TransactionLimit.builder()
+                .account(account)
+                .limitType(type)
+                .timePeriod(period)
+                .maxAmount(new BigDecimal(maxAmount))
+                .maxTransactions(maxTransactions)
+                .currency(account.getCurrency())
+                .build());
+    }
+
     /** A debit card of the account. */
     @Transactional
     public Card card(Account account, String cardNumber, CardStatus status, LocalDate expirationDate) {
         return cardRepository.save(Card.builder()
                 .account(account)
-                .cardNumber(cardNumber)
+                .cardNumberHash(cardNumberHash.of(cardNumber))
+                .lastFour(CardNumberHash.lastFour(cardNumber))
                 .cardHolderName("TEST HOLDER")
                 .cardType(CardType.DEBIT)
                 .cardStatus(status)

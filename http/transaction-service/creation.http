@@ -1,8 +1,10 @@
 # The source account must belong to the customer (403 otherwise); an ADMIN can use any account.
+# The currency must be the one of the accounts (422 DECLINED otherwise); limits: account-service/limit.http.
 # The response has the transactionCode and the status: COMPLETED, DECLINED (rejected by account-service,
 # with the reason), FAILED or PENDING (account-service did not answer; it is retried automatically).
 @baseUrl = http://localhost:8000/api/v1/transaction/create
 @customerToken = PASTE_TOKEN_FROM_auth.http
+@adminToken = PASTE_TOKEN_FROM_auth.http
 @accountNumber = ACC-1774713408076
 @clabe = 002010113717262634
 @targetAccountNumber = ACC-1847392018473
@@ -87,7 +89,7 @@ Content-Type: application/json
   "currency": "MX"
 }
 
-### ATM withdrawal
+### ATM withdrawal: the transactionFee is debited along with the amount (and refunded if reversed)
 POST {{baseUrl}}/withdrawal
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
@@ -103,4 +105,18 @@ Content-Type: application/json
   "currency": "MX",
   "securityVerificationMethod": "PIN",
   "withdrawalMethod": "DEBIT_CARD"
+}
+
+### Deposit (ADMIN only): cash at a branch, payroll... The target can be an ACCOUNT, CLABE or CARD;
+### the transaction belongs to the owner of the account, who sees it in their history
+POST {{baseUrl}}/deposit
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "amount": 5000.00,
+  "description": "Cash deposit at branch",
+  "targetIdentifier": "{{clabe}}",
+  "targetIdentifierType": "CLABE",
+  "currency": "MX"
 }

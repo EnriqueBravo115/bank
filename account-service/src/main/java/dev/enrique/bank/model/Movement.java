@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.enrique.bank.commons.enums.MovementType;
+import dev.enrique.bank.commons.enums.SecurityVerificationMethod;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,6 +55,15 @@ public class Movement {
     @Column(name = "amount")
     private BigDecimal amount;
 
+    // Withdrawal fee, debited along with the amount and returned by a reversal
+    @Column(name = "fee")
+    private BigDecimal fee;
+
+    // How the customer was verified for a withdrawal
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_method")
+    private SecurityVerificationMethod verificationMethod;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private TransactionStatus status;
@@ -68,4 +78,9 @@ public class Movement {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /** What leaves the source account: the amount plus the fee, if any. */
+    public BigDecimal totalDebit() {
+        return fee == null ? amount : amount.add(fee);
+    }
 }

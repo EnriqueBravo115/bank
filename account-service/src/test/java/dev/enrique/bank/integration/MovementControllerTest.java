@@ -34,10 +34,16 @@ import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.CardStatus;
+import dev.enrique.bank.commons.enums.Currency;
+import dev.enrique.bank.commons.enums.LimitType;
+import dev.enrique.bank.commons.enums.MovementType;
+import dev.enrique.bank.commons.enums.SecurityVerificationMethod;
+import dev.enrique.bank.commons.enums.TimePeriod;
 import dev.enrique.bank.commons.exception.InsufficientFundsException;
 import dev.enrique.bank.commons.util.CardSecurityCode;
 import dev.enrique.bank.dao.MovementRepository;
 import dev.enrique.bank.model.Account;
+import dev.enrique.bank.model.Movement;
 import dev.enrique.bank.service.MovementService;
 import dev.enrique.bank.util.AccountFixtures;
 import dev.enrique.bank.util.PostgresContainerConfig;
@@ -140,9 +146,9 @@ class MovementControllerTest extends PostgresContainerConfig {
     void shouldDebitOnceForEachMovementType() throws Exception {
         debit("/purchase", "txn-p", purchaseBody(CARD, cvv()));
         debit("/purchase", "txn-p", purchaseBody(CARD, cvv()));
-        debit("/service", "txn-s", "{\"accountNumber\":\"" + SOURCE + "\",\"amount\":20.00}");
+        debit("/service", "txn-s", "{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":20.00}");
         debit("/withdrawal", "txn-w",
-                "{\"accountNumber\":\"" + SOURCE + "\",\"amount\":30.00,\"securityVerificationMethod\":\"PIN\"}");
+                "{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":30.00,\"securityVerificationMethod\":\"PIN\"}");
 
         assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("440.00");
         assertThat(movementRepository.count()).isEqualTo(3);
@@ -156,7 +162,7 @@ class MovementControllerTest extends PostgresContainerConfig {
                 .with(service())
                 .header(IDEMPOTENCY_KEY, "txn-1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"accountNumber\":\"ACC-3\",\"amount\":10.00}"))
+                .content("{\"currency\":\"MX\",\"accountNumber\":\"ACC-3\",\"amount\":10.00}"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.message").value("Account ACC-3 is FROZEN and cannot operate"));
     }
@@ -167,7 +173,7 @@ class MovementControllerTest extends PostgresContainerConfig {
                 .with(service())
                 .header(IDEMPOTENCY_KEY, "txn-1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"accountNumber\":\"ACC-404\",\"amount\":10.00}"))
+                .content("{\"currency\":\"MX\",\"accountNumber\":\"ACC-404\",\"amount\":10.00}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Account not found with number: ACC-404"));
     }
@@ -176,7 +182,7 @@ class MovementControllerTest extends PostgresContainerConfig {
 
     @Test
     void shouldRequireTheCardInPurchases() throws Exception {
-        purchase("txn-p", "{\"accountNumber\":\"" + SOURCE + "\",\"amount\":10.00}")
+        purchase("txn-p", "{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":10.00}")
                 .andExpect(status().isBadRequest());
     }
 
@@ -239,7 +245,7 @@ class MovementControllerTest extends PostgresContainerConfig {
             results.add(executor.submit(() -> {
                 start.await();
                 try {
-                    movementService.processService(key, new ClientServiceRequest(SOURCE, new BigDecimal("100.00")));
+                    movementService.processService(key, new ClientServiceRequest(SOURCE, new BigDecimal("100.00"), Currency.MX));
                     return true;
                 } catch (InsufficientFundsException ex) {
                     return false;
@@ -275,7 +281,7 @@ class MovementControllerTest extends PostgresContainerConfig {
             results.add(executor.submit(() -> {
                 start.await();
                 return movementService.processTransfer(key, new ClientTransferRequest(new BigDecimal("10.00"),
-                        forward ? SOURCE : TARGET, forward ? TARGET : SOURCE));
+                        forward ? SOURCE : TARGET, forward ? TARGET : SOURCE, Currency.MX));
             }));
         }
         start.countDown();
@@ -287,6 +293,161 @@ class MovementControllerTest extends PostgresContainerConfig {
         assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("500.00");
         assertThat(fixtures.balanceOf(TARGET)).isEqualByComparingTo("500.00");
         assertThat(movementRepository.count()).isEqualTo(requests);
+    }
+
+    // ---- deposits ----
+
+    @Test
+    void shouldDepositOnceAndReverseIt() throws Exception {
+        deposit("dep-1", TARGET, "MX", "250.00")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
+        deposit("dep-1", TARGET, "MX", "250.00").andExpect(status().isOk());
+
+        assertThat(fixtures.balanceOf(TARGET)).isEqualByComparingTo("250.00");
+        Movement movement = movementRepository.findByIdempotencyKey("dep-1").orElseThrow();
+        assertThat(movement.getMovementType()).isEqualTo(MovementType.DEPOSIT);
+        assertThat(movement.getSourceAccountNumber()).isNull();
+
+        reverse("dep-1").andExpect(jsonPath("$.transactionStatus").value("REVERSED"));
+        assertThat(fixtures.balanceOf(TARGET)).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    void shouldNotReverseDepositAlreadySpent() throws Exception {
+        deposit("dep-1", TARGET, "MX", "100.00").andExpect(status().isOk());
+        debit("/service", "txn-s", "{\"currency\":\"MX\",\"accountNumber\":\"" + TARGET + "\",\"amount\":60.00}");
+
+        reverse("dep-1").andExpect(status().isUnprocessableEntity());
+        assertThat(fixtures.balanceOf(TARGET)).isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    void shouldDeclineDepositToFrozenAccountOrInAnotherCurrency() throws Exception {
+        fixtures.account("user-3", "ACC-3", "646180000000000003", AccountStatus.FROZEN, "0.00");
+
+        deposit("dep-1", "ACC-3", "MX", "100.00")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("Account ACC-3 is FROZEN and cannot operate"));
+        deposit("dep-2", TARGET, "US", "100.00")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("Account " + TARGET + " operates in MX, not US"));
+        deposit("dep-3", TARGET, "MX", "0").andExpect(status().isBadRequest());
+
+        assertThat(movementRepository.count()).isZero();
+    }
+
+    // ---- currency ----
+
+    @Test
+    void shouldDeclineMovementsInAnotherCurrency() throws Exception {
+        mockMvc.perform(post(MOVEMENT + "/service")
+                .with(service())
+                .header(IDEMPOTENCY_KEY, "txn-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"currency\":\"EU\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":10.00}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("Account " + SOURCE + " operates in MX, not EU"));
+
+        mockMvc.perform(post(MOVEMENT + "/service")
+                .with(service())
+                .header(IDEMPOTENCY_KEY, "txn-2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"accountNumber\":\"" + SOURCE + "\",\"amount\":10.00}"))
+                .andExpect(status().isBadRequest());
+
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("500.00");
+    }
+
+    @Test
+    void shouldDeclineTransferBetweenAccountsWithDifferentCurrencies() throws Exception {
+        fixtures.account("user-3", "ACC-3", "646180000000000003", AccountStatus.OPEN, "0.00", Currency.US);
+
+        mockMvc.perform(post(MOVEMENT + "/transfer")
+                .with(service())
+                .header(IDEMPOTENCY_KEY, "txn-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"currency\":\"MX\",\"amount\":10.00,\"sourceAccountNumber\":\"" + SOURCE
+                        + "\",\"targetAccountNumber\":\"ACC-3\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("Account ACC-3 operates in US, not MX"));
+
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("500.00");
+        assertThat(fixtures.balanceOf("ACC-3")).isEqualByComparingTo("0.00");
+    }
+
+    // ---- withdrawals: fee and verification ----
+
+    @Test
+    void shouldDebitWithdrawalFeeAndRefundItOnReversal() throws Exception {
+        debit("/withdrawal", "txn-w", withdrawalBody("100.00", "5.50"));
+
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("394.50");
+        Movement movement = movementRepository.findByIdempotencyKey("txn-w").orElseThrow();
+        assertThat(movement.getFee()).isEqualByComparingTo("5.50");
+        assertThat(movement.getVerificationMethod()).isEqualTo(SecurityVerificationMethod.PIN);
+
+        reverse("txn-w").andExpect(jsonPath("$.transactionStatus").value("REVERSED"));
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("500.00");
+    }
+
+    @Test
+    void shouldRequireFundsForTheWithdrawalPlusItsFee() throws Exception {
+        mockMvc.perform(post(MOVEMENT + "/withdrawal")
+                .with(service())
+                .header(IDEMPOTENCY_KEY, "txn-w")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(withdrawalBody("500.00", "1.00")))
+                .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(post(MOVEMENT + "/withdrawal")
+                .with(service())
+                .header(IDEMPOTENCY_KEY, "txn-w")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(withdrawalBody("10.00", "-1.00")))
+                .andExpect(status().isBadRequest());
+
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("500.00");
+    }
+
+    // ---- limits ----
+
+    @Test
+    void shouldAddUpTheMovementsOfThePeriodAgainstTheMaxAmount() throws Exception {
+        fixtures.limit(source, LimitType.SERVICE, TimePeriod.DAILY, "100.00", 10);
+
+        debit("/service", "txn-1", serviceBody("60.00"));
+        payService("txn-2", "50.00")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value(
+                        "DAILY SERVICE limit of 100.00 MX exceeded: 60.00 already used"));
+        debit("/service", "txn-3", serviceBody("40.00"));
+
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("400.00");
+    }
+
+    @Test
+    void shouldLimitTheNumberOfMovementsAndIgnoreReversedOnes() throws Exception {
+        fixtures.limit(source, LimitType.SERVICE, TimePeriod.MONTHLY, "1000.00", 2);
+
+        debit("/service", "txn-1", serviceBody("10.00"));
+        debit("/service", "txn-2", serviceBody("10.00"));
+        payService("txn-3", "10.00")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("MONTHLY SERVICE limit of 2 transactions reached"));
+
+        reverse("txn-1").andExpect(status().isOk());
+        debit("/service", "txn-3", serviceBody("10.00"));
+    }
+
+    @Test
+    void shouldApplyLimitsOnlyToTheirMovementType() throws Exception {
+        fixtures.limit(source, LimitType.WITHDRAWAL, TimePeriod.WEEKLY, "50.00", 1);
+
+        debit("/service", "txn-1", serviceBody("100.00"));
+        // The fee does not count towards the limit
+        debit("/withdrawal", "txn-w", withdrawalBody("50.00", "3.00"));
+
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("347.00");
     }
 
     // ---- reversal and cancellation ----
@@ -313,7 +474,7 @@ class MovementControllerTest extends PostgresContainerConfig {
 
     @Test
     void shouldReverseDebitByCreditingTheAccount() throws Exception {
-        debit("/service", "txn-s", "{\"accountNumber\":\"" + SOURCE + "\",\"amount\":20.00}");
+        debit("/service", "txn-s", "{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":20.00}");
 
         reverse("txn-s").andExpect(jsonPath("$.transactionStatus").value("REVERSED"));
 
@@ -327,7 +488,7 @@ class MovementControllerTest extends PostgresContainerConfig {
                 .with(service())
                 .header(IDEMPOTENCY_KEY, "txn-2")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"accountNumber\":\"" + TARGET + "\",\"amount\":100.00}"))
+                .content("{\"currency\":\"MX\",\"accountNumber\":\"" + TARGET + "\",\"amount\":100.00}"))
                 .andExpect(status().isOk());
 
         reverse("txn-1").andExpect(status().isUnprocessableEntity());
@@ -386,8 +547,34 @@ class MovementControllerTest extends PostgresContainerConfig {
     }
 
     private static String purchaseBody(String cardNumber, String cvv) {
-        return "{\"accountNumber\":\"" + SOURCE + "\",\"amount\":10.00,\"sourceCardNumber\":\"" + cardNumber
+        return "{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":10.00,\"sourceCardNumber\":\"" + cardNumber
                 + "\"" + (cvv == null ? "" : ",\"cvv\":\"" + cvv + "\"") + "}";
+    }
+
+    private ResultActions deposit(String key, String account, String currency, String amount) throws Exception {
+        return mockMvc.perform(post(MOVEMENT + "/deposit")
+                .with(service())
+                .header(IDEMPOTENCY_KEY, key)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"currency\":\"" + currency + "\",\"accountNumber\":\"" + account
+                        + "\",\"amount\":" + amount + "}"));
+    }
+
+    private ResultActions payService(String key, String amount) throws Exception {
+        return mockMvc.perform(post(MOVEMENT + "/service")
+                .with(service())
+                .header(IDEMPOTENCY_KEY, key)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(serviceBody(amount)));
+    }
+
+    private static String serviceBody(String amount) {
+        return "{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":" + amount + "}";
+    }
+
+    private static String withdrawalBody(String amount, String fee) {
+        return "{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":" + amount
+                + ",\"transactionFee\":" + fee + ",\"securityVerificationMethod\":\"PIN\"}";
     }
 
     private ResultActions reverse(String key) throws Exception {
@@ -395,7 +582,7 @@ class MovementControllerTest extends PostgresContainerConfig {
     }
 
     private static String transferBody(String amount) {
-        return "{\"amount\":" + amount + ",\"sourceAccountNumber\":\"" + SOURCE
+        return "{\"currency\":\"MX\",\"amount\":" + amount + ",\"sourceAccountNumber\":\"" + SOURCE
                 + "\",\"targetAccountNumber\":\"" + TARGET + "\"}";
     }
 }

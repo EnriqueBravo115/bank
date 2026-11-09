@@ -56,6 +56,9 @@ spec:
               value: "config-server"
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
               value: "true"
+          envFrom:
+            - secretRef:
+                name: account-service-card-keys
           startupProbe:
             httpGet:
               path: /actuator/health

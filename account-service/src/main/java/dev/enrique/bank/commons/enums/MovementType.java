@@ -4,5 +4,6 @@ public enum MovementType {
     TRANSFER,
     PURCHASE,
     SERVICE,
-    WITHDRAWAL
+    WITHDRAWAL,
+    DEPOSIT
 }

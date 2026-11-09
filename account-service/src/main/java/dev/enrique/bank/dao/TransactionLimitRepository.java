@@ -1,37 +1,37 @@
 package dev.enrique.bank.dao;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import dev.enrique.bank.commons.enums.LimitType;
 import dev.enrique.bank.commons.enums.TimePeriod;
 import dev.enrique.bank.model.TransactionLimit;
 
+// At most one limit per account, type and period (unique constraint).
 public interface TransactionLimitRepository extends JpaRepository<TransactionLimit, Long> {
     @Query("""
-            SELECT tl FROM TransactionLimit tl
+            SELECT tl FROM TransactionLimit tl JOIN FETCH tl.account
             WHERE tl.account.accountNumber = :accountNumber
-            AND tl.limitType = :limitType
-            AND tl.timePeriod = :timePeriod
-            ORDER BY tl.creationDate DESC
-            LIMIT 1
+            ORDER BY tl.limitType, tl.timePeriod
             """)
-    Optional<TransactionLimit> findLatestByAccountNumberAndLimitTypeAndTimePeriod(
-            @Param("accountNumber") String accountNumber,
-            @Param("limitType") LimitType limitType,
-            @Param("timePeriod") TimePeriod timePeriod);
+    List<TransactionLimit> findAllByAccountNumber(String accountNumber);
+
+    @Query("""
+            SELECT tl FROM TransactionLimit tl JOIN FETCH tl.account
+            WHERE tl.account.userId = :userId
+            ORDER BY tl.limitType, tl.timePeriod
+            """)
+    List<TransactionLimit> findAllByUserId(String userId);
 
     @Query("""
             SELECT tl FROM TransactionLimit tl
-            WHERE tl.account.accountNumber = :accountNumber
-            AND tl.limitType = :limitType
-            ORDER BY tl.creationDate DESC
-            LIMIT 1
+            WHERE tl.account.id = :accountId AND tl.limitType = :limitType
             """)
-    Optional<TransactionLimit> findLatestByAccountNumberAndLimitType(
-            @Param("accountNumber") String accountNumber,
-            @Param("limitType") LimitType limitType);
+    List<TransactionLimit> findAllByAccountIdAndLimitType(Long accountId, LimitType limitType);
+
+    Optional<TransactionLimit> findByAccountIdAndLimitTypeAndTimePeriod(
+            Long accountId, LimitType limitType, TimePeriod timePeriod);
 }

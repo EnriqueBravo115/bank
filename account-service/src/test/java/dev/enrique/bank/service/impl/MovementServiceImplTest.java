@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
 import dev.enrique.bank.commons.enums.AccountStatus;
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.exception.AccountNotFoundException;
 import dev.enrique.bank.commons.exception.AccountNotOperableException;
@@ -35,6 +36,7 @@ import dev.enrique.bank.model.AccountBalance;
 import dev.enrique.bank.model.Movement;
 import dev.enrique.bank.service.CardService;
 import dev.enrique.bank.service.FundsValidationService;
+import dev.enrique.bank.service.TransactionLimitService;
 
 @ExtendWith(MockitoExtension.class)
 class MovementServiceImplTest {
@@ -53,14 +55,14 @@ class MovementServiceImplTest {
     private MovementRepository movementRepository;
     @Mock
     private CardService cardService;
+    @Mock
+    private TransactionLimitService transactionLimitService;
     @InjectMocks
     private MovementServiceImpl movementService;
 
     @BeforeEach
     void fundsAndLimitsOk() {
         lenient().when(fundsValidationService.hasSufficientFunds(any(), any())).thenReturn(true);
-        lenient().when(fundsValidationService.isWithinTransactionLimit(any(), any(), any())).thenReturn(true);
-        lenient().when(fundsValidationService.isWithinDailyLimit(any(), any(), any())).thenReturn(true);
     }
 
     @Test
@@ -70,7 +72,7 @@ class MovementServiceImplTest {
         balance(source, "500.00");
         balance(target, "0.00");
 
-        var result = movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET));
+        var result = movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET, Currency.MX));
 
         assertThat(result.transactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
         verify(accountBalanceRepository, times(2)).save(any());
@@ -81,7 +83,7 @@ class MovementServiceImplTest {
         when(movementRepository.findByIdempotencyKey(KEY)).thenReturn(Optional.of(Movement.builder()
                 .idempotencyKey(KEY).status(TransactionStatus.COMPLETED).reason("Valid Transaction").build()));
 
-        var result = movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET));
+        var result = movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET, Currency.MX));
 
         assertThat(result.transactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
         verify(movementRepository, never()).saveAndFlush(any());
@@ -94,7 +96,7 @@ class MovementServiceImplTest {
         account(SOURCE, status);
         account(TARGET, AccountStatus.OPEN);
 
-        assertThatThrownBy(() -> movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET)))
+        assertThatThrownBy(() -> movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET, Currency.MX)))
                 .isInstanceOf(AccountNotOperableException.class)
                 .hasMessage("Account " + SOURCE + " is " + status + " and cannot operate");
 
@@ -106,7 +108,7 @@ class MovementServiceImplTest {
         account(SOURCE, AccountStatus.OPEN);
         account(TARGET, AccountStatus.FROZEN);
 
-        assertThatThrownBy(() -> movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET)))
+        assertThatThrownBy(() -> movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET, Currency.MX)))
                 .isInstanceOf(AccountNotOperableException.class)
                 .hasMessageContaining(TARGET);
 
@@ -117,7 +119,7 @@ class MovementServiceImplTest {
     void shouldRejectDebitFromFrozenAccount() {
         account(SOURCE, AccountStatus.FROZEN);
 
-        assertThatThrownBy(() -> movementService.processService(KEY, new ClientServiceRequest(SOURCE, AMOUNT)))
+        assertThatThrownBy(() -> movementService.processService(KEY, new ClientServiceRequest(SOURCE, AMOUNT, Currency.MX)))
                 .isInstanceOf(AccountNotOperableException.class);
 
         verify(accountBalanceRepository, never()).save(any());
@@ -127,12 +129,12 @@ class MovementServiceImplTest {
     void shouldRejectUnknownAccount() {
         when(accountRepository.lockByAccountNumber(SOURCE)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> movementService.processService(KEY, new ClientServiceRequest(SOURCE, AMOUNT)))
+        assertThatThrownBy(() -> movementService.processService(KEY, new ClientServiceRequest(SOURCE, AMOUNT, Currency.MX)))
                 .isInstanceOf(AccountNotFoundException.class);
     }
 
     private Account account(String number, AccountStatus status) {
-        Account account = Account.builder().accountNumber(number).accountStatus(status).build();
+        Account account = Account.builder().accountNumber(number).accountStatus(status).currency(Currency.MX).build();
         lenient().when(accountRepository.lockByAccountNumber(number)).thenReturn(Optional.of(account));
         return account;
     }

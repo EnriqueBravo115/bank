@@ -85,6 +85,11 @@ class CardControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$[0].maskedNumber").value("**** **** **** " + number.substring(12)))
                 .andExpect(jsonPath("$[0].cardNumber").doesNotExist())
                 .andExpect(jsonPath("$[0].cvv").doesNotExist());
+
+        // Neither is the number: only its keyed hash and its last four digits
+        var stored = cardRepository.findAll().get(0);
+        assertThat(stored.getCardNumberHash()).hasSize(64).doesNotContain(number);
+        assertThat(stored.getLastFour()).isEqualTo(number.substring(12));
     }
 
     @Test
@@ -186,7 +191,7 @@ class CardControllerTest extends PostgresContainerConfig {
     void issuedCard_paysWithItsCvv_andNotOnceBlocked() throws Exception {
         JsonNode card = issue(customer("user-1")).andReturn().getResponse().getContentAsString()
                 .transform(this::json);
-        String body = "{\"accountNumber\":\"" + ACCOUNT_NUMBER + "\",\"amount\":50.00,\"sourceCardNumber\":\""
+        String body = "{\"currency\":\"MX\",\"accountNumber\":\"" + ACCOUNT_NUMBER + "\",\"amount\":50.00,\"sourceCardNumber\":\""
                 + card.get("cardNumber").asText() + "\",\"cvv\":\"" + card.get("cvv").asText() + "\"}";
 
         purchase("txn-1", body)

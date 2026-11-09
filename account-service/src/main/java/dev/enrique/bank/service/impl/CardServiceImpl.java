@@ -23,6 +23,7 @@ import dev.enrique.bank.commons.exception.CardDeclinedException;
 import dev.enrique.bank.commons.exception.CardNotFoundException;
 import dev.enrique.bank.commons.exception.CardStateException;
 import dev.enrique.bank.commons.util.CardNumberGenerator;
+import dev.enrique.bank.commons.util.CardNumberHash;
 import dev.enrique.bank.commons.util.CardSecurityCode;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.CardRepository;
@@ -44,6 +45,7 @@ public class CardServiceImpl implements CardService {
     private final AccountRepository accountRepository;
     private final CardNumberGenerator cardNumberGenerator;
     private final CardSecurityCode cardSecurityCode;
+    private final CardNumberHash cardNumberHash;
     private final Clock clock;
 
     @Override
@@ -60,9 +62,12 @@ public class CardServiceImpl implements CardService {
             throw new CardStateException("The account already has a card; cancel it to issue a new one");
         }
 
+        // The full number and the security code are returned only here: neither is stored.
+        String number = uniqueCardNumber();
         Card card = cardRepository.save(Card.builder()
                 .account(account)
-                .cardNumber(uniqueCardNumber())
+                .cardNumberHash(cardNumberHash.of(number))
+                .lastFour(CardNumberHash.lastFour(number))
                 .cardHolderName(cardHolderName.trim().toUpperCase(Locale.ROOT))
                 .cardType(CardType.DEBIT)
                 .cardStatus(CardStatus.ACTIVE)
@@ -70,8 +75,8 @@ public class CardServiceImpl implements CardService {
                 .build());
         log.info("Card {} issued for account {}", card.getId(), account.getAccountNumber());
 
-        return new IssuedCardResponse(card.getId(), card.getCardNumber(), card.getCardHolderName(),
-                card.getExpirationDate(), cardSecurityCode.of(card.getCardNumber(), card.getExpirationDate()),
+        return new IssuedCardResponse(card.getId(), number, card.getCardHolderName(),
+                card.getExpirationDate(), cardSecurityCode.of(number, card.getExpirationDate()),
                 card.getCardType(), card.getCardStatus());
     }
 
@@ -100,13 +105,14 @@ public class CardServiceImpl implements CardService {
 
     @Override
     public AccountDetailedResponse findAccountByCardNumber(String cardNumber) {
-        Card card = cardRepository.findByCardNumber(cardNumber).orElseThrow(CardNotFoundException::new);
+        Card card = cardRepository.findByCardNumberHash(cardNumberHash.of(cardNumber))
+                .orElseThrow(CardNotFoundException::new);
         return accountRepository.findByAccountNumber(card.getAccount().getAccountNumber()).orElseThrow();
     }
 
     @Override
     public void verifyPayment(Account account, String cardNumber, String cvv) {
-        Card card = cardRepository.findByCardNumber(cardNumber)
+        Card card = cardRepository.findByCardNumberHash(cardNumberHash.of(cardNumber))
                 .filter(c -> c.getAccount().getId().equals(account.getId()))
                 .orElseThrow(() -> new CardDeclinedException("the card is not linked to the account"));
         if (card.getCardStatus() != CardStatus.ACTIVE) {
@@ -115,7 +121,7 @@ public class CardServiceImpl implements CardService {
         if (card.isExpired(LocalDate.now(clock))) {
             throw new CardDeclinedException("the card is expired");
         }
-        if (!cardSecurityCode.matches(card.getCardNumber(), card.getExpirationDate(), cvv)) {
+        if (!cardSecurityCode.matches(cardNumber, card.getExpirationDate(), cvv)) {
             throw new CardDeclinedException("invalid security code");
         }
     }
@@ -139,7 +145,7 @@ public class CardServiceImpl implements CardService {
         String number;
         do {
             number = cardNumberGenerator.generate();
-        } while (cardRepository.existsByCardNumber(number));
+        } while (cardRepository.existsByCardNumberHash(cardNumberHash.of(number)));
         return number;
     }
 }

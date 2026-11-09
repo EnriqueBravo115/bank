@@ -40,10 +40,12 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.enrique.bank.client.AccountClient;
+import dev.enrique.bank.commons.dto.request.ClientDepositRequest;
 import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
 import dev.enrique.bank.commons.dto.request.ClientWithdrawalRequest;
+import dev.enrique.bank.commons.dto.request.DepositRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
@@ -122,7 +124,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         Transaction saved = singleSavedTransaction();
         // The transaction code is the idempotency key; the CLABEs travel as account numbers.
         verify(accountClient).processTransfer(saved.getTransactionCode(),
-                new ClientTransferRequest(new BigDecimal("250.00"), SOURCE_ACCOUNT, TARGET_ACCOUNT));
+                new ClientTransferRequest(new BigDecimal("250.00"), SOURCE_ACCOUNT, TARGET_ACCOUNT, Currency.MX));
         assertThat(saved.getSourceIdentifier()).isEqualTo(SOURCE_CLABE);
         assertThat(saved.getIdentifierType()).isEqualTo(IdentifierType.CLABE);
         assertThat(saved.getAccountNumber()).isEqualTo(SOURCE_ACCOUNT);
@@ -174,7 +176,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         verify(accountClient).getByAccountNumber(SOURCE_ACCOUNT);
         verify(accountClient).getByClabe(TARGET_CLABE);
         verify(accountClient).processTransfer(anyString(),
-                eq(new ClientTransferRequest(new BigDecimal("10.00"), SOURCE_ACCOUNT, TARGET_ACCOUNT)));
+                eq(new ClientTransferRequest(new BigDecimal("10.00"), SOURCE_ACCOUNT, TARGET_ACCOUNT, Currency.MX)));
     }
 
     @Test
@@ -209,7 +211,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
 
         Transaction saved = singleSavedTransaction();
         verify(accountClient).processTransfer(saved.getTransactionCode(),
-                new ClientTransferRequest(new BigDecimal("250.00"), SOURCE_ACCOUNT, TARGET_ACCOUNT));
+                new ClientTransferRequest(new BigDecimal("250.00"), SOURCE_ACCOUNT, TARGET_ACCOUNT, Currency.MX));
         assertThat(saved.getAccountNumber()).isEqualTo(SOURCE_ACCOUNT);
         assertThat(saved.getIdentifierType()).isEqualTo(IdentifierType.CARD);
     }
@@ -342,7 +344,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
 
         Transaction saved = singleSavedTransaction();
         verify(accountClient).processService(saved.getTransactionCode(),
-                new ClientServiceRequest(SOURCE_ACCOUNT, new BigDecimal("875.50")));
+                new ClientServiceRequest(SOURCE_ACCOUNT, new BigDecimal("875.50"), Currency.MX));
         assertThat(saved.getIdentifierType()).isEqualTo(IdentifierType.ACCOUNT);
         assertThat(saved.getOwnerId()).isEqualTo(OWNER);
     }
@@ -371,9 +373,9 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
 
         Transaction saved = singleSavedTransaction();
         verify(accountClient).processPurchase(saved.getTransactionCode(),
-                new ClientPurchaseRequest(SOURCE_ACCOUNT, new BigDecimal("349.99"), CARD, "123"));
+                new ClientPurchaseRequest(SOURCE_ACCOUNT, new BigDecimal("349.99"), CARD, "123", Currency.MX));
         verify(accountClient).processPurchase(saved.getTransactionCode(),
-                new ClientPurchaseRequest(SOURCE_ACCOUNT, new BigDecimal("349.99"), CARD, null));
+                new ClientPurchaseRequest(SOURCE_ACCOUNT, new BigDecimal("349.99"), CARD, null, Currency.MX));
         assertThat(saved.getTransactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM information_schema.columns "
                 + "WHERE table_name = 'purchase_transaction' AND column_name = 'cvv'", Integer.class))
@@ -405,8 +407,41 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
 
         Transaction saved = singleSavedTransaction();
         verify(accountClient).processWithdrawal(saved.getTransactionCode(), new ClientWithdrawalRequest(
-                SOURCE_ACCOUNT, new BigDecimal("1000.00"), SecurityVerificationMethod.PIN, new BigDecimal("25.00")));
+                SOURCE_ACCOUNT, new BigDecimal("1000.00"), SecurityVerificationMethod.PIN, new BigDecimal("25.00"), Currency.MX));
         assertThat(saved.getTransactionType()).isEqualTo(TransactionType.WITHDRAWAL);
+    }
+
+    // ---- deposit ----
+
+    @Test
+    void shouldLetAdminDepositIntoAnyAccount_asATransactionOfItsOwner() throws Exception {
+        when(accountClient.processDeposit(anyString(), any())).thenReturn(COMPLETED);
+
+        DepositRequest request = new DepositRequest(new BigDecimal("1500.00"), "Cash deposit at branch",
+                TARGET_CLABE, IdentifierType.CLABE, Currency.MX);
+        post(TRANSACTION_CREATE + "/deposit", request, admin())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionType").value("DEPOSIT"))
+                .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
+
+        Transaction saved = singleSavedTransaction();
+        verify(accountClient).processDeposit(saved.getTransactionCode(),
+                new ClientDepositRequest(TARGET_ACCOUNT, new BigDecimal("1500.00"), Currency.MX));
+        assertThat(saved.getAccountNumber()).isEqualTo(TARGET_ACCOUNT);
+        assertThat(saved.getOwnerId()).isEqualTo(OTHER_USER);
+        assertThat(saved.getSourceIdentifier()).isEqualTo(TARGET_CLABE);
+    }
+
+    @Test
+    void shouldNotLetCustomersDeposit() throws Exception {
+        DepositRequest request = new DepositRequest(new BigDecimal("1500.00"), "Cash deposit",
+                SOURCE_ACCOUNT, IdentifierType.ACCOUNT, Currency.MX);
+
+        post(TRANSACTION_CREATE + "/deposit", request, customer()).andExpect(status().isForbidden());
+        post(TRANSACTION_CREATE + "/deposit", new DepositRequest(BigDecimal.ZERO, "Cash deposit",
+                SOURCE_ACCOUNT, IdentifierType.ACCOUNT, Currency.MX), admin()).andExpect(status().isBadRequest());
+
+        verifyNoInteractions(accountClient);
     }
 
     // ---- cancel and reverse ----

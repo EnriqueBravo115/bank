@@ -1,6 +1,8 @@
 package dev.enrique.bank.commons.dto.request;
 
 import java.math.BigDecimal;
+
+import dev.enrique.bank.commons.enums.Currency;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -11,5 +13,6 @@ public record ClientPurchaseRequest(
         @NotBlank String accountNumber,
         @NotNull @Positive BigDecimal amount,
         @NotBlank String sourceCardNumber,
-        String cvv) {
+        String cvv,
+        @NotNull Currency currency) {
 }

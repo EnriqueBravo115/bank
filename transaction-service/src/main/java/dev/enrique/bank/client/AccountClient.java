@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.enrique.bank.commons.dto.request.ClientDepositRequest;
 import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
@@ -61,6 +62,11 @@ public interface AccountClient {
     MovementResultResponse processWithdrawal(@RequestHeader(IDEMPOTENCY_KEY) String idempotencyKey,
             @RequestBody ClientWithdrawalRequest request);
 
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "depositFallback")
+    @PostMapping("/movement/deposit")
+    MovementResultResponse processDeposit(@RequestHeader(IDEMPOTENCY_KEY) String idempotencyKey,
+            @RequestBody ClientDepositRequest request);
+
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "reverseFallback")
     @PostMapping("/movement/{idempotencyKey}/reverse")
     MovementResultResponse reverse(@PathVariable String idempotencyKey);
@@ -82,6 +88,11 @@ public interface AccountClient {
     }
 
     default MovementResultResponse withdrawalFallback(String idempotencyKey, ClientWithdrawalRequest request,
+            Throwable throwable) {
+        return toResult(throwable);
+    }
+
+    default MovementResultResponse depositFallback(String idempotencyKey, ClientDepositRequest request,
             Throwable throwable) {
         return toResult(throwable);
     }

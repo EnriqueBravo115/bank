@@ -310,6 +310,9 @@ services:
       KEYCLOAK_HOST: keycloak
       KAFKA_HOST: broker
       CONFIG_SERVER_HOST: config-server
+      # Development values only (see config-server's account-service.yml)
+      CARD_CVV_SECRET: local-dev-card-cvv-secret
+      CARD_PAN_SECRET: local-dev-card-pan-secret
     restart: on-failure
     ports:
       - "8082:8082"

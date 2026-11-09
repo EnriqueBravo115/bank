@@ -1,5 +1,6 @@
 package dev.enrique.bank.service;
 
+import dev.enrique.bank.commons.dto.request.DepositRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
@@ -14,6 +15,8 @@ public interface TransactionCreationService {
     TransactionResultResponse servicePayment(ServiceRequest request);
 
     TransactionResultResponse withdrawal(WithdrawalRequest request);
+
+    TransactionResultResponse deposit(DepositRequest request);
 
     TransactionResultResponse cancel(String transactionCode);
 

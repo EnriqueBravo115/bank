@@ -58,13 +58,18 @@ public class GlobalExceptionHandler {
         return unprocessable(ex);
     }
 
+    @ExceptionHandler(CurrencyMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleCurrencyMismatch(CurrencyMismatchException ex) {
+        return unprocessable(ex);
+    }
+
     @ExceptionHandler(CardDeclinedException.class)
     public ResponseEntity<ErrorResponse> handleCardDeclined(CardDeclinedException ex) {
         return unprocessable(ex);
     }
 
-    @ExceptionHandler(CardNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCardNotFound(CardNotFoundException ex) {
+    @ExceptionHandler({ CardNotFoundException.class, LimitNotFoundException.class })
+    public ResponseEntity<ErrorResponse> handleCardNotFound(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(), LocalDateTime.now()));
     }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.enrique.bank.client.AccountClient;
+import dev.enrique.bank.commons.dto.request.ClientDepositRequest;
 import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
@@ -90,20 +91,29 @@ public class TransactionSettlement {
             case TRANSFER -> accountClient.processTransfer(key, new ClientTransferRequest(
                     transaction.getAmount(),
                     transaction.getAccountNumber(),
-                    transaction.getTransferTransaction().getTargetAccountNumber()));
+                    transaction.getTransferTransaction().getTargetAccountNumber(),
+                    transaction.getCurrency()));
             case PURCHASE -> accountClient.processPurchase(key, new ClientPurchaseRequest(
                     transaction.getAccountNumber(),
                     transaction.getAmount(),
                     transaction.getPurchaseTransaction().getSourceCardNumber(),
-                    transaction.getPurchaseTransaction().getCvv()));
+                    transaction.getPurchaseTransaction().getCvv(),
+                    transaction.getCurrency()));
             case SERVICE -> accountClient.processService(key, new ClientServiceRequest(
                     transaction.getAccountNumber(),
-                    transaction.getAmount()));
+                    transaction.getAmount(),
+                    transaction.getCurrency()));
             case WITHDRAWAL -> accountClient.processWithdrawal(key, new ClientWithdrawalRequest(
                     transaction.getAccountNumber(),
                     transaction.getAmount(),
                     transaction.getWithdrawalTransaction().getSecurityVerificationMethod(),
-                    transaction.getWithdrawalTransaction().getTransactionFee()));
+                    transaction.getWithdrawalTransaction().getTransactionFee(),
+                    transaction.getCurrency()));
+            // The deposited account is the transaction's account: there is no source account
+            case DEPOSIT -> accountClient.processDeposit(key, new ClientDepositRequest(
+                    transaction.getAccountNumber(),
+                    transaction.getAmount(),
+                    transaction.getCurrency()));
             case OTHER -> throw new IllegalStateException("Unsupported transaction type: OTHER");
         };
     }

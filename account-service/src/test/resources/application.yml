@@ -27,6 +27,7 @@ spring:
 
 card:
   cvv-secret: test-card-cvv-secret
+  pan-secret: test-card-pan-secret
 
 eureka:
   client:

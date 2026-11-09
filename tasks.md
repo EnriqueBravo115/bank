@@ -20,8 +20,10 @@
   - `createAccount` stores a 0 `account_balance` (`OPENING`) in the same transaction as the account.
   - `V6` creates that opening balance for the accounts that had none.
 
-- [ ] **Deposits / credits**
-  - `AccountBalanceController` is commented out and `AccountBalanceServiceImpl.createAccountBalance` throws `UnsupportedOperationException`.
+- [x] **Deposits / credits**
+  - `POST /movement/deposit` (`SERVICE`, idempotent like every movement): credits an `OPEN` account; the movement has no source account. Reversing it debits the account, `422` if it no longer has the money.
+  - transaction-service: `POST /api/v1/transaction/create/deposit` (`ADMIN` only), target by account number, CLABE or card; the `DEPOSIT` transaction belongs to the account's owner.
+  - The stub `AccountBalanceController`/`AccountBalanceService` (`UnsupportedOperationException`) was removed.
 
 - [x] **Cards**
   - `/api/v1/account/card`: `POST` issues a debit card for the account of the `sub` (in the name of the `name` claim; `409` if it already has an `ACTIVE`/`BLOCKED` one, `422` if the account is not `OPEN`). It is the only response with the full number and the cvv. `GET /me` lists them masked; `POST /{id}/block|unblock|cancel` for the owner or `ADMIN` (another user's card is `404`, an invalid transition `409`, `CANCELLED` is final).
@@ -30,17 +32,19 @@
   - Purchases require `sourceCardNumber` (`400`) and are declined (`422`, `Card declined: …`) if the card is not linked to the account, is not `ACTIVE`, is expired or the cvv does not match. transaction-service only sends the cvv on its first attempt: a retry that never reached account-service before is declined.
   - `GET /get-by-card-number/{cardNumber}` (`ADMIN`, `SERVICE`) returns the card's account.
 
-- [ ] **Cards: pending**
-  - The full card number (PAN) is stored in plain text; PCI-DSS requires encrypting or tokenizing it.
-  - `card.cvv-secret` has a development-only default in config-server: outside local development `CARD_CVV_SECRET` must be set (in k8s, in the `secretGenerator`).
+- [x] **Card number (PAN) and card keys**
+  - The PAN is not stored: `card_number_hash` (HMAC-SHA256 with `card.pan-secret`, `UNIQUE`, to find the card by its number) and `last_four` (to show it). A plain hash would not do: the numbers of a BIN can be brute-forced.
+  - `V8__hash_card_numbers` is a Java migration (Spring bean, it needs the key): hashes the existing cards and drops `card_number`. `HashCardNumbersMigrationTest` runs it over a V7 schema with a plaintext card.
+  - `card.cvv-secret` and `card.pan-secret` have no default in config-server: the service does not start without `CARD_CVV_SECRET`/`CARD_PAN_SECRET`. Development values in `docker-compose.yml` and in the `account-service-card-keys` `secretGenerator` of k8s (replace them outside the local cluster). To run account-service from the IDE, set both variables.
 
-- [ ] **Incomplete transaction limits**
-  - There is no way to create them.
-  - `isWithinDailyLimit` compares the amount of a single operation, not the sum of the day.
-  - `max_transactions` is not used.
+- [x] **Transaction limits**
+  - `/api/v1/account/limit`: `PUT` creates or replaces the limit of an account for a type and period (`ADMIN`; one per account, type and period, `V7` constraint), `GET /me` (`CUSTOMER_BASIC`), `GET /{accountNumber}` and `DELETE /{id}` (`ADMIN`). The currency is the account's.
+  - `TransactionLimitService.check` adds up the `COMPLETED` movements of the type since the start of the calendar period (`DAILY` midnight, `WEEKLY` Monday, `MONTHLY` the 1st) and checks both `maxAmount` and `maxTransactions` (`422`). It runs with the account locked, so concurrent movements cannot both fit. Reversed movements and withdrawal fees do not count.
+  - The old `isWithinDailyLimit`/`isWithinTransactionLimit` were removed.
 
-- [ ] **Ignored movement fields**
-  - `transactionFee` in withdrawals, `SecurityVerificationMethod` and the currency (money can be transferred between accounts with different currencies).
+- [x] **Ignored movement fields**
+  - Withdrawals debit amount + `transactionFee` (funds are checked for both; a reversal refunds both) and store the fee and the `SecurityVerificationMethod` (required) in `movement` (`V7`).
+  - Every movement carries its `currency` (required; transaction-service sends the transaction's): it must be the currency of every account it touches, both of a transfer, `422` otherwise. There is no currency conversion.
 
 ### Consistency
 
@@ -48,6 +52,9 @@
   - Every movement (and its reversal) locks its accounts with `SELECT ... FOR UPDATE` (`AccountRepository.lockByAccountNumber`) before reading the balance, in account number order so two opposite transfers cannot deadlock.
   - The current balance is the latest row by `id`, not by `creation_date` (two rows could share a date); index `(account_id, id DESC)`.
   - `MovementControllerTest`: 10 concurrent debits of 100 over 500 → exactly 5 are applied (without the lock all 10 were), and concurrent opposite transfers do not deadlock.
+
+- [ ] **PAN in plain text in transaction-service**
+  - `purchase_transaction.source_card_number`, and `source_identifier` of transactions created with a `CARD`, keep the full number. Store the last four digits (or a token) instead; the retries of a purchase need the number, so it would have to be kept only while `PENDING` or resolved again through account-service.
 
 - [ ] **Poorly modeled balance types**
   - Every movement is stored as `INTRADAY`, but `hasSufficientFundsIncludingHolds` looks for `AVAILABLE`/`ON_HOLD`; `checkHolds` is always `false`; "the latest by date" mixes types.

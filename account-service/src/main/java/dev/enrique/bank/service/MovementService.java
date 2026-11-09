@@ -1,5 +1,6 @@
 package dev.enrique.bank.service;
 
+import dev.enrique.bank.commons.dto.request.ClientDepositRequest;
 import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
@@ -14,6 +15,8 @@ public interface MovementService {
     MovementResultResponse processService(String idempotencyKey, ClientServiceRequest request);
 
     MovementResultResponse processWithdrawal(String idempotencyKey, ClientWithdrawalRequest request);
+
+    MovementResultResponse processDeposit(String idempotencyKey, ClientDepositRequest request);
 
     MovementResultResponse reverse(String idempotencyKey);
 }

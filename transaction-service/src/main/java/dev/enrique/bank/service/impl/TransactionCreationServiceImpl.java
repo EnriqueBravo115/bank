@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.enrique.bank.client.AccountClient;
+import dev.enrique.bank.commons.dto.request.DepositRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
@@ -110,6 +111,18 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
                 .transaction(transaction)
                 .build());
         return register(transaction);
+    }
+
+    /**
+     * Credits an account with money from outside the bank. Admin only (see the controller), so the
+     * account need not belong to the caller: the transaction belongs to the account's owner, who sees
+     * it in their history.
+     */
+    @Override
+    public TransactionResultResponse deposit(DepositRequest request) {
+        AccountResponse target = accountResolver.resolve(request.targetIdentifier(), request.targetIdentifierType());
+        return register(transaction(TransactionType.DEPOSIT, target, request.targetIdentifier(),
+                request.targetIdentifierType(), request.amount(), request.description(), request.currency()));
     }
 
     /**

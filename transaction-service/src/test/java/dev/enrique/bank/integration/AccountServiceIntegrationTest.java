@@ -101,6 +101,7 @@ class AccountServiceIntegrationTest extends PostgresContainerConfig {
         assertThat(sent.get("sourceAccountNumber").asText()).isEqualTo("ACC-1");
         assertThat(sent.get("targetAccountNumber").asText()).isEqualTo("ACC-2");
         assertThat(sent.get("amount").decimalValue()).isEqualByComparingTo("250.00");
+        assertThat(sent.get("currency").asText()).isEqualTo("MX");
         assertThat(saved.getTransactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
     }
 

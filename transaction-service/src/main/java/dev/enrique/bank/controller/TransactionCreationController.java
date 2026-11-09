@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.enrique.bank.commons.dto.request.DepositRequest;
 import dev.enrique.bank.commons.dto.request.PurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ServiceRequest;
 import dev.enrique.bank.commons.dto.request.TransferRequest;
@@ -47,5 +48,12 @@ public class TransactionCreationController {
     public ResponseEntity<TransactionResultResponse> withdrawal(
             @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
         return ResponseEntity.ok(transactionCreationService.withdrawal(withdrawalRequest));
+    }
+
+    // Cash at a branch, payroll...: registered by bank staff, never by the customer.
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/deposit")
+    public ResponseEntity<TransactionResultResponse> deposit(@Valid @RequestBody DepositRequest depositRequest) {
+        return ResponseEntity.ok(transactionCreationService.deposit(depositRequest));
     }
 }

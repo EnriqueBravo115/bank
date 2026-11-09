@@ -1,0 +1,34 @@
+# Limits per account, movement type (TRANSFER, PURCHASE, SERVICE, WITHDRAWAL) and calendar period
+# (DAILY: since midnight, WEEKLY: since Monday, MONTHLY: since the 1st). Within the period the account
+# can make at most maxTransactions movements of the type adding up to maxAmount, in the account's
+# currency. Reversed movements and withdrawal fees do not count. Exceeding a limit: 422 DECLINED.
+@baseUrl = http://localhost:8000/api/v1/account/limit
+@customerToken = PASTE_TOKEN_FROM_auth.http
+@adminToken = PASTE_TOKEN_FROM_auth.http
+@accountNumber = ACC-1774713408076
+@limitId = 1
+
+### Create or replace the limit of an account for a type and period (ADMIN)
+PUT {{baseUrl}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "accountNumber": "{{accountNumber}}",
+  "limitType": "TRANSFER",
+  "timePeriod": "DAILY",
+  "maxAmount": 20000.00,
+  "maxTransactions": 10
+}
+
+### My limits (CUSTOMER_BASIC)
+GET {{baseUrl}}/me
+Authorization: Bearer {{customerToken}}
+
+### Limits of an account (ADMIN)
+GET {{baseUrl}}/{{accountNumber}}
+Authorization: Bearer {{adminToken}}
+
+### Remove a limit (ADMIN): 204
+DELETE {{baseUrl}}/{{limitId}}
+Authorization: Bearer {{adminToken}}

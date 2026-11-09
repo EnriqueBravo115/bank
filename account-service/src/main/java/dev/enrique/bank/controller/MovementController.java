@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.enrique.bank.commons.dto.request.ClientDepositRequest;
 import dev.enrique.bank.commons.dto.request.ClientPurchaseRequest;
 import dev.enrique.bank.commons.dto.request.ClientServiceRequest;
 import dev.enrique.bank.commons.dto.request.ClientTransferRequest;
@@ -58,6 +59,13 @@ public class MovementController {
             @RequestHeader(IDEMPOTENCY_KEY) @NotBlank @Size(max = 100) String idempotencyKey,
             @Valid @RequestBody ClientWithdrawalRequest request) {
         return ResponseEntity.ok(movementService.processWithdrawal(idempotencyKey, request));
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<MovementResultResponse> processDeposit(
+            @RequestHeader(IDEMPOTENCY_KEY) @NotBlank @Size(max = 100) String idempotencyKey,
+            @Valid @RequestBody ClientDepositRequest request) {
+        return ResponseEntity.ok(movementService.processDeposit(idempotencyKey, request));
     }
 
     @PostMapping("/{idempotencyKey}/reverse")
