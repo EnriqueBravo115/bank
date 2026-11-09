@@ -10,12 +10,14 @@ import org.springframework.stereotype.Repository;
 import dev.enrique.bank.commons.enums.BalanceType;
 import dev.enrique.bank.model.AccountBalance;
 
+// The balance is the latest row by id: ids follow the order in which rows were inserted while the
+// account was locked, whereas two rows can share a creation_date.
 @Repository
 public interface AccountBalanceRepository extends JpaRepository<AccountBalance, Long> {
     @Query("""
             SELECT ab FROM AccountBalance ab
             WHERE ab.account.accountNumber = :accountNumber
-            ORDER BY ab.creationDate DESC
+            ORDER BY ab.id DESC
             LIMIT 1
             """)
     Optional<AccountBalance> findLatestByAccountNumber(
@@ -25,7 +27,7 @@ public interface AccountBalanceRepository extends JpaRepository<AccountBalance, 
             SELECT ab FROM AccountBalance ab
             WHERE ab.account.accountNumber = :accountNumber
             AND ab.balanceType = :type
-            ORDER BY ab.creationDate DESC
+            ORDER BY ab.id DESC
             LIMIT 1
             """)
     Optional<AccountBalance> findLatestByAccountNumberAndType(

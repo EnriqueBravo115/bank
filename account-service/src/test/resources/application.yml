@@ -25,6 +25,9 @@ spring:
           # Never called: tests authenticate with spring-security-test's jwt()
           jwk-set-uri: http://localhost/realms/bank/protocol/openid-connect/certs
 
+card:
+  cvv-secret: test-card-cvv-secret
+
 eureka:
   client:
     enabled: false

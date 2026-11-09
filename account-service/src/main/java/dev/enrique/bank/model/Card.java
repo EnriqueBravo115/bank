@@ -24,6 +24,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// The card security code is not a column: see CardSecurityCode.
 @Entity
 @Getter
 @Setter
@@ -41,9 +42,6 @@ public class Card {
 
     @Column(name = "card_holder_name", nullable = false)
     private String cardHolderName;
-
-    @Column(name = "cvv", nullable = false)
-    private String cvv;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "card_type", nullable = false)
@@ -63,4 +61,14 @@ public class Card {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
+
+    /** Expires at the end of its expiration date. */
+    public boolean isExpired(LocalDate today) {
+        return today.isAfter(expirationDate);
+    }
+
+    /** The last four digits, the only part of the number shown after the card is issued. */
+    public String maskedNumber() {
+        return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
+    }
 }

@@ -9,10 +9,13 @@ public final class JwtTestUtils {
     private JwtTestUtils() {
     }
 
-    // Same claims Keycloak issues: subject, realm role (mapped to ROLE_*) and registration_status
+    public static final String CUSTOMER_NAME = "Ana Martínez";
+
+    // Same claims Keycloak issues: subject, realm role (mapped to ROLE_*), registration_status and name
     public static RequestPostProcessor customer(String userId) {
         return jwt()
-                .jwt(token -> token.subject(userId).claim("registration_status", "COMPLETE"))
+                .jwt(token -> token.subject(userId).claim("registration_status", "COMPLETE")
+                        .claim("name", CUSTOMER_NAME))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER_BASIC"));
     }
 

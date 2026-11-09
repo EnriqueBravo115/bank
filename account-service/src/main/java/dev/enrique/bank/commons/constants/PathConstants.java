@@ -5,4 +5,5 @@ public class PathConstants {
     public static final String ACCOUNT = API + "/account";
     public static final String ACCOUNT_BALANCE = API + "/account-balance";
     public static final String MOVEMENT = ACCOUNT + "/movement";
+    public static final String CARD = ACCOUNT + "/card";
 }

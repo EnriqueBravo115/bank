@@ -33,6 +33,7 @@ import dev.enrique.bank.dao.MovementRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
 import dev.enrique.bank.model.Movement;
+import dev.enrique.bank.service.CardService;
 import dev.enrique.bank.service.FundsValidationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +51,8 @@ class MovementServiceImplTest {
     private AccountRepository accountRepository;
     @Mock
     private MovementRepository movementRepository;
+    @Mock
+    private CardService cardService;
     @InjectMocks
     private MovementServiceImpl movementService;
 
@@ -89,6 +92,7 @@ class MovementServiceImplTest {
     @EnumSource(value = AccountStatus.class, names = "OPEN", mode = EnumSource.Mode.EXCLUDE)
     void shouldRejectTransferFromAccountThatIsNotOpen(AccountStatus status) {
         account(SOURCE, status);
+        account(TARGET, AccountStatus.OPEN);
 
         assertThatThrownBy(() -> movementService.processTransfer(KEY, new ClientTransferRequest(AMOUNT, SOURCE, TARGET)))
                 .isInstanceOf(AccountNotOperableException.class)
@@ -121,7 +125,7 @@ class MovementServiceImplTest {
 
     @Test
     void shouldRejectUnknownAccount() {
-        when(accountRepository.findEntityByAccountNumber(SOURCE)).thenReturn(Optional.empty());
+        when(accountRepository.lockByAccountNumber(SOURCE)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> movementService.processService(KEY, new ClientServiceRequest(SOURCE, AMOUNT)))
                 .isInstanceOf(AccountNotFoundException.class);
@@ -129,7 +133,7 @@ class MovementServiceImplTest {
 
     private Account account(String number, AccountStatus status) {
         Account account = Account.builder().accountNumber(number).accountStatus(status).build();
-        lenient().when(accountRepository.findEntityByAccountNumber(number)).thenReturn(Optional.of(account));
+        lenient().when(accountRepository.lockByAccountNumber(number)).thenReturn(Optional.of(account));
         return account;
     }
 

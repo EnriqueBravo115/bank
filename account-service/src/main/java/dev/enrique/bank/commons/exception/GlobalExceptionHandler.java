@@ -58,6 +58,23 @@ public class GlobalExceptionHandler {
         return unprocessable(ex);
     }
 
+    @ExceptionHandler(CardDeclinedException.class)
+    public ResponseEntity<ErrorResponse> handleCardDeclined(CardDeclinedException ex) {
+        return unprocessable(ex);
+    }
+
+    @ExceptionHandler(CardNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCardNotFound(CardNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(), LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(CardStateException.class)
+    public ResponseEntity<ErrorResponse> handleCardState(CardStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), LocalDateTime.now()));
+    }
+
     // Two requests with the same Idempotency-Key at once: the second one is rejected and retried later.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {

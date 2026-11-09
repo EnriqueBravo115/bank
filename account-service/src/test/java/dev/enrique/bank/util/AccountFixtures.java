@@ -1,6 +1,7 @@
 package dev.enrique.bank.util;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -9,12 +10,16 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.AccountType;
 import dev.enrique.bank.commons.enums.BalanceType;
+import dev.enrique.bank.commons.enums.CardStatus;
+import dev.enrique.bank.commons.enums.CardType;
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
+import dev.enrique.bank.dao.CardRepository;
 import dev.enrique.bank.dao.MovementRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
+import dev.enrique.bank.model.Card;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +30,7 @@ public class AccountFixtures {
     private final AccountRepository accountRepository;
     private final AccountBalanceRepository accountBalanceRepository;
     private final MovementRepository movementRepository;
+    private final CardRepository cardRepository;
     private final EntityManager entityManager;
 
     @Transactional
@@ -32,6 +38,7 @@ public class AccountFixtures {
         movementRepository.deleteAll();
         entityManager.createQuery("DELETE FROM AccountBalance").executeUpdate();
         entityManager.createQuery("DELETE FROM TransactionLimit").executeUpdate();
+        entityManager.createQuery("DELETE FROM Card").executeUpdate();
         entityManager.createQuery("DELETE FROM Account").executeUpdate();
     }
 
@@ -52,6 +59,19 @@ public class AccountFixtures {
                 .balanceType(BalanceType.INTRADAY)
                 .build());
         return account;
+    }
+
+    /** A debit card of the account. */
+    @Transactional
+    public Card card(Account account, String cardNumber, CardStatus status, LocalDate expirationDate) {
+        return cardRepository.save(Card.builder()
+                .account(account)
+                .cardNumber(cardNumber)
+                .cardHolderName("TEST HOLDER")
+                .cardType(CardType.DEBIT)
+                .cardStatus(status)
+                .expirationDate(expirationDate)
+                .build());
     }
 
     public BigDecimal balanceOf(String accountNumber) {

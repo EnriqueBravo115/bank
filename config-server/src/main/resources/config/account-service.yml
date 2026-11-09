@@ -31,6 +31,11 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
 
+# Key that derives the card security code (CardSecurityCode). Changing it invalidates the cvv of
+# every issued card. The default is only for local development: set CARD_CVV_SECRET elsewhere.
+card:
+  cvv-secret: ${CARD_CVV_SECRET:local-dev-card-cvv-secret}
+
 management:
   endpoints:
     web:

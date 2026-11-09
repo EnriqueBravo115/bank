@@ -17,5 +17,30 @@ Authorization: {{token}}
 GET {{baseUrl}}/get-by-email/ana.martinez92@gmail.com
 Authorization: {{token}}
 
+### GET account by card number(ADMIN-SERVICE)
+GET {{baseUrl}}/get-by-card-number/4123450000000001
+Authorization: {{token}}
+
+### Issue a debit card for my account(CUSTOMER_BASIC)
+### The response is the only time the full number and the cvv are shown
+POST {{baseUrl}}/card
+Authorization: {{token}}
+
+### GET my cards, masked(CUSTOMER_BASIC)
+GET {{baseUrl}}/card/me
+Authorization: {{token}}
+
+### Block a card(owner CUSTOMER_BASIC or ADMIN)
+POST {{baseUrl}}/card/1/block
+Authorization: {{token}}
+
+### Unblock a card(owner CUSTOMER_BASIC or ADMIN)
+POST {{baseUrl}}/card/1/unblock
+Authorization: {{token}}
+
+### Cancel a card; final, allows issuing a new one(owner CUSTOMER_BASIC or ADMIN)
+POST {{baseUrl}}/card/1/cancel
+Authorization: {{token}}
+
 # Los movimientos (/movement/transfer|purchase|service|withdrawal y /movement/{key}/reverse)
 # solo los llama transaction-service con su token de servicio (rol SERVICE) y el header Idempotency-Key.

@@ -1,7 +1,12 @@
 package dev.enrique.bank.service.impl;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +32,7 @@ import dev.enrique.bank.dao.MovementRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
 import dev.enrique.bank.model.Movement;
+import dev.enrique.bank.service.CardService;
 import dev.enrique.bank.service.FundsValidationService;
 import dev.enrique.bank.service.MovementService;
 import lombok.RequiredArgsConstructor;
@@ -44,24 +50,30 @@ public class MovementServiceImpl implements MovementService {
     private final AccountBalanceRepository accountBalanceRepository;
     private final AccountRepository accountRepository;
     private final MovementRepository movementRepository;
+    private final CardService cardService;
 
     @Override
     @Transactional
     public MovementResultResponse processTransfer(String idempotencyKey, ClientTransferRequest request) {
         return once(idempotencyKey, MovementType.TRANSFER, request.sourceAccountNumber(),
-                request.targetAccountNumber(), request.amount(), () -> {
-                    validate(request.sourceAccountNumber(), request.amount(), LimitType.TRANSFER);
-                    requireOpen(request.targetAccountNumber());
-                    adjust(request.sourceAccountNumber(), request.amount().negate());
-                    adjust(request.targetAccountNumber(), request.amount());
+                request.targetAccountNumber(), request.amount(), accounts -> {
+                    validate(accounts.get(request.sourceAccountNumber()), request.amount(), LimitType.TRANSFER);
+                    requireOpen(accounts.get(request.targetAccountNumber()));
+                    adjust(accounts.get(request.sourceAccountNumber()), request.amount().negate());
+                    adjust(accounts.get(request.targetAccountNumber()), request.amount());
                 });
     }
 
     @Override
     @Transactional
     public MovementResultResponse processPurchase(String idempotencyKey, ClientPurchaseRequest request) {
-        return debit(idempotencyKey, MovementType.PURCHASE, request.accountNumber(), request.amount(),
-                LimitType.PURCHASE);
+        return once(idempotencyKey, MovementType.PURCHASE, request.accountNumber(), null, request.amount(),
+                accounts -> {
+                    Account account = accounts.get(request.accountNumber());
+                    validate(account, request.amount(), LimitType.PURCHASE);
+                    cardService.verifyPayment(account, request.sourceCardNumber(), request.cvv());
+                    adjust(account, request.amount().negate());
+                });
     }
 
     @Override
@@ -101,12 +113,14 @@ public class MovementServiceImpl implements MovementService {
             return resultOf(movement);
         }
 
+        Map<String, Account> accounts = lock(movement.getSourceAccountNumber(), movement.getTargetAccountNumber());
         if (movement.getMovementType() == MovementType.TRANSFER) {
             // The money comes back from the target, which must still have it.
-            requireFunds(movement.getTargetAccountNumber(), movement.getAmount());
-            adjust(movement.getTargetAccountNumber(), movement.getAmount().negate());
+            Account target = accounts.get(movement.getTargetAccountNumber());
+            requireFunds(target, movement.getAmount());
+            adjust(target, movement.getAmount().negate());
         }
-        adjust(movement.getSourceAccountNumber(), movement.getAmount());
+        adjust(accounts.get(movement.getSourceAccountNumber()), movement.getAmount());
 
         movement.setStatus(TransactionStatus.REVERSED);
         movement.setReason(REVERSED);
@@ -116,9 +130,10 @@ public class MovementServiceImpl implements MovementService {
 
     private MovementResultResponse debit(String idempotencyKey, MovementType type, String accountNumber,
             BigDecimal amount, LimitType limitType) {
-        return once(idempotencyKey, type, accountNumber, null, amount, () -> {
-            validate(accountNumber, amount, limitType);
-            adjust(accountNumber, amount.negate());
+        return once(idempotencyKey, type, accountNumber, null, amount, accounts -> {
+            Account account = accounts.get(accountNumber);
+            validate(account, amount, limitType);
+            adjust(account, amount.negate());
         });
     }
 
@@ -126,9 +141,10 @@ public class MovementServiceImpl implements MovementService {
      * Applies the movement only the first time its key is seen. The key is claimed before moving the
      * money: a concurrent request with the same key waits on the unique index and fails (409) once
      * this one commits. A rejection rolls the claim back, so a retry is evaluated again.
+     * The accounts are locked before reading their balances (see lock).
      */
     private MovementResultResponse once(String idempotencyKey, MovementType type, String source, String target,
-            BigDecimal amount, Runnable apply) {
+            BigDecimal amount, Consumer<Map<String, Account>> apply) {
         Optional<Movement> previous = movementRepository.findByIdempotencyKey(idempotencyKey);
         if (previous.isPresent()) {
             log.info("Movement {} already processed, returning its result", idempotencyKey);
@@ -144,47 +160,59 @@ public class MovementServiceImpl implements MovementService {
                 .status(TransactionStatus.COMPLETED)
                 .reason(APPLIED)
                 .build());
-        apply.run();
+        apply.accept(lock(source, target));
         return new MovementResultResponse(TransactionStatus.COMPLETED, APPLIED);
+    }
+
+    /**
+     * Locks the accounts of a movement (SELECT ... FOR UPDATE) until the transaction ends, so two
+     * movements of the same account cannot both read the same balance and spend it twice. They are
+     * locked in account number order: two opposite transfers (A to B, B to A) would deadlock otherwise.
+     */
+    private Map<String, Account> lock(String... accountNumbers) {
+        Map<String, Account> locked = new TreeMap<>();
+        Stream.of(accountNumbers).filter(Objects::nonNull).distinct().sorted().forEach(number ->
+                locked.put(number, accountRepository.lockByAccountNumber(number)
+                        .orElseThrow(() -> new AccountNotFoundException(number))));
+        return locked;
     }
 
     private static MovementResultResponse resultOf(Movement movement) {
         return new MovementResultResponse(movement.getStatus(), movement.getReason());
     }
 
-    private void validate(String accountNumber, BigDecimal amount, LimitType limitType) {
-        requireOpen(accountNumber);
-        requireFunds(accountNumber, amount);
+    private void validate(Account account, BigDecimal amount, LimitType limitType) {
+        requireOpen(account);
+        requireFunds(account, amount);
 
+        String accountNumber = account.getAccountNumber();
         if (!fundsValidationService.isWithinTransactionLimit(accountNumber, amount, limitType)
                 || !fundsValidationService.isWithinDailyLimit(accountNumber, amount, limitType)) {
             throw new TransactionLimitExceededException("Amount exceeds the allowed transaction limit");
         }
     }
 
-    private void requireFunds(String accountNumber, BigDecimal amount) {
-        if (!fundsValidationService.hasSufficientFunds(accountNumber, amount)) {
-            throw new InsufficientFundsException(accountNumber, amount);
+    private void requireFunds(Account account, BigDecimal amount) {
+        if (!fundsValidationService.hasSufficientFunds(account.getAccountNumber(), amount)) {
+            throw new InsufficientFundsException(account.getAccountNumber(), amount);
         }
     }
 
     // A blocked user's account is FROZEN by the user-status-changed event; it must not move money.
-    private void requireOpen(String accountNumber) {
-        Account account = accountRepository.findEntityByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+    private static void requireOpen(Account account) {
         if (account.getAccountStatus() != AccountStatus.OPEN) {
-            throw new AccountNotOperableException(accountNumber, account.getAccountStatus());
+            throw new AccountNotOperableException(account.getAccountNumber(), account.getAccountStatus());
         }
     }
 
     // The balance is the latest account_balance row: every change appends a new one.
-    private void adjust(String accountNumber, BigDecimal delta) {
+    private void adjust(Account account, BigDecimal delta) {
         AccountBalance latest = accountBalanceRepository
-                .findLatestByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountBalanceNotFoundException(accountNumber));
+                .findLatestByAccountNumber(account.getAccountNumber())
+                .orElseThrow(() -> new AccountBalanceNotFoundException(account.getAccountNumber()));
 
         accountBalanceRepository.save(AccountBalance.builder()
-                .account(latest.getAccount())
+                .account(account)
                 .balance(latest.getBalance().add(delta))
                 .balanceType(BalanceType.INTRADAY)
                 .build());

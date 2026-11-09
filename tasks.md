@@ -16,16 +16,23 @@
 
 ### Funcionalidad
 
-- [ ] **No se crea saldo al abrir la cuenta**
-  - `createAccount` no inserta `account_balance`; todo movimiento falla con "balance not found" y hoy solo funciona con SQL manual.
+- [x] **No se crea saldo al abrir la cuenta**
+  - `createAccount` guarda un `account_balance` en 0 (`OPENING`) en la misma transacción que la cuenta.
+  - `V6` crea ese saldo inicial a las cuentas que no tenían ninguno.
 
 - [ ] **Depósitos / abonos**
   - `AccountBalanceController` está comentado y `AccountBalanceServiceImpl.createAccountBalance` lanza `UnsupportedOperationException`.
 
-- [ ] **Tarjetas**
-  - `Card` solo existe como modelo y tabla: no hay service ni endpoints.
-  - La compra recibe `sourceCardNumber` y `cvv` y los ignora.
-  - No guardar el CVV en BD (PCI-DSS).
+- [x] **Tarjetas**
+  - `/api/v1/account/card`: `POST` emite una tarjeta de débito para la cuenta del `sub` (a nombre del claim `name`; `409` si ya tiene una `ACTIVE`/`BLOCKED`, `422` si la cuenta no está `OPEN`). Es la única respuesta con el número completo y el CVV. `GET /me` las lista enmascaradas; `POST /{id}/block|unblock|cancel` para el dueño o `ADMIN` (de otro usuario `404`, transición inválida `409`, `CANCELLED` es final).
+  - Número de 16 dígitos con BIN `412345` y dígito Luhn (`CardNumberGenerator`); vence al final del mes, a 5 años.
+  - El CVV no se guarda (`V6` borra la columna): `CardSecurityCode` lo deriva con HMAC-SHA256 del número y la expiración con `card.cvv-secret` (`CARD_CVV_SECRET`), como la clave CVK de un emisor, y lo compara en tiempo constante. Cambiar el secreto invalida el CVV de todas las tarjetas.
+  - La compra exige `sourceCardNumber` (`400`) y la declina (`422`, `Card declined: …`) si la tarjeta no es de la cuenta, no está `ACTIVE`, venció o el CVV no coincide. transaction-service solo manda el CVV en el primer intento: un reintento que nunca llegó a account-service se declina.
+  - `GET /get-by-card-number/{cardNumber}` (`ADMIN`, `SERVICE`) devuelve la cuenta de la tarjeta.
+
+- [ ] **Tarjetas: pendientes**
+  - El número completo de la tarjeta (PAN) se guarda en claro; PCI-DSS pide cifrarlo o tokenizarlo.
+  - `card.cvv-secret` tiene un valor por defecto solo para desarrollo en config-server: fuera de local hay que definir `CARD_CVV_SECRET` (en k8s, en el `secretGenerator`).
 
 - [ ] **Límites de transacción incompletos**
   - No hay forma de crearlos.
@@ -37,8 +44,10 @@
 
 ### Consistencia
 
-- [ ] **Condición de carrera en el saldo**
-  - El modelo "último registro de `account_balance`" no tiene bloqueo (`SELECT ... FOR UPDATE` o `@Version`): dos débitos simultáneos leen el mismo saldo (doble gasto).
+- [x] **Condición de carrera en el saldo**
+  - Cada movimiento (y su reversa) bloquea sus cuentas con `SELECT ... FOR UPDATE` (`AccountRepository.lockByAccountNumber`) antes de leer el saldo, en orden de número de cuenta para que dos transferencias opuestas no hagan deadlock.
+  - El saldo actual es la última fila por `id`, no por `creation_date` (dos filas podían compartir fecha); índice `(account_id, id DESC)`.
+  - `MovementControllerTest`: 10 débitos simultáneos de 100 sobre 500 → exactamente 5 se aplican (sin el bloqueo se aplicaban los 10), y transferencias opuestas simultáneas sin deadlock.
 
 - [ ] **Tipos de saldo mal modelados**
   - Todos los movimientos se guardan como `INTRADAY`, pero `hasSufficientFundsIncludingHolds` busca `AVAILABLE`/`ON_HOLD`; `checkHolds` siempre es `false`; "el último por fecha" mezcla tipos.
@@ -79,6 +88,9 @@
 
 - [x] **`IdentifierType` no se respeta**
   - `AccountResolver` busca por número de cuenta o por CLABE según el tipo y envía a account-service siempre el `accountNumber`. `CARD` responde `400` hasta que account-service tenga tarjetas.
+
+- [ ] **Resolver `CARD` con account-service**
+  - account-service ya tiene `GET /api/v1/account/get-by-card-number/{cardNumber}`: falta el método en `AccountClient` y usarlo en `AccountResolver` en lugar del `400`.
 
 ### Funcionalidad
 

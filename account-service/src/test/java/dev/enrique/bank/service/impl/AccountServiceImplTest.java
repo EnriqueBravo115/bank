@@ -18,10 +18,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import dev.enrique.bank.broker.event.CreateAccountEvent;
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.AccountType;
+import dev.enrique.bank.commons.enums.BalanceType;
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.util.ClabeGenerator;
+import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.model.Account;
+import dev.enrique.bank.model.AccountBalance;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceImplTest {
@@ -29,6 +32,8 @@ class AccountServiceImplTest {
 
     @Mock
     private AccountRepository accountRepository;
+    @Mock
+    private AccountBalanceRepository accountBalanceRepository;
     @Mock
     private ClabeGenerator clabeGenerator;
     @InjectMocks
@@ -49,6 +54,12 @@ class AccountServiceImplTest {
         assertThat(saved.getValue().getAccountType()).isEqualTo(AccountType.SAVING);
         assertThat(saved.getValue().getCurrency()).isEqualTo(Currency.MX);
         assertThat(saved.getValue().getAccountStatus()).isEqualTo(AccountStatus.OPEN);
+
+        ArgumentCaptor<AccountBalance> opening = ArgumentCaptor.forClass(AccountBalance.class);
+        verify(accountBalanceRepository).save(opening.capture());
+        assertThat(opening.getValue().getAccount()).isSameAs(saved.getValue());
+        assertThat(opening.getValue().getBalance()).isEqualByComparingTo("0");
+        assertThat(opening.getValue().getBalanceType()).isEqualTo(BalanceType.OPENING);
     }
 
     @Test
@@ -58,6 +69,7 @@ class AccountServiceImplTest {
         accountService.createAccount(event(), USER_ID);
 
         verify(accountRepository, never()).save(any());
+        verify(accountBalanceRepository, never()).save(any());
     }
 
     @Test
@@ -97,6 +109,7 @@ class AccountServiceImplTest {
         accountService.updateStatusByUserId(USER_ID, false);
 
         verify(accountRepository, never()).save(any());
+        verify(accountBalanceRepository, never()).save(any());
     }
 
     @Test

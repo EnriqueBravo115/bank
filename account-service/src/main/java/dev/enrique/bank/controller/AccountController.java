@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
 import dev.enrique.bank.service.AccountService;
+import dev.enrique.bank.service.CardService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountService accountService;
+    private final CardService cardService;
 
     // The customer's own account, resolved from the JWT subject.
     @PreAuthorize("hasRole('CUSTOMER_BASIC')")
@@ -39,6 +41,13 @@ public class AccountController {
     @GetMapping("/get-by-clabe/{clabe}")
     public ResponseEntity<AccountDetailedResponse> getByClabe(@PathVariable String clabe) {
         return ResponseEntity.ok(accountService.findByClabe(clabe));
+    }
+
+    // The account a card belongs to: transaction-service resolves CARD identifiers with it.
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SERVICE')")
+    @GetMapping("/get-by-card-number/{cardNumber}")
+    public ResponseEntity<AccountDetailedResponse> getByCardNumber(@PathVariable String cardNumber) {
+        return ResponseEntity.ok(cardService.findAccountByCardNumber(cardNumber));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

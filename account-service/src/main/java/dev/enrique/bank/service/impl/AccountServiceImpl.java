@@ -1,15 +1,20 @@
 package dev.enrique.bank.service.impl;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.broker.event.CreateAccountEvent;
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
 import dev.enrique.bank.commons.enums.AccountStatus;
+import dev.enrique.bank.commons.enums.BalanceType;
 import dev.enrique.bank.commons.exception.AccountAlreadyExistsException;
 import dev.enrique.bank.commons.exception.AccountNotFoundException;
 import dev.enrique.bank.commons.util.ClabeGenerator;
+import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.model.Account;
+import dev.enrique.bank.model.AccountBalance;
 import dev.enrique.bank.service.AccountService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
+    private final AccountBalanceRepository accountBalanceRepository;
     private final ClabeGenerator clabeGenerator;
 
     @Override
@@ -41,6 +47,13 @@ public class AccountServiceImpl implements AccountService {
         account.setAccountStatus(AccountStatus.OPEN);
 
         accountRepository.save(account);
+
+        // Every movement reads the latest balance row: without this one they all failed.
+        accountBalanceRepository.save(AccountBalance.builder()
+                .account(account)
+                .balance(BigDecimal.ZERO)
+                .balanceType(BalanceType.OPENING)
+                .build());
     }
 
     // TODO: integrate with kafka via user-service

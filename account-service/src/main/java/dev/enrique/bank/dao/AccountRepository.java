@@ -3,10 +3,12 @@ package dev.enrique.bank.dao;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
 import dev.enrique.bank.model.Account;
+import jakarta.persistence.LockModeType;
 
 public interface AccountRepository extends JpaRepository<Account, Long> {
     boolean existsByClabe(String clabe);
@@ -48,6 +50,12 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<AccountDetailedResponse> findByUserId(String userId);
 
     Optional<Account> findEntityByAccountNumber(String accountNumber);
+
+    // SELECT ... FOR UPDATE: every change of balance holds this lock until its transaction ends, so
+    // two movements of the same account read and write the balance one after the other.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM Account a WHERE a.accountNumber = :accountNumber")
+    Optional<Account> lockByAccountNumber(String accountNumber);
 
     Optional<Account> findEntityByUserId(String userId);
 
