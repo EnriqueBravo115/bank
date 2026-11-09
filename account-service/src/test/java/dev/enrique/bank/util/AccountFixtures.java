@@ -15,7 +15,6 @@ import dev.enrique.bank.commons.enums.CardType;
 import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.LimitType;
 import dev.enrique.bank.commons.enums.TimePeriod;
-import dev.enrique.bank.commons.util.CardNumberHash;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.CardRepository;
@@ -32,13 +31,15 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class AccountFixtures {
+    // Security code of every card created by card(...)
+    public static final String CVV = "123";
+
     private final AccountRepository accountRepository;
     private final AccountBalanceRepository accountBalanceRepository;
     private final MovementRepository movementRepository;
     private final CardRepository cardRepository;
     private final TransactionLimitRepository transactionLimitRepository;
     private final EntityManager entityManager;
-    private final CardNumberHash cardNumberHash;
 
     @Transactional
     public void clear() {
@@ -92,8 +93,8 @@ public class AccountFixtures {
     public Card card(Account account, String cardNumber, CardStatus status, LocalDate expirationDate) {
         return cardRepository.save(Card.builder()
                 .account(account)
-                .cardNumberHash(cardNumberHash.of(cardNumber))
-                .lastFour(CardNumberHash.lastFour(cardNumber))
+                .cardNumber(cardNumber)
+                .cvv(CVV)
                 .cardHolderName("TEST HOLDER")
                 .cardType(CardType.DEBIT)
                 .cardStatus(status)

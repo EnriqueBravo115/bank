@@ -4,7 +4,10 @@ import java.security.SecureRandom;
 
 import org.springframework.stereotype.Component;
 
-/** 16-digit card numbers: the bank's 6-digit BIN, 9 random digits and the Luhn check digit. */
+/**
+ * 16-digit card numbers (the bank's 6-digit BIN, 9 random digits and the Luhn check digit) and their
+ * 3-digit security codes.
+ */
 @Component
 public class CardNumberGenerator {
     // Issuer identification number of the bank's debit cards
@@ -18,6 +21,10 @@ public class CardNumberGenerator {
             number.append(random.nextInt(10));
         }
         return number.append(luhnCheckDigit(number)).toString();
+    }
+
+    public String generateCvv() {
+        return String.format("%03d", random.nextInt(1000));
     }
 
     static int luhnCheckDigit(CharSequence digits) {

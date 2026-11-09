@@ -31,15 +31,6 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
 
-# Card keys, at least 16 characters each. There are no defaults: the service does not start
-# without them (docker-compose.yml and k8s/kustomization.yaml set development values).
-# - cvv-secret derives the card security code (CardSecurityCode): changing it invalidates the cvv
-#   of every issued card.
-# - pan-secret hashes the card numbers (CardNumberHash): changing it makes every card unfindable.
-card:
-  cvv-secret: ${CARD_CVV_SECRET}
-  pan-secret: ${CARD_PAN_SECRET}
-
 management:
   endpoints:
     web:

@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-// The cvv is forwarded to account-service and never stored.
 public record PurchaseRequest(
         @NotNull @Positive BigDecimal amount,
         @NotBlank String description,

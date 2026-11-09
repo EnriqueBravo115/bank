@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.enrique.bank.commons.enums.AccountStatus;
-import dev.enrique.bank.commons.util.CardSecurityCode;
 import dev.enrique.bank.dao.CardRepository;
 import dev.enrique.bank.util.AccountFixtures;
 import dev.enrique.bank.util.PostgresContainerConfig;
@@ -49,8 +48,6 @@ class CardControllerTest extends PostgresContainerConfig {
     private AccountFixtures fixtures;
     @Autowired
     private CardRepository cardRepository;
-    @Autowired
-    private CardSecurityCode cardSecurityCode;
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -76,9 +73,9 @@ class CardControllerTest extends PostgresContainerConfig {
         assertThat(number).hasSize(16).startsWith("412345");
         assertThat(luhnValid(number)).isTrue();
         assertThat(expiration).isEqualTo(YearMonth.now().plusYears(5).atEndOfMonth());
-        assertThat(card.get("cvv").asText()).isEqualTo(cardSecurityCode.of(number, expiration));
+        assertThat(card.get("cvv").asText()).matches("\\d{3}");
 
-        // Afterwards only the last four digits are shown, and the cvv is not stored anywhere
+        // Afterwards only the last four digits are shown, without the cvv
         mockMvc.perform(get(CARD + "/me").with(customer("user-1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
@@ -86,10 +83,9 @@ class CardControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$[0].cardNumber").doesNotExist())
                 .andExpect(jsonPath("$[0].cvv").doesNotExist());
 
-        // Neither is the number: only its keyed hash and its last four digits
         var stored = cardRepository.findAll().get(0);
-        assertThat(stored.getCardNumberHash()).hasSize(64).doesNotContain(number);
-        assertThat(stored.getLastFour()).isEqualTo(number.substring(12));
+        assertThat(stored.getCardNumber()).isEqualTo(number);
+        assertThat(stored.getCvv()).isEqualTo(card.get("cvv").asText());
     }
 
     @Test

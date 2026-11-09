@@ -1,4 +1,4 @@
-# One debit card in use per account. The cvv is not stored: it only appears when the card is issued.
+# One debit card in use per account. The full number and the cvv only appear when the card is issued.
 @baseUrl = http://localhost:8000/api/v1/account/card
 @customerToken = PASTE_TOKEN_FROM_auth.http
 @adminToken = PASTE_TOKEN_FROM_auth.http

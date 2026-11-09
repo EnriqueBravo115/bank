@@ -7,7 +7,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,8 +30,8 @@ public class PurchaseTransaction {
     @Column(name = "source_card_number")
     private String sourceCardNumber;
 
-    // Forwarded to account-service on the first attempt and never stored (PCI-DSS).
-    @Transient
+    // Sent to account-service on every attempt, so a retried purchase is checked like the first one
+    @Column(name = "cvv")
     private String cvv;
 
     @Column(name = "merchant_code")

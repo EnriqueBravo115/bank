@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -90,8 +89,6 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     private TransactionRepository transactionRepository;
     @Autowired
     private TransactionSettlement settlement;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @MockitoBean
     private AccountClient accountClient;
@@ -360,7 +357,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void shouldRegisterPurchaseSendingTheCvvOnlyOnTheFirstAttempt() throws Exception {
+    void shouldRegisterPurchaseSendingTheCvvOnEveryAttempt() throws Exception {
         when(accountClient.processPurchase(anyString(), any())).thenReturn(UNKNOWN, COMPLETED);
 
         PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Store purchase",
@@ -372,14 +369,9 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         settlement.retryPending(LocalDateTime.now().plusMinutes(1));
 
         Transaction saved = singleSavedTransaction();
-        verify(accountClient).processPurchase(saved.getTransactionCode(),
+        verify(accountClient, times(2)).processPurchase(saved.getTransactionCode(),
                 new ClientPurchaseRequest(SOURCE_ACCOUNT, new BigDecimal("349.99"), CARD, "123", Currency.MX));
-        verify(accountClient).processPurchase(saved.getTransactionCode(),
-                new ClientPurchaseRequest(SOURCE_ACCOUNT, new BigDecimal("349.99"), CARD, null, Currency.MX));
         assertThat(saved.getTransactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
-        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM information_schema.columns "
-                + "WHERE table_name = 'purchase_transaction' AND column_name = 'cvv'", Integer.class))
-                .as("the cvv is never stored").isZero();
     }
 
     @Test

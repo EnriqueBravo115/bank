@@ -28,14 +28,9 @@
 - [x] **Cards**
   - `/api/v1/account/card`: `POST` issues a debit card for the account of the `sub` (in the name of the `name` claim; `409` if it already has an `ACTIVE`/`BLOCKED` one, `422` if the account is not `OPEN`). It is the only response with the full number and the cvv. `GET /me` lists them masked; `POST /{id}/block|unblock|cancel` for the owner or `ADMIN` (another user's card is `404`, an invalid transition `409`, `CANCELLED` is final).
   - 16-digit number with BIN `412345` and a Luhn check digit (`CardNumberGenerator`); it expires at the end of the month, 5 years ahead.
-  - The cvv is not stored (`V6` drops the column): `CardSecurityCode` derives it with HMAC-SHA256 from the number and the expiration date using `card.cvv-secret` (`CARD_CVV_SECRET`), like an issuer's CVK, and compares it in constant time. Changing the secret invalidates the cvv of every card.
-  - Purchases require `sourceCardNumber` (`400`) and are declined (`422`, `Card declined: …`) if the card is not linked to the account, is not `ACTIVE`, is expired or the cvv does not match. transaction-service only sends the cvv on its first attempt: a retry that never reached account-service before is declined.
+  - The number and a random 3-digit cvv are stored with the card in plain text (practice project, no PCI-DSS): `V8` adds back the `cvv` column that `V6` had dropped.
+  - Purchases require `sourceCardNumber` (`400`) and are declined (`422`, `Card declined: …`) if the card is not linked to the account, is not `ACTIVE`, is expired or the cvv does not match. transaction-service stores the cvv with the purchase (`V6`) and sends it on every attempt.
   - `GET /get-by-card-number/{cardNumber}` (`ADMIN`, `SERVICE`) returns the card's account.
-
-- [x] **Card number (PAN) and card keys**
-  - The PAN is not stored: `card_number_hash` (HMAC-SHA256 with `card.pan-secret`, `UNIQUE`, to find the card by its number) and `last_four` (to show it). A plain hash would not do: the numbers of a BIN can be brute-forced.
-  - `V8__hash_card_numbers` is a Java migration (Spring bean, it needs the key): hashes the existing cards and drops `card_number`. `HashCardNumbersMigrationTest` runs it over a V7 schema with a plaintext card.
-  - `card.cvv-secret` and `card.pan-secret` have no default in config-server: the service does not start without `CARD_CVV_SECRET`/`CARD_PAN_SECRET`. Development values in `docker-compose.yml` and in the `account-service-card-keys` `secretGenerator` of k8s (replace them outside the local cluster). To run account-service from the IDE, set both variables.
 
 - [x] **Transaction limits**
   - `/api/v1/account/limit`: `PUT` creates or replaces the limit of an account for a type and period (`ADMIN`; one per account, type and period, `V7` constraint), `GET /me` (`CUSTOMER_BASIC`), `GET /{accountNumber}` and `DELETE /{id}` (`ADMIN`). The currency is the account's.
@@ -52,9 +47,6 @@
   - Every movement (and its reversal) locks its accounts with `SELECT ... FOR UPDATE` (`AccountRepository.lockByAccountNumber`) before reading the balance, in account number order so two opposite transfers cannot deadlock.
   - The current balance is the latest row by `id`, not by `creation_date` (two rows could share a date); index `(account_id, id DESC)`.
   - `MovementControllerTest`: 10 concurrent debits of 100 over 500 → exactly 5 are applied (without the lock all 10 were), and concurrent opposite transfers do not deadlock.
-
-- [ ] **PAN in plain text in transaction-service**
-  - `purchase_transaction.source_card_number`, and `source_identifier` of transactions created with a `CARD`, keep the full number. Store the last four digits (or a token) instead; the retries of a purchase need the number, so it would have to be kept only while `PENDING` or resolved again through account-service.
 
 - [ ] **Poorly modeled balance types**
   - Every movement is stored as `INTRADAY`, but `hasSufficientFundsIncludingHolds` looks for `AVAILABLE`/`ON_HOLD`; `checkHolds` is always `false`; "the latest by date" mixes types.
@@ -135,8 +127,8 @@
 - [x] **`process` wrapped everything in `RuntimeException`**
   - Not anymore: account-service rejections arrive as DECLINED/FAILED through the fallback and any other error propagates and rolls back (the transaction is not recorded).
 
-- [x] **The cvv was stored** in `purchase_transaction.cvv` (PCI-DSS)
-  - `V3` drops the column; the cvv is only forwarded to account-service. Feign goes from `FULL` logging (which wrote the bodies, card and cvv included) to `BASIC`.
+- [x] **Feign logged the request bodies**
+  - Feign goes from `FULL` logging (which wrote the bodies, card and cvv included) to `BASIC`. `V3` had dropped `purchase_transaction.cvv`; `V6` adds it back so a `PENDING` purchase is retried with its cvv.
 
 - [x] **Resilience4j configuration**
   - `AccountServiceIntegrationTest` starts a fake account-service (real HTTP, no new dependencies) and checks that the `@CircuitBreaker` of `AccountClient` does run the fallback: 422 → DECLINED with the message, 404 and 5xx → FAILED, and the JSON that is sent.

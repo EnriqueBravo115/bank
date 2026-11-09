@@ -37,8 +37,3 @@ secretGenerator:
     literals:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
-  # Card keys of account-service (development values: replace them outside the local cluster)
-  - name: account-service-card-keys
-    literals:
-      - CARD_CVV_SECRET=local-dev-card-cvv-secret
-      - CARD_PAN_SECRET=local-dev-card-pan-secret

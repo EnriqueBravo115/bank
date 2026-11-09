@@ -40,7 +40,6 @@ import dev.enrique.bank.commons.enums.MovementType;
 import dev.enrique.bank.commons.enums.SecurityVerificationMethod;
 import dev.enrique.bank.commons.enums.TimePeriod;
 import dev.enrique.bank.commons.exception.InsufficientFundsException;
-import dev.enrique.bank.commons.util.CardSecurityCode;
 import dev.enrique.bank.dao.MovementRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.Movement;
@@ -64,8 +63,6 @@ class MovementControllerTest extends PostgresContainerConfig {
     private MovementRepository movementRepository;
     @Autowired
     private MovementService movementService;
-    @Autowired
-    private CardSecurityCode cardSecurityCode;
 
     private Account source;
     private Account target;
@@ -205,7 +202,7 @@ class MovementControllerTest extends PostgresContainerConfig {
         fixtures.card(target, "4123450000000019", CardStatus.ACTIVE, CARD_EXPIRATION);
 
         purchase("txn-p", purchaseBody("4123450000000019",
-                cardSecurityCode.of("4123450000000019", CARD_EXPIRATION)))
+                AccountFixtures.CVV))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.message").value("Card declined: the card is not linked to the account"));
         purchase("txn-p", purchaseBody("4000000000000002", "123"))
@@ -224,7 +221,7 @@ class MovementControllerTest extends PostgresContainerConfig {
         purchase("txn-p", purchaseBody(CARD, cvv()))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.message").value("Card declined: the card is BLOCKED"));
-        purchase("txn-p", purchaseBody("4123450000000027", cardSecurityCode.of("4123450000000027", expired)))
+        purchase("txn-p", purchaseBody("4123450000000027", AccountFixtures.CVV))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.message").value("Card declined: the card is expired"));
 
@@ -542,8 +539,8 @@ class MovementControllerTest extends PostgresContainerConfig {
                 .content(body));
     }
 
-    private String cvv() {
-        return cardSecurityCode.of(CARD, CARD_EXPIRATION);
+    private static String cvv() {
+        return AccountFixtures.CVV;
     }
 
     private static String purchaseBody(String cardNumber, String cvv) {
