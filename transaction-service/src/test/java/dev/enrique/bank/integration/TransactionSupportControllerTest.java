@@ -45,11 +45,11 @@ class TransactionSupportControllerTest extends PostgresContainerConfig {
     void setUp() {
         transactionRepository.deleteAll();
         transactionRepository.saveAll(List.of(
-                transaction("TXN-001", CLABE, TRANSFER, COMPLETED, "1500.00", "Pago de renta enero",
+                transaction("TXN-001", CLABE, TRANSFER, COMPLETED, "1500.00", "January rent payment",
                         LocalDateTime.of(2024, 1, 15, 9, 0)),
-                transaction("TXN-002", CLABE, SERVICE, COMPLETED, "300.00", "Pago de luz",
+                transaction("TXN-002", CLABE, SERVICE, COMPLETED, "300.00", "Electricity payment",
                         LocalDateTime.of(2024, 2, 4, 9, 0)),
-                transaction("TXN-003", CLABE, TRANSFER, FAILED, "50.00", "Retiro fallido",
+                transaction("TXN-003", CLABE, TRANSFER, FAILED, "50.00", "Failed withdrawal",
                         LocalDateTime.of(2024, 3, 1, 9, 0))));
     }
 
@@ -58,7 +58,7 @@ class TransactionSupportControllerTest extends PostgresContainerConfig {
         mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", ACCOUNT)
                 .with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", containsInAnyOrder("Pago", "de", "renta", "enero", "luz")));
+                .andExpect(jsonPath("$", containsInAnyOrder("January", "rent", "payment", "Electricity")));
     }
 
     @Test
@@ -67,9 +67,9 @@ class TransactionSupportControllerTest extends PostgresContainerConfig {
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Pago de renta enero"),
-                        containsString("Pago de luz"),
-                        not(containsString("Retiro fallido")))));
+                        containsString("January rent payment"),
+                        containsString("Electricity payment"),
+                        not(containsString("Failed withdrawal")))));
     }
 
     @Test

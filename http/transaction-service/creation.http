@@ -1,24 +1,24 @@
-# La cuenta origen debe ser del cliente (403 si no); un ADMIN puede usar cualquiera.
-# La respuesta trae transactionCode y el estado: COMPLETED, DECLINED (rechazo de account-service, con
-# el motivo), FAILED o PENDING (account-service no respondió; se reintenta solo).
+# The source account must belong to the customer (403 otherwise); an ADMIN can use any account.
+# The response has the transactionCode and the status: COMPLETED, DECLINED (rejected by account-service,
+# with the reason), FAILED or PENDING (account-service did not answer; it is retried automatically).
 @baseUrl = http://localhost:8000/api/v1/transaction/create
-@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@customerToken = PASTE_TOKEN_FROM_auth.http
 @accountNumber = ACC-1774713408076
 @clabe = 002010113717262634
 @targetAccountNumber = ACC-1847392018473
 @targetClabe = 002180700148685530
-# De account-service/card.http (POST /card): número y CVV de una tarjeta emitida a la cuenta
+# From account-service/card.http (POST /card): number and cvv of a card issued to the account
 @cardNumber = 4123450000000001
 @cvv = 000
 
-### Transferencia - número de cuenta a número de cuenta
+### Transfer - account number to account number
 POST {{baseUrl}}/transfer
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {
   "amount": 1500.00,
-  "description": "Pago de renta febrero",
+  "description": "February rent",
   "currency": "MX",
   "sourceIdentifier": "{{accountNumber}}",
   "sourceIdentifierType": "ACCOUNT",
@@ -26,14 +26,14 @@ Content-Type: application/json
   "targetIdentifierType": "ACCOUNT"
 }
 
-### Transferencia - CLABE a CLABE
+### Transfer - CLABE to CLABE
 POST {{baseUrl}}/transfer
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {
   "amount": 100.00,
-  "description": "Pago con CLABE",
+  "description": "Payment with CLABE",
   "currency": "MX",
   "sourceIdentifier": "{{clabe}}",
   "sourceIdentifierType": "CLABE",
@@ -41,14 +41,14 @@ Content-Type: application/json
   "targetIdentifierType": "CLABE"
 }
 
-### Transferencia - desde la cuenta de una tarjeta a una CLABE
+### Transfer - from the account of a card to a CLABE
 POST {{baseUrl}}/transfer
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {
   "amount": 50.00,
-  "description": "Transferencia desde la tarjeta",
+  "description": "Transfer from the card",
   "currency": "MX",
   "sourceIdentifier": "{{cardNumber}}",
   "sourceIdentifierType": "CARD",
@@ -56,14 +56,14 @@ Content-Type: application/json
   "targetIdentifierType": "CLABE"
 }
 
-### Compra con tarjeta: se declina si la tarjeta no es de la cuenta, no está ACTIVE, venció o el CVV no coincide
+### Card purchase: declined if the card is not linked to the account, is not ACTIVE, is expired or the cvv does not match
 POST {{baseUrl}}/purchase
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {
   "amount": 349.99,
-  "description": "Compra en tienda departamental",
+  "description": "Department store purchase",
   "sourceAccountNumber": "{{accountNumber}}",
   "sourceCardNumber": "{{cardNumber}}",
   "cvv": "{{cvv}}",
@@ -73,28 +73,28 @@ Content-Type: application/json
   "currency": "MX"
 }
 
-### Pago de servicio (ELECTRICITY, WATER, GAS u OTHER)
+### Service payment (ELECTRICITY, WATER, GAS or OTHER)
 POST {{baseUrl}}/service-payment
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {
   "amount": 875.50,
-  "description": "Pago de luz marzo",
+  "description": "March electricity bill",
   "sourceAccountNumber": "{{accountNumber}}",
   "paymentReference": "LUZ-RPT-20240317-0100",
   "serviceType": "ELECTRICITY",
   "currency": "MX"
 }
 
-### Retiro en cajero
+### ATM withdrawal
 POST {{baseUrl}}/withdrawal
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {
   "amount": 1000.00,
-  "description": "Retiro en cajero",
+  "description": "ATM withdrawal",
   "sourceAccountNumber": "{{accountNumber}}",
   "atmLocation": "Av. Insurgentes Sur 1234, CDMX",
   "atmSessionId": "ATM-SESSION-20240118-4521",

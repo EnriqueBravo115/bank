@@ -47,13 +47,13 @@ class TransactionAnalyticsControllerTest extends PostgresContainerConfig {
     void setUp() {
         transactionRepository.deleteAll();
         transactionRepository.saveAll(List.of(
-                transaction("TXN-001", CLABE, TRANSFER, COMPLETED, "1500.00", "Renta",
+                transaction("TXN-001", CLABE, TRANSFER, COMPLETED, "1500.00", "Rent",
                         LocalDateTime.of(2024, 1, 15, 9, 0)),
-                transaction("TXN-002", CLABE, TRANSFER, COMPLETED, "500.00", "Ahorro",
+                transaction("TXN-002", CLABE, TRANSFER, COMPLETED, "500.00", "Savings",
                         LocalDateTime.of(2024, 1, 25, 9, 0)),
-                transaction("TXN-003", CLABE, SERVICE, COMPLETED, "300.00", "Luz",
+                transaction("TXN-003", CLABE, SERVICE, COMPLETED, "300.00", "Electricity",
                         LocalDateTime.of(2024, 2, 4, 9, 0)),
-                transaction("TXN-004", CLABE, TRANSFER, FAILED, "999.00", "Rechazada",
+                transaction("TXN-004", CLABE, TRANSFER, FAILED, "999.00", "Rejected",
                         LocalDateTime.of(2024, 1, 20, 9, 0))));
     }
 

@@ -55,13 +55,13 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     void setUp() {
         transactionRepository.deleteAll();
         transactionRepository.saveAll(List.of(
-                transaction("TXN-001", CLABE, TRANSFER, COMPLETED, "1500.00", "Pago de renta enero",
+                transaction("TXN-001", CLABE, TRANSFER, COMPLETED, "1500.00", "January rent payment",
                         LocalDateTime.of(2024, 1, 15, 9, 30)),
-                transaction("TXN-002", CLABE, SERVICE, COMPLETED, "300.00", "Pago de luz",
+                transaction("TXN-002", CLABE, SERVICE, COMPLETED, "300.00", "Electricity payment",
                         LocalDateTime.of(2024, 3, 10, 11, 0)),
-                transaction("TXN-003", CLABE, TRANSFER, FAILED, "50.00", "Transferencia rechazada",
+                transaction("TXN-003", CLABE, TRANSFER, FAILED, "50.00", "Rejected transfer",
                         LocalDateTime.of(2023, 6, 1, 8, 0)),
-                transaction("TXN-004", CARD, PURCHASE, COMPLETED, "200.00", "Compra en tienda",
+                transaction("TXN-004", CARD, PURCHASE, COMPLETED, "200.00", "Store purchase",
                         LocalDateTime.of(2024, 2, 1, 18, 45))));
     }
 
@@ -121,7 +121,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].amount").value(300.00))
                 .andExpect(jsonPath("$.content[0].transactionCode").value("TXN-002"))
-                .andExpect(jsonPath("$.content[0].description").value("Pago de luz"))
+                .andExpect(jsonPath("$.content[0].description").value("Electricity payment"))
                 .andExpect(jsonPath("$.page.number").value(0))
                 .andExpect(jsonPath("$.page.size").value(1))
                 .andExpect(jsonPath("$.page.totalElements").value(2))
@@ -272,7 +272,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.transactionCode").value("TXN-001"))
-                .andExpect(jsonPath("$.description").value("Pago de renta enero"))
+                .andExpect(jsonPath("$.description").value("January rent payment"))
                 .andExpect(jsonPath("$.amount").value(1500.00))
                 .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
     }
@@ -310,11 +310,11 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
         mockMvc.perform(get(TRANSACTION_QUERY + "/keyword")
                 .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
-                .param("keyword", "RENTA")
+                .param("keyword", "RENT")
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].description").value("Pago de renta enero"));
+                .andExpect(jsonPath("$[0].description").value("January rent payment"));
     }
 
     // ---- source identifier: account number or CLABE ----
@@ -322,7 +322,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void history_byAccountNumber_includesTransactionsCreatedWithAccountOrClabe() throws Exception {
         transactionRepository.save(transaction("TXN-005", ACCOUNT, TRANSFER, COMPLETED, "80.00",
-                "Transferencia con numero de cuenta", LocalDateTime.of(2024, 4, 1, 10, 0)));
+                "Transfer with the account number", LocalDateTime.of(2024, 4, 1, 10, 0)));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
                 .param("sourceIdentifier", ACCOUNT)
@@ -336,7 +336,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void history_byClabe_resolvesTheAccountFirst() throws Exception {
         transactionRepository.save(transaction("TXN-005", ACCOUNT, TRANSFER, COMPLETED, "80.00",
-                "Transferencia con numero de cuenta", LocalDateTime.of(2024, 4, 1, 10, 0)));
+                "Transfer with the account number", LocalDateTime.of(2024, 4, 1, 10, 0)));
         when(accountClient.getByClabe(CLABE)).thenReturn(new AccountResponse(OWNER, ACCOUNT, CLABE, "OPEN"));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
@@ -351,7 +351,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void identifierType_byClabe_filtersByTheIdentifierTheyWereCreatedWith() throws Exception {
         transactionRepository.save(transaction("TXN-005", ACCOUNT, TRANSFER, COMPLETED, "80.00",
-                "Transferencia con numero de cuenta", LocalDateTime.of(2024, 4, 1, 10, 0)));
+                "Transfer with the account number", LocalDateTime.of(2024, 4, 1, 10, 0)));
         when(accountClient.getByClabe(CLABE)).thenReturn(new AccountResponse(OWNER, ACCOUNT, CLABE, "OPEN"));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/identifier-type")

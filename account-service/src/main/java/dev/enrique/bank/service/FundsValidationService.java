@@ -6,12 +6,12 @@ import dev.enrique.bank.commons.enums.LimitType;
 
 public interface FundsValidationService {
     Boolean hasSufficientFunds(String accountNumber, BigDecimal amount);
-    // saldo que el cliente puede usar realmente(bloqueos, retenciones etc)
+    // Balance the customer can actually use (after holds, withholdings, etc.)
     BigDecimal getAvailableBalance(String accountNumber);
-    // hay fondos bloqueados por compras por tarjetas
+    // Takes into account funds on hold from card purchases
     Boolean hasSufficientFundsIncludingHolds(String accountNumber, BigDecimal amount);
-    // evita que un cliente mas de su limite por cuenta
+    // Keeps a customer from spending more than the account's daily limit
     Boolean isWithinDailyLimit(String accountNumber, BigDecimal amount, LimitType limitType);
-    // analizar rangos de limite por tipo de cuenta
+    // Checks the per-transaction limit of the account for the movement type
     Boolean isWithinTransactionLimit(String accountNumber, BigDecimal amount, LimitType limitType);
 }

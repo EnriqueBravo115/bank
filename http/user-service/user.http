@@ -1,26 +1,26 @@
 @baseUrl = http://localhost:8000/api/v1/user
-@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
-@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@customerToken = PASTE_TOKEN_FROM_auth.http
+@adminToken = PASTE_TOKEN_FROM_auth.http
 @userId = 1
 
-### Mi usuario (CUSTOMER_BASIC)
+### My user (CUSTOMER_BASIC)
 GET {{baseUrl}}/me
 Authorization: Bearer {{customerToken}}
 
-### Usuario por id (ADMIN)
+### User by id (ADMIN)
 GET {{baseUrl}}/get-by-id/{{userId}}
 Authorization: Bearer {{adminToken}}
 
-### Usuario por email (ADMIN)
+### User by email (ADMIN)
 GET {{baseUrl}}/get-by-email/ana.martinez92@gmail.com
 Authorization: Bearer {{adminToken}}
 
-### Usuarios activos, paginado: page desde 0, size 1-100 (ADMIN)
+### Active users, paginated: page from 0, size 1-100 (ADMIN)
 GET {{baseUrl}}/get-active?page=0&size=20
 Authorization: Bearer {{adminToken}}
 
-### Cambiar nivel de cliente: CUSTOMER_BASIC, CUSTOMER_PREMIUM o CUSTOMER_BUSINESS (ADMIN)
-### El usuario debe iniciar sesión de nuevo para tener el rol en su token
+### Change the customer tier: CUSTOMER_BASIC, CUSTOMER_PREMIUM or CUSTOMER_BUSINESS (ADMIN)
+### The user must log in again to get the new role in their token
 PUT {{baseUrl}}/{{userId}}/role
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -29,7 +29,7 @@ Content-Type: application/json
   "role": "CUSTOMER_PREMIUM"
 }
 
-### Bloquear: deshabilita el usuario en Keycloak y congela su cuenta en account-service (ADMIN)
+### Block: disables the user in Keycloak and freezes their account in account-service (ADMIN)
 PUT {{baseUrl}}/{{userId}}/active
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -38,7 +38,7 @@ Content-Type: application/json
   "active": false
 }
 
-### Desbloquear (ADMIN)
+### Unblock (ADMIN)
 PUT {{baseUrl}}/{{userId}}/active
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -47,7 +47,7 @@ Content-Type: application/json
   "active": true
 }
 
-### Cambiar mi email: también es el usuario de login; llega una verificación a http://localhost:8025 (CUSTOMER_BASIC)
+### Change my email: it is also the login username; a verification email is sent to http://localhost:8025 (CUSTOMER_BASIC)
 PUT {{baseUrl}}/me/email
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
@@ -56,7 +56,7 @@ Content-Type: application/json
   "email": "ana.martinez.nuevo@gmail.com"
 }
 
-### Cambiar mi teléfono (CUSTOMER_BASIC)
+### Change my phone (CUSTOMER_BASIC)
 PUT {{baseUrl}}/me/phone
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json

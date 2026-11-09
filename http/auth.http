@@ -1,14 +1,14 @@
-# Tokens de Keycloak (expiran en 5 minutos). Copia el access_token de la respuesta en la
-# variable de token del archivo que vayas a usar:
-#   @customerToken -> cliente con registro COMPLETE (rol CUSTOMER_BASIC)
-#   @registerToken -> cliente a mitad del registro (registration_status != COMPLETE)
-#   @adminToken    -> admin-user (rol ADMIN)
-#   @serviceToken  -> transaction-service (rol SERVICE), para llamar a account-service directo
+# Keycloak tokens (they expire in 5 minutes). Copy the access_token of the response into the
+# token variable of the file you are going to use:
+#   @customerToken -> customer with a COMPLETE registration (role CUSTOMER_BASIC)
+#   @registerToken -> customer halfway through registration (registration_status != COMPLETE)
+#   @adminToken    -> admin-user (role ADMIN)
+#   @serviceToken  -> transaction-service (role SERVICE), to call account-service directly
 @keycloak = http://localhost:9090/realms/bank/protocol/openid-connect/token
 @email = ana.martinez92@gmail.com
 @password = secure1!
 
-### Customer token (también sirve como @registerToken durante el registro)
+### Customer token (also the @registerToken during registration)
 POST {{keycloak}}
 Content-Type: application/x-www-form-urlencoded
 
@@ -20,7 +20,7 @@ Content-Type: application/x-www-form-urlencoded
 
 grant_type=password&client_id=kong&client_secret=kong-client-secret&username=admin@bank.com&password=admin123
 
-### Service token de transaction-service (client credentials)
+### transaction-service service token (client credentials)
 POST {{keycloak}}
 Content-Type: application/x-www-form-urlencoded
 

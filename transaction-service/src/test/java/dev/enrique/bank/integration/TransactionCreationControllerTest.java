@@ -166,7 +166,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     @Test
     void shouldResolveIdentifiersByTheirType() throws Exception {
         when(accountClient.processTransfer(anyString(), any())).thenReturn(COMPLETED);
-        TransferRequest request = new TransferRequest(new BigDecimal("10.00"), "Pago", Currency.MX,
+        TransferRequest request = new TransferRequest(new BigDecimal("10.00"), "Payment", Currency.MX,
                 SOURCE_ACCOUNT, IdentifierType.ACCOUNT, TARGET_CLABE, IdentifierType.CLABE);
 
         post(TRANSACTION_CREATE + "/transfer", request, customer()).andExpect(status().isOk());
@@ -200,7 +200,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         when(accountClient.getByCardNumber(CARD))
                 .thenReturn(new AccountResponse(OWNER, SOURCE_ACCOUNT, SOURCE_CLABE, "OPEN"));
         when(accountClient.processTransfer(anyString(), any())).thenReturn(COMPLETED);
-        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Pago", Currency.MX,
+        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Payment", Currency.MX,
                 CARD, IdentifierType.CARD, TARGET_CLABE, IdentifierType.CLABE);
 
         post(TRANSACTION_CREATE + "/transfer", request, customer())
@@ -217,7 +217,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     @Test
     void shouldReturn404ForUnknownCard_withoutEchoingTheFullNumber() throws Exception {
         when(accountClient.getByCardNumber(CARD)).thenThrow(FeignErrors.status(404, ""));
-        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Pago", Currency.MX,
+        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Payment", Currency.MX,
                 CARD, IdentifierType.CARD, TARGET_CLABE, IdentifierType.CLABE);
 
         post(TRANSACTION_CREATE + "/transfer", request, customer())
@@ -230,7 +230,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     void shouldRejectCardOfAnotherUser_withoutEchoingTheFullNumber() throws Exception {
         when(accountClient.getByCardNumber(CARD))
                 .thenReturn(new AccountResponse(OTHER_USER, TARGET_ACCOUNT, TARGET_CLABE, "OPEN"));
-        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Pago", Currency.MX,
+        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Payment", Currency.MX,
                 CARD, IdentifierType.CARD, SOURCE_CLABE, IdentifierType.CLABE);
 
         post(TRANSACTION_CREATE + "/transfer", request, customer())
@@ -332,7 +332,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     void shouldRegisterServicePayment() throws Exception {
         when(accountClient.processService(anyString(), any())).thenReturn(COMPLETED);
 
-        ServiceRequest request = new ServiceRequest(new BigDecimal("875.50"), "Pago de CFE",
+        ServiceRequest request = new ServiceRequest(new BigDecimal("875.50"), "Electricity bill payment",
                 SOURCE_ACCOUNT, "CFE-RPT-0099", ServiceType.ELECTRICITY, Currency.MX);
 
         post(TRANSACTION_CREATE + "/service-payment", request, customer())
@@ -349,7 +349,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
 
     @Test
     void shouldRejectServicePaymentFromAccountOfAnotherUser() throws Exception {
-        ServiceRequest request = new ServiceRequest(new BigDecimal("875.50"), "Pago de CFE",
+        ServiceRequest request = new ServiceRequest(new BigDecimal("875.50"), "Electricity bill payment",
                 TARGET_ACCOUNT, "CFE-RPT-0099", ServiceType.ELECTRICITY, Currency.MX);
 
         post(TRANSACTION_CREATE + "/service-payment", request, customer()).andExpect(status().isForbidden());
@@ -361,7 +361,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     void shouldRegisterPurchaseSendingTheCvvOnlyOnTheFirstAttempt() throws Exception {
         when(accountClient.processPurchase(anyString(), any())).thenReturn(UNKNOWN, COMPLETED);
 
-        PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Compra en tienda",
+        PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Store purchase",
                 SOURCE_ACCOUNT, CARD, "MERC-001", "RETAIL", "POS-001", "123", Currency.MX);
 
         post(TRANSACTION_CREATE + "/purchase", request, customer())
@@ -382,7 +382,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
 
     @Test
     void shouldRejectPurchaseWithoutSourceAccount() throws Exception {
-        PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Compra en tienda",
+        PurchaseRequest request = new PurchaseRequest(new BigDecimal("349.99"), "Store purchase",
                 null, CARD, "MERC-001", "RETAIL", "POS-001", "123", Currency.MX);
 
         post(TRANSACTION_CREATE + "/purchase", request, customer()).andExpect(status().isBadRequest());
@@ -394,7 +394,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     void shouldRegisterWithdrawal() throws Exception {
         when(accountClient.processWithdrawal(anyString(), any())).thenReturn(COMPLETED);
 
-        WithdrawalRequest request = new WithdrawalRequest(new BigDecimal("1000.00"), "Retiro en cajero",
+        WithdrawalRequest request = new WithdrawalRequest(new BigDecimal("1000.00"), "ATM withdrawal",
                 SOURCE_ACCOUNT, "Av. Insurgentes Sur 1234", "ATM-SESSION-1", "RCP-1", null, null,
                 new BigDecimal("25.00"), Currency.MX, SecurityVerificationMethod.PIN, WithdrawalMethod.DEBIT_CARD);
 
@@ -512,7 +512,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     }
 
     private static TransferRequest transferRequest(String source, String target, String amount) {
-        return new TransferRequest(new BigDecimal(amount), "Pago de renta", Currency.MX,
+        return new TransferRequest(new BigDecimal(amount), "Rent payment", Currency.MX,
                 source, IdentifierType.CLABE, target, IdentifierType.CLABE);
     }
 }

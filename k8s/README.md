@@ -1,34 +1,34 @@
 # Kubernetes (kind)
 
-Despliegue de la arquitectura en un clúster local de [kind](https://kind.sigs.k8s.io/).
+Deployment of the architecture on a local [kind](https://kind.sigs.k8s.io/) cluster.
 
-## Requisitos
-- Docker con buildx
+## Requirements
+- Docker with buildx
 - kind
 - kubectl
 
-## Despliegue
+## Deployment
 
-Los puertos 8000, 9090, 8761 y 8083 del host deben estar libres
-(detén `docker compose` antes: `docker compose down`).
+Host ports 8000, 9090, 8761 and 8083 must be free
+(stop `docker compose` first: `docker compose down`).
 
 ```bash
-# 1. Crear el clúster (expone los puertos del host definidos en kind-config.yaml)
+# 1. Create the cluster (exposes the host ports defined in kind-config.yaml)
 kind create cluster --config k8s/kind-config.yaml
 
-# 2. Construir las imágenes de los servicios y cargarlas en el clúster
+# 2. Build the service images and load them into the cluster
 ./k8s/build-images.sh
 
-# 3. Aplicar los manifiestos
+# 3. Apply the manifests
 kubectl apply -k k8s
 
-# 4. Esperar a que todo esté listo y probar los servicios a través de Kong
+# 4. Wait until everything is ready and test the services through Kong
 ./k8s/smoke-test.sh
 ```
 
-## Acceso desde el host
+## Access from the host
 
-| Componente   | URL                       |
+| Component    | URL                       |
 |--------------|---------------------------|
 | Kong (proxy) | http://localhost:8000     |
 | Keycloak     | http://localhost:9090     |
@@ -36,8 +36,8 @@ kubectl apply -k k8s
 | Kafka UI     | http://localhost:8083     |
 | Mailpit      | http://localhost:8025     |
 
-Los microservicios, las bases de datos y Kafka solo son accesibles dentro del clúster;
-el tráfico externo entra por Kong.
+The microservices, the databases and Kafka are only reachable inside the cluster;
+external traffic comes in through Kong.
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:9090/realms/bank/protocol/openid-connect/token \
@@ -47,38 +47,38 @@ TOKEN=$(curl -s -X POST http://localhost:9090/realms/bank/protocol/openid-connec
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/user/get-active
 ```
 
-## Estructura
+## Structure
 
 ```
 k8s/
-├── kind-config.yaml       # clúster kind + mapeo de puertos al host
-├── kustomization.yaml     # punto de entrada (kubectl apply -k k8s)
-├── build-images.sh        # build + kind load de las imágenes
-├── smoke-test.sh          # espera los pods y prueba los servicios vía Kong
+├── kind-config.yaml       # kind cluster + port mapping to the host
+├── kustomization.yaml     # entry point (kubectl apply -k k8s)
+├── build-images.sh        # builds the images and loads them with kind load
+├── smoke-test.sh          # waits for the pods and tests the services through Kong
 ├── namespace.yaml
-├── databases/             # PostgreSQL (StatefulSet + PVC) por servicio y Keycloak
-├── kafka/                 # broker (KRaft) y kafka-ui
-├── mailpit/               # SMTP falso para los correos de verificación de Keycloak
+├── databases/             # PostgreSQL (StatefulSet + PVC) per service and for Keycloak
+├── kafka/                 # broker (KRaft) and kafka-ui
+├── mailpit/               # fake SMTP server for Keycloak's verification emails
 ├── keycloak/              # Keycloak + realm-export.json (ConfigMap)
-├── kong/                  # Kong DB-less + kong.yml (ConfigMap)
-└── services/              # eureka, config-server y microservicios
+├── kong/                  # DB-less Kong + kong.yml (ConfigMap)
+└── services/              # eureka, config-server and the microservices
 ```
 
-## Diferencias con docker-compose
-- **Kong en modo DB-less**: las rutas se cargan desde `kong/kong.yml` al arrancar.
-  Sustituye a `kong-db`, `kong-migration` y `kong-deck`.
-  Para cambiar rutas: editar `kong/kong.yml` y volver a aplicar con `kubectl apply -k k8s`
-  (el ConfigMap cambia de nombre y Kong se reinicia automáticamente).
-- **Orden de arranque**: en lugar de `depends_on`, cada servicio usa `initContainers`
-  que esperan a sus dependencias (config-server, base de datos, Keycloak, Kafka).
-- **Eureka**: los servicios se registran con la IP del pod (`EUREKA_INSTANCE_PREFER_IP_ADDRESS`),
-  porque el hostname de un pod no se resuelve por DNS dentro del clúster.
-- **`enableServiceLinks: false`** en todos los pods: evita que Kubernetes inyecte variables como
-  `KAFKA_UI_PORT=tcp://...`, que Kafka, Kong y Spring interpretarían como configuración.
-- `keycloak/realm-export.json` y `kong/kong.yml` son la única copia de esos archivos:
-  `docker-compose.yml` también los monta desde `k8s/`.
+## Differences from docker-compose
+- **DB-less Kong**: the routes are loaded from `kong/kong.yml` at startup.
+  It replaces `kong-db`, `kong-migration` and `kong-deck`.
+  To change routes: edit `kong/kong.yml` and apply again with `kubectl apply -k k8s`
+  (the ConfigMap gets a new name and Kong restarts automatically).
+- **Startup order**: instead of `depends_on`, each service uses `initContainers`
+  that wait for its dependencies (config-server, database, Keycloak, Kafka).
+- **Eureka**: services register with the pod IP (`EUREKA_INSTANCE_PREFER_IP_ADDRESS`),
+  because a pod's hostname does not resolve through DNS inside the cluster.
+- **`enableServiceLinks: false`** on every pod: keeps Kubernetes from injecting variables such as
+  `KAFKA_UI_PORT=tcp://...`, which Kafka, Kong and Spring would read as configuration.
+- `keycloak/realm-export.json` and `kong/kong.yml` are the only copy of those files:
+  `docker-compose.yml` also mounts them from `k8s/`.
 
-## Limpieza
+## Cleanup
 
 ```bash
 kind delete cluster --name bank

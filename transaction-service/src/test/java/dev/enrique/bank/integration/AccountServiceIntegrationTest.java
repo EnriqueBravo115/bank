@@ -168,7 +168,7 @@ class AccountServiceIntegrationTest extends PostgresContainerConfig {
     }
 
     private ResultActions transfer() throws Exception {
-        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Pago de renta", Currency.MX,
+        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Rent payment", Currency.MX,
                 SOURCE_CLABE, IdentifierType.CLABE, TARGET_CLABE, IdentifierType.CLABE);
         return mockMvc.perform(post(TRANSACTION_CREATE + "/transfer")
                 .with(customer())

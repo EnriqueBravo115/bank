@@ -1,20 +1,20 @@
 @baseUrl = http://localhost:8000/api/v1/user/profile
-@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
-@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@customerToken = PASTE_TOKEN_FROM_auth.http
+@adminToken = PASTE_TOKEN_FROM_auth.http
 @userId = 1
 
-### Mi perfil (CUSTOMER_BASIC)
+### My profile (CUSTOMER_BASIC)
 GET {{baseUrl}}/me
 Authorization: Bearer {{customerToken}}
 
-### Perfil de un usuario (ADMIN)
+### Profile of a user (ADMIN)
 GET {{baseUrl}}/get-detail/{{userId}}
 Authorization: Bearer {{adminToken}}
 
-### Buscar por nombre, paginado (ADMIN)
+### Search by name, paginated (ADMIN)
 GET {{baseUrl}}/search/ana?page=0&size=20
 Authorization: Bearer {{adminToken}}
 
-### Por estado de registro, paginado (ADMIN)
+### By registration status, paginated (ADMIN)
 GET {{baseUrl}}/get-by-status/COMPLETE?page=0&size=20
 Authorization: Bearer {{adminToken}}

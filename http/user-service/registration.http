@@ -1,9 +1,9 @@
-# Registro de un cliente, en orden. Después de cada paso vuelve a pedir el token en auth.http:
-# el claim registration_status avanza (REGISTER -> PROFILE -> KYC -> COMPLETE).
+# Customer registration, in order. After each step request the token again in auth.http:
+# the registration_status claim moves forward (REGISTER -> PROFILE -> KYC -> COMPLETE).
 @baseUrl = http://localhost:8000/api/v1/user/register
-@registerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@registerToken = PASTE_TOKEN_FROM_auth.http
 
-### PASO 1 - Registro (público): crea el usuario en Keycloak y en user_db
+### STEP 1 - Register (public): creates the user in Keycloak and in user_db
 POST {{baseUrl}}
 Content-Type: application/json
 
@@ -14,14 +14,14 @@ Content-Type: application/json
   "phoneNumber": "6649876543"
 }
 
-### PASO 2 - Pide el token en auth.http y verifica el email con el enlace que llega a
-### Mailpit (http://localhost:8025). Es obligatorio antes del KYC.
+### STEP 2 - Request the token in auth.http and verify the email with the link sent to
+### Mailpit (http://localhost:8025). Required before the KYC step.
 
-### Reenviar el email de verificación
+### Resend the verification email
 POST {{baseUrl}}/me/verify-email
 Authorization: Bearer {{registerToken}}
 
-### Corregir un email mal escrito (antes del KYC); se envía otra verificación y se inicia sesión con el nuevo
+### Fix a mistyped email (before KYC); a new verification is sent and you log in with the new email
 PUT {{baseUrl}}/me/email
 Authorization: Bearer {{registerToken}}
 Content-Type: application/json
@@ -30,7 +30,7 @@ Content-Type: application/json
   "email": "ana.martinez92@gmail.com"
 }
 
-### PASO 3 - Perfil (birthday en dd/MM/yyyy)
+### STEP 3 - Profile (birthday as dd/MM/yyyy)
 PUT {{baseUrl}}/me/profile
 Authorization: Bearer {{registerToken}}
 Content-Type: application/json
@@ -44,8 +44,8 @@ Content-Type: application/json
   "countryOfBirth": "MX"
 }
 
-### PASO 4 - KYC: CURP y RFC deben coincidir entre sí y con nombre y birthday.
-### Asigna CUSTOMER_BASIC y pide la cuenta a account-service (Kafka)
+### STEP 4 - KYC: CURP and RFC must match each other and the name and birthday.
+### Assigns CUSTOMER_BASIC and requests the account from account-service (Kafka)
 PUT {{baseUrl}}/me/kyc
 Authorization: Bearer {{registerToken}}
 Content-Type: application/json
@@ -56,7 +56,7 @@ Content-Type: application/json
   "documentType": "NATIONAL_ID_CARD"
 }
 
-### PASO 5 (opcional) - Información financiera
+### STEP 5 (optional) - Financial information
 PUT {{baseUrl}}/me/financial
 Authorization: Bearer {{registerToken}}
 Content-Type: application/json

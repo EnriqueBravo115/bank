@@ -1,12 +1,12 @@
 @baseUrl = http://localhost:8000/api/v1/user/financial-info
-@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
-@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@customerToken = PASTE_TOKEN_FROM_auth.http
+@adminToken = PASTE_TOKEN_FROM_auth.http
 @userId = 1
 
-### Mi información financiera (CUSTOMER_BASIC)
+### My financial information (CUSTOMER_BASIC)
 GET {{baseUrl}}/me
 Authorization: Bearer {{customerToken}}
 
-### Información financiera de un usuario (ADMIN)
+### Financial information of a user (ADMIN)
 GET {{baseUrl}}/get-detail/{{userId}}
 Authorization: Bearer {{adminToken}}

@@ -23,7 +23,7 @@ public class UserKycDataRequest {
     @Pattern(regexp = CURP_PATTERN, message = "must be a valid CURP (18 characters, uppercase)")
     private String curp;
 
-    // Persona física: 4 letters, birth date YYMMDD, 2-character homoclave and check digit (0-9 or A).
+    // Individual (persona física): 4 letters, birth date YYMMDD, 2-character homoclave and check digit (0-9 or A).
     @NotBlank
     @Pattern(regexp = RFC_PATTERN, message = "must be a valid RFC for an individual (13 characters, uppercase)")
     private String rfc;

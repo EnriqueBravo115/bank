@@ -1,12 +1,12 @@
-# Descripciones de las transacciones COMPLETED de una cuenta (por número de cuenta).
+# Descriptions of an account's COMPLETED transactions (by account number).
 @baseUrl = http://localhost:8000/api/v1/transaction/support
-@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@customerToken = PASTE_TOKEN_FROM_auth.http
 @accountNumber = ACC-1774713408076
 
-### Palabras únicas de las descripciones (ADMIN, CUSTOMER_BASIC)
+### Unique words of the descriptions (ADMIN, CUSTOMER_BASIC)
 GET {{baseUrl}}/unique-descriptions/{{accountNumber}}
 Authorization: Bearer {{customerToken}}
 
-### Todas las descripciones separadas por coma (ADMIN, CUSTOMER_BASIC)
+### All descriptions, comma separated (ADMIN, CUSTOMER_BASIC)
 GET {{baseUrl}}/all-descriptions/{{accountNumber}}
 Authorization: Bearer {{customerToken}}

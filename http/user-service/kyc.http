@@ -1,20 +1,20 @@
 @baseUrl = http://localhost:8000/api/v1/user/kyc
-@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
-@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@customerToken = PASTE_TOKEN_FROM_auth.http
+@adminToken = PASTE_TOKEN_FROM_auth.http
 @userId = 1
 
-### Mi KYC (CUSTOMER_BASIC)
+### My KYC (CUSTOMER_BASIC)
 GET {{baseUrl}}/me
 Authorization: Bearer {{customerToken}}
 
-### KYC de un usuario (ADMIN)
+### KYC of a user (ADMIN)
 GET {{baseUrl}}/get-detail/{{userId}}
 Authorization: Bearer {{adminToken}}
 
-### Por RFC (ADMIN)
+### By RFC (ADMIN)
 GET {{baseUrl}}/get-by-rfc/MALA920615AB3
 Authorization: Bearer {{adminToken}}
 
-### Por CURP (ADMIN)
+### By CURP (ADMIN)
 GET {{baseUrl}}/get-by-curp/MALA920615MSLRPN09
 Authorization: Bearer {{adminToken}}
