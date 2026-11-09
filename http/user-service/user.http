@@ -1,63 +1,64 @@
 @baseUrl = http://localhost:8000/api/v1/user
-@tokenBasic = eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJBSENKRVhjb01KWDFiTEVJRHpjeFBYVGRfLUt4SzlWVFhzVWJwQ0VtVHZnIn0.eyJleHAiOjE3OTM4MTIyMDEsImlhdCI6MTc5MzgxMTkwMSwianRpIjoiNzQwNjJhY2UtNmVhMC00MmVjLTk2ZTYtMDk5OWQ3YmVmZjI5IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImRlMDFmODdhLTVjNzEtNDQzMS05MWJjLWVlNjYxYmJjZjc2OSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImtvbmciLCJzaWQiOiI4NGViODA3ZC03MWM0LTRlOTAtOWUxOS1lNzlhY2EyMjgzODUiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIkNVU1RPTUVSX0JBU0lDIiwib2ZmbGluZV9hY2Nlc3MiLCJkZWZhdWx0LXJvbGVzLWJhbmsiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyZWdpc3RyYXRpb25fc3RhdHVzIjoiQ09NUExFVEUiLCJuYW1lIjoiQW5hIE1hcnRpbmV6IExvcGV6IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYW5hLm1hcnRpbmV6OTJAZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6IkFuYSIsImZhbWlseV9uYW1lIjoiTWFydGluZXogTG9wZXoiLCJlbWFpbCI6ImFuYS5tYXJ0aW5lejkyQGdtYWlsLmNvbSJ9.1rb_W2UTY9LBcmM61TJRBy9qM69mDdfXXyt9zLvzUUa-yg-coz2M-2z4leiCjgQLhvCSkQ-8PQCVPQ7SDk0wczJeGOoK_EgV4xUb0zSLxSOldxJ6P9XKgfB3KYJYqueFrOYz0EV1MgJOM0bU8HDujZpdsmpuD1aog9GFAqJX9Gofinal2yaqXBAdrb2E0Rl3HOjIxg4XVzzcNiMoWXGxa8D57CyPQImrlZgFmY1e5IPK9bgZ6Q2Aq2JJ8MMPPaGsrKIhjwa7NLzLJGAkb5iEjqEJwCpRV5afvkZaOPuZPhtKAnOUwhYNlrQzks66Z3XY5Bh7QWnd-nVDMh6HTOesyg
-@tokenAdmin = eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJBSENKRVhjb01KWDFiTEVJRHpjeFBYVGRfLUt4SzlWVFhzVWJwQ0VtVHZnIn0.eyJleHAiOjE3OTM4MTIyNDYsImlhdCI6MTc5MzgxMTk0NiwianRpIjoiMTFlNTE4MmItYjgwZC00MjA5LThjMTMtMWYyYzgwM2NjYzY4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwic3ViIjoiYjYwNDE0NTEtMDdhMi00ZjQyLTk2NTItYTc5NWNkMjk4YWI1IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoia29uZyIsInNpZCI6IjYwOTBmNTAwLWU3NWQtNDQ2MC1iMmVjLWEyYTgyZGYyOWE4YiIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiQURNSU4iXX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicmVnaXN0cmF0aW9uX3N0YXR1cyI6IkNPTVBMRVRFIiwibmFtZSI6IkFkbWluIFVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi11c2VyIiwiZ2l2ZW5fbmFtZSI6IkFkbWluIiwiZmFtaWx5X25hbWUiOiJVc2VyIiwiZW1haWwiOiJhZG1pbkBiYW5rLmNvbSJ9.3bxOyAPfTjBFINAr31fm4SToFqGDPCzE-HKuDIKBAGtd6oSCq5mnJm2v1RBGvlsbUSwdRjHfXLCI1VwK3RB7theXgpuU_iNwrZecOCT7c5tovNqIEfNfBe1zzUV5dlq2DFCC0uwskej2sEaS9m8bQNhiD4NxqP2LLAu4Jr2SwcdwD-yKssyUKLaJeRn5VY8Q_PHli-gwNeUZFHd_qdWhMbIWb331NYMxzAj_0Foge_2U6jDxThlWTGzyyjnOcGbhMQynSVO8VbE1_NhD8P-O8byQ-GTNlgPh_m6YTnE8hsHrU940aCrQc1T9hRkhn5_KWSjOYcRTT9fQQ23Pz06yzQ
+@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@userId = 1
 
-### GET user - me (CUSTOMER_BASIC)
+### Mi usuario (CUSTOMER_BASIC)
 GET {{baseUrl}}/me
-Authorization: Bearer {{tokenBasic}}
+Authorization: Bearer {{customerToken}}
 
-### GET user - by ID (ADMIN)
-GET {{baseUrl}}/get-by-id/1
-Authorization: Bearer {{tokenAdmin}}
+### Usuario por id (ADMIN)
+GET {{baseUrl}}/get-by-id/{{userId}}
+Authorization: Bearer {{adminToken}}
 
-### GET user - by email (ADMIN)
+### Usuario por email (ADMIN)
 GET {{baseUrl}}/get-by-email/ana.martinez92@gmail.com
-Authorization: Bearer {{tokenAdmin}}
+Authorization: Bearer {{adminToken}}
 
-### GET user - active (ADMIN), paginated: page (from 0) and size (1-100, default 20)
+### Usuarios activos, paginado: page desde 0, size 1-100 (ADMIN)
 GET {{baseUrl}}/get-active?page=0&size=20
-Authorization: Bearer {{tokenAdmin}}
+Authorization: Bearer {{adminToken}}
 
-### PUT user - change customer tier (ADMIN). Allowed: CUSTOMER_BASIC, CUSTOMER_PREMIUM, CUSTOMER_BUSINESS
-# The user must log in again to get a token with the new role.
-PUT {{baseUrl}}/1/role
-Authorization: Bearer {{tokenAdmin}}
+### Cambiar nivel de cliente: CUSTOMER_BASIC, CUSTOMER_PREMIUM o CUSTOMER_BUSINESS (ADMIN)
+### El usuario debe iniciar sesión de nuevo para tener el rol en su token
+PUT {{baseUrl}}/{{userId}}/role
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
   "role": "CUSTOMER_PREMIUM"
 }
 
-### PUT user - block (ADMIN). Disables the Keycloak user and freezes the account in account-service
-PUT {{baseUrl}}/1/active
-Authorization: Bearer {{tokenAdmin}}
+### Bloquear: deshabilita el usuario en Keycloak y congela su cuenta en account-service (ADMIN)
+PUT {{baseUrl}}/{{userId}}/active
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
   "active": false
 }
 
-### PUT user - unblock (ADMIN)
-PUT {{baseUrl}}/1/active
-Authorization: Bearer {{tokenAdmin}}
+### Desbloquear (ADMIN)
+PUT {{baseUrl}}/{{userId}}/active
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
   "active": true
 }
 
-### PUT user - change my email (CUSTOMER_BASIC). Also the login username; a verification email is sent to http://localhost:8025
+### Cambiar mi email: también es el usuario de login; llega una verificación a http://localhost:8025 (CUSTOMER_BASIC)
 PUT {{baseUrl}}/me/email
-Authorization: Bearer {{tokenBasic}}
+Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {
   "email": "ana.martinez.nuevo@gmail.com"
 }
 
-### PUT user - change my phone (CUSTOMER_BASIC)
+### Cambiar mi teléfono (CUSTOMER_BASIC)
 PUT {{baseUrl}}/me/phone
-Authorization: Bearer {{tokenBasic}}
+Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 
 {

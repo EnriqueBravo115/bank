@@ -196,14 +196,46 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void shouldRejectCardIdentifiers() throws Exception {
+    void shouldResolveCardIdentifiersToTheirAccount() throws Exception {
+        when(accountClient.getByCardNumber(CARD))
+                .thenReturn(new AccountResponse(OWNER, SOURCE_ACCOUNT, SOURCE_CLABE, "OPEN"));
+        when(accountClient.processTransfer(anyString(), any())).thenReturn(COMPLETED);
         TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Pago", Currency.MX,
                 CARD, IdentifierType.CARD, TARGET_CLABE, IdentifierType.CLABE);
 
         post(TRANSACTION_CREATE + "/transfer", request, customer())
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(
-                        "Card identifiers are not supported yet: use the account number or the CLABE"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
+
+        Transaction saved = singleSavedTransaction();
+        verify(accountClient).processTransfer(saved.getTransactionCode(),
+                new ClientTransferRequest(new BigDecimal("250.00"), SOURCE_ACCOUNT, TARGET_ACCOUNT));
+        assertThat(saved.getAccountNumber()).isEqualTo(SOURCE_ACCOUNT);
+        assertThat(saved.getIdentifierType()).isEqualTo(IdentifierType.CARD);
+    }
+
+    @Test
+    void shouldReturn404ForUnknownCard_withoutEchoingTheFullNumber() throws Exception {
+        when(accountClient.getByCardNumber(CARD)).thenThrow(FeignErrors.status(404, ""));
+        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Pago", Currency.MX,
+                CARD, IdentifierType.CARD, TARGET_CLABE, IdentifierType.CLABE);
+
+        post(TRANSACTION_CREATE + "/transfer", request, customer())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Account not found with CARD: **** 1111"));
+        assertThat(transactionRepository.count()).isZero();
+    }
+
+    @Test
+    void shouldRejectCardOfAnotherUser_withoutEchoingTheFullNumber() throws Exception {
+        when(accountClient.getByCardNumber(CARD))
+                .thenReturn(new AccountResponse(OTHER_USER, TARGET_ACCOUNT, TARGET_CLABE, "OPEN"));
+        TransferRequest request = new TransferRequest(new BigDecimal("250.00"), "Pago", Currency.MX,
+                CARD, IdentifierType.CARD, SOURCE_CLABE, IdentifierType.CLABE);
+
+        post(TRANSACTION_CREATE + "/transfer", request, customer())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Account **** 1111 does not belong to the user"));
     }
 
     @Test

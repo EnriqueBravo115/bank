@@ -1,0 +1,31 @@
+# Una tarjeta de débito en uso por cuenta. El CVV no se guarda: solo aparece al emitirla.
+@baseUrl = http://localhost:8000/api/v1/account/card
+@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@cardId = 1
+
+### Emitir una tarjeta para mi cuenta, a nombre del claim "name" del token (CUSTOMER_BASIC)
+### Única respuesta con el número completo y el CVV: guárdalos para las compras.
+### 409 si la cuenta ya tiene una tarjeta ACTIVE o BLOCKED
+POST {{baseUrl}}
+Authorization: Bearer {{customerToken}}
+
+### Mis tarjetas, con el número enmascarado (CUSTOMER_BASIC)
+GET {{baseUrl}}/me
+Authorization: Bearer {{customerToken}}
+
+### Bloquear: ACTIVE -> BLOCKED (dueño CUSTOMER_BASIC o ADMIN)
+POST {{baseUrl}}/{{cardId}}/block
+Authorization: Bearer {{customerToken}}
+
+### Desbloquear: BLOCKED -> ACTIVE (dueño CUSTOMER_BASIC o ADMIN)
+POST {{baseUrl}}/{{cardId}}/unblock
+Authorization: Bearer {{customerToken}}
+
+### Cancelar: definitivo, permite emitir otra (dueño CUSTOMER_BASIC o ADMIN)
+POST {{baseUrl}}/{{cardId}}/cancel
+Authorization: Bearer {{customerToken}}
+
+### Bloquear la tarjeta de cualquier cliente (ADMIN)
+POST {{baseUrl}}/{{cardId}}/block
+Authorization: Bearer {{adminToken}}

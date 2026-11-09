@@ -1,0 +1,70 @@
+# Registro de un cliente, en orden. Después de cada paso vuelve a pedir el token en auth.http:
+# el claim registration_status avanza (REGISTER -> PROFILE -> KYC -> COMPLETE).
+@baseUrl = http://localhost:8000/api/v1/user/register
+@registerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+
+### PASO 1 - Registro (público): crea el usuario en Keycloak y en user_db
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "email": "ana.martinez92@gmail.com",
+  "password": "secure1!",
+  "phoneCode": "+52",
+  "phoneNumber": "6649876543"
+}
+
+### PASO 2 - Pide el token en auth.http y verifica el email con el enlace que llega a
+### Mailpit (http://localhost:8025). Es obligatorio antes del KYC.
+
+### Reenviar el email de verificación
+POST {{baseUrl}}/me/verify-email
+Authorization: Bearer {{registerToken}}
+
+### Corregir un email mal escrito (antes del KYC); se envía otra verificación y se inicia sesión con el nuevo
+PUT {{baseUrl}}/me/email
+Authorization: Bearer {{registerToken}}
+Content-Type: application/json
+
+{
+  "email": "ana.martinez92@gmail.com"
+}
+
+### PASO 3 - Perfil (birthday en dd/MM/yyyy)
+PUT {{baseUrl}}/me/profile
+Authorization: Bearer {{registerToken}}
+Content-Type: application/json
+
+{
+  "names": "Ana",
+  "firstSurname": "Martinez",
+  "secondSurname": "Lopez",
+  "gender": "FEMALE",
+  "birthday": "15/06/1992",
+  "countryOfBirth": "MX"
+}
+
+### PASO 4 - KYC: CURP y RFC deben coincidir entre sí y con nombre y birthday.
+### Asigna CUSTOMER_BASIC y pide la cuenta a account-service (Kafka)
+PUT {{baseUrl}}/me/kyc
+Authorization: Bearer {{registerToken}}
+Content-Type: application/json
+
+{
+  "curp": "MALA920615MSLRPN09",
+  "rfc": "MALA920615AB3",
+  "documentType": "NATIONAL_ID_CARD"
+}
+
+### PASO 5 (opcional) - Información financiera
+PUT {{baseUrl}}/me/financial
+Authorization: Bearer {{registerToken}}
+Content-Type: application/json
+
+{
+  "occupationType": "EMPLOYEE",
+  "employerName": "Tech Company SA de CV",
+  "incomeSource": "SALARY",
+  "monthlyIncome": 25000.00,
+  "maritalStatus": "SINGLE"
+}

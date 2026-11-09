@@ -1,0 +1,12 @@
+# Eventos que user-service publica a Kafka con el patrón outbox (alta de cuenta, bloqueo, email).
+@baseUrl = http://localhost:8000/api/v1/user/outbox
+@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@eventId = 00000000-0000-0000-0000-000000000000
+
+### Eventos FAILED, paginado (ADMIN)
+GET {{baseUrl}}/failed?page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+### Reintentar un evento FAILED: vuelve a PENDING con los intentos en 0; 409 si no está FAILED (ADMIN)
+POST {{baseUrl}}/{{eventId}}/retry
+Authorization: Bearer {{adminToken}}

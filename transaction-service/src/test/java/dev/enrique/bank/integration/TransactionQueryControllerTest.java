@@ -391,13 +391,18 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void history_byCard_returns400() throws Exception {
+    void history_byCard_resolvesTheAccountOfTheCard() throws Exception {
+        when(accountClient.getByCardNumber(CARD))
+                .thenReturn(new AccountResponse(OWNER, CARD_ACCOUNT, "646180110400000002", "OPEN"));
+
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
                 .param("sourceIdentifier", CARD)
                 .param("sourceIdentifierType", "CARD")
                 .param("status", "COMPLETED")
                 .with(customer()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].transactionCode").value("TXN-004"));
     }
 
     @Test

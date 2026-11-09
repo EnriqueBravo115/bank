@@ -1,0 +1,21 @@
+# Kong expone el actuator de cada servicio en /<servicio>/actuator (strip_path).
+# health e info son públicos; el resto pide ADMIN.
+@kong = http://localhost:8000
+@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+
+### user-service health
+GET {{kong}}/user/actuator/health
+
+### account-service health
+GET {{kong}}/account/actuator/health
+
+### transaction-service health
+GET {{kong}}/transaction/actuator/health
+
+### transaction-service info
+GET {{kong}}/transaction/actuator/info
+
+### transaction-service circuit breakers (ADMIN)
+GET {{kong}}/transaction/actuator/circuitbreakers
+Accept: application/json
+Authorization: Bearer {{adminToken}}

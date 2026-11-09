@@ -38,6 +38,9 @@ public interface AccountClient {
     @GetMapping("/get-by-clabe/{clabe}")
     AccountResponse getByClabe(@PathVariable String clabe);
 
+    @GetMapping("/get-by-card-number/{cardNumber}")
+    AccountResponse getByCardNumber(@PathVariable String cardNumber);
+
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "transferFallback")
     @PostMapping("/movement/transfer")
     MovementResultResponse processTransfer(@RequestHeader(IDEMPOTENCY_KEY) String idempotencyKey,

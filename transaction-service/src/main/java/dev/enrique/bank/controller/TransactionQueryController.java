@@ -29,8 +29,8 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Queries by source account. {@code sourceIdentifier} is an account number unless
- * {@code sourceIdentifierType} says otherwise (CLABE): either way it returns every transaction of the
- * account, whichever identifier was used to create them.
+ * {@code sourceIdentifierType} says otherwise (CLABE or CARD): either way it returns every transaction
+ * of the account, whichever identifier was used to create them.
  */
 @RestController
 @RequestMapping(TRANSACTION_QUERY)

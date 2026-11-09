@@ -1,0 +1,13 @@
+# transactionCode: el que devuelve la creación (creation.http) o las consultas (query.http).
+@baseUrl = http://localhost:8000/api/v1/transaction
+@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@transactionCode = 00000000-0000-0000-0000-000000000000
+
+### Cancelar, solo PENDING: account-service la deshace si llegó a aplicarse (REVERSED) o bloquea la clave (CANCELLED) (dueño CUSTOMER_BASIC o ADMIN)
+POST {{baseUrl}}/{{transactionCode}}/cancel
+Authorization: Bearer {{customerToken}}
+
+### Revertir, solo COMPLETED: devuelve el dinero; 409 si la cuenta destino ya no lo tiene (ADMIN)
+POST {{baseUrl}}/{{transactionCode}}/reverse
+Authorization: Bearer {{adminToken}}

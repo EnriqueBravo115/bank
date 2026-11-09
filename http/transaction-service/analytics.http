@@ -1,0 +1,47 @@
+# Mismos parámetros que query.http: sourceIdentifier (número de cuenta por defecto, o
+# sourceIdentifierType=CLABE|CARD) y status.
+@baseUrl = http://localhost:8000/api/v1/transaction/analytics
+@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@accountNumber = ACC-1774713408076
+@clabe = 002010113717262634
+
+### Agrupadas por tipo (ADMIN)
+GET {{baseUrl}}/group-by-type?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{adminToken}}
+
+### Suma por tipo (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/sum-by-type?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{customerToken}}
+
+### Suma por tipo, consultando por CLABE (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/sum-by-type?sourceIdentifier={{clabe}}&sourceIdentifierType=CLABE&status=COMPLETED
+Authorization: Bearer {{customerToken}}
+
+### Partición por monto: true = mayor que amount (ADMIN)
+GET {{baseUrl}}/partition-by-amount?sourceIdentifier={{accountNumber}}&status=COMPLETED&amount=1000.00
+Authorization: Bearer {{adminToken}}
+
+### Resumen por tipo: cantidad y total (ADMIN)
+GET {{baseUrl}}/type-summary?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{adminToken}}
+
+### Total de un tipo (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/total-amount?sourceIdentifier={{accountNumber}}&status=COMPLETED&type=TRANSFER
+Authorization: Bearer {{customerToken}}
+
+### Promedio de días entre transacciones (ADMIN)
+GET {{baseUrl}}/average-days?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{adminToken}}
+
+### La de mayor monto por tipo (ADMIN)
+GET {{baseUrl}}/max-by-type?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{adminToken}}
+
+### Cantidad por mes (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/count-by-month?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{customerToken}}
+
+### Monto promedio por tipo (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/average-amount?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{customerToken}}

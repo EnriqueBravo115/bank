@@ -1,0 +1,58 @@
+# sourceIdentifier es un número de cuenta salvo que sourceIdentifierType diga CLABE o CARD; en todos
+# los casos devuelve las transacciones de la cuenta, se hayan creado con el número, la CLABE o la tarjeta.
+# Un cliente solo ve las suyas; un ADMIN las de cualquiera.
+@baseUrl = http://localhost:8000/api/v1/transaction/query
+@customerToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@adminToken = PEGA_AQUI_EL_TOKEN_DE_auth.http
+@accountNumber = ACC-1774713408076
+@clabe = 002010113717262634
+@cardNumber = 4123450000000001
+@transactionCode = 00000000-0000-0000-0000-000000000000
+
+### Historial por número de cuenta (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/history?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{customerToken}}
+
+### Historial por CLABE (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/history?sourceIdentifier={{clabe}}&sourceIdentifierType=CLABE&status=COMPLETED
+Authorization: Bearer {{customerToken}}
+
+### Historial por tarjeta (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/history?sourceIdentifier={{cardNumber}}&sourceIdentifierType=CARD&status=COMPLETED
+Authorization: Bearer {{customerToken}}
+
+### Paginado: page desde 0, size 1-100 (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/all?sourceIdentifier={{accountNumber}}&status=COMPLETED&page=0&size=10
+Authorization: Bearer {{customerToken}}
+
+### Por año (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/status-year?sourceIdentifier={{accountNumber}}&status=COMPLETED&year=2026
+Authorization: Bearer {{customerToken}}
+
+### COMPLETED de varias cuentas (ADMIN)
+GET {{baseUrl}}/by-accounts?accountNumbers={{accountNumber}},ACC-1847392018473
+Authorization: Bearer {{adminToken}}
+
+### La de mayor monto (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/max?sourceIdentifier={{accountNumber}}&status=COMPLETED
+Authorization: Bearer {{customerToken}}
+
+### Rango de fechas (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/date-range?sourceIdentifier={{accountNumber}}&status=COMPLETED&startDate=2026-01-01T00:00:00&endDate=2026-12-31T23:59:59
+Authorization: Bearer {{customerToken}}
+
+### Rango de montos (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/amount-range?sourceIdentifier={{accountNumber}}&status=COMPLETED&minAmount=500.00&maxAmount=2000.00
+Authorization: Bearer {{customerToken}}
+
+### Por código de transacción; de otro cliente es 404 (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/{{transactionCode}}
+Authorization: Bearer {{customerToken}}
+
+### Las creadas con un tipo de identificador: ACCOUNT, CLABE o CARD (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/identifier-type?sourceIdentifier={{accountNumber}}&status=COMPLETED&identifierType=CLABE
+Authorization: Bearer {{customerToken}}
+
+### Por palabra en descripción o motivo (ADMIN, CUSTOMER_BASIC)
+GET {{baseUrl}}/keyword?sourceIdentifier={{accountNumber}}&status=COMPLETED&keyword=renta
+Authorization: Bearer {{customerToken}}

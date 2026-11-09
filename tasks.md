@@ -87,10 +87,8 @@
   - Al crear, la cuenta origen debe ser del usuario (`403`); la destino debe existir (`404`). Si account-service no responde a la consulta, `503` y no se registra nada.
 
 - [x] **`IdentifierType` no se respeta**
-  - `AccountResolver` busca por número de cuenta o por CLABE según el tipo y envía a account-service siempre el `accountNumber`. `CARD` responde `400` hasta que account-service tenga tarjetas.
-
-- [ ] **Resolver `CARD` con account-service**
-  - account-service ya tiene `GET /api/v1/account/get-by-card-number/{cardNumber}`: falta el método en `AccountClient` y usarlo en `AccountResolver` en lugar del `400`.
+  - `AccountResolver` busca por número de cuenta, CLABE o tarjeta según el tipo y envía a account-service siempre el `accountNumber`.
+  - `CARD` se resuelve con `GET /api/v1/account/get-by-card-number/{cardNumber}` (antes `400`): sirve como origen de transferencias y en consultas y analítica. Los mensajes de error muestran solo los últimos 4 dígitos (`**** 1111`).
 
 ### Funcionalidad
 
