@@ -1,0 +1,37 @@
+# Used by docker-compose and by the k8s ConfigMap: the hostnames are the same in both
+# (eureka-server, keycloak).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Every instance registered in Eureka (user, transaction and account services, config-server):
+  # new replicas are scraped without touching this file.
+  - job_name: bank-services
+    metrics_path: /actuator/prometheus
+    eureka_sd_configs:
+      - server: http://eureka-server:8761/eureka
+        refresh_interval: 30s
+    # /actuator/prometheus needs the METRICS role: token of the "prometheus" client (client credentials).
+    # config-server has no security and ignores it.
+    oauth2:
+      client_id: prometheus
+      client_secret: prometheus-secret
+      token_url: http://keycloak:8080/realms/bank/protocol/openid-connect/token
+    relabel_configs:
+      # Instances register with their IP (prefer-ip-address), which works in Docker and in k8s
+      - source_labels: [__meta_eureka_app_instance_ip_addr, __meta_eureka_app_instance_port]
+        separator: ":"
+        target_label: __address__
+      # USER-SERVICE -> application="user-service", used by every dashboard query
+      - source_labels: [__meta_eureka_app_name]
+        action: lowercase
+        target_label: application
+
+  # Eureka does not register itself
+  - job_name: eureka-server
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["eureka-server:8761"]
+        labels:
+          application: eureka-server

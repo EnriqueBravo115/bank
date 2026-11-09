@@ -20,6 +20,7 @@ import dev.enrique.bank.commons.exception.TransactionNotFoundException;
 import dev.enrique.bank.commons.exception.TransactionNotReversibleException;
 import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.model.Transaction;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +48,7 @@ public class TransactionSettlement {
 
     private final TransactionRepository transactionRepository;
     private final AccountClient accountClient;
+    private final MeterRegistry meterRegistry;
 
     public Transaction register(Transaction transaction) {
         LocalDateTime now = LocalDateTime.now();
@@ -94,12 +96,18 @@ public class TransactionSettlement {
         LocalDateTime base = now.isAfter(finished) ? now : finished;
         transaction.registerAttempt(result.transactionStatus(), result.reason(),
                 base.plus(nextDelay(transaction.getAttempts() + 1)));
+        // Answer of each call to account-service; PENDING means it gave no answer (Grafana dashboard)
+        meterRegistry.counter("bank.transaction.attempts",
+                "type", transaction.getTransactionType().name(),
+                "status", result.transactionStatus().name()).increment();
 
         if (transaction.isPending() && transaction.getAttempts() >= MAX_ATTEMPTS) {
             transaction.stopRetrying("No answer from account-service after " + transaction.getAttempts()
                     + " attempts (" + result.reason() + "): waiting for an admin to retry or cancel it");
             log.error("Transaction {} is stuck PENDING after {} attempts", transaction.getTransactionCode(),
                     transaction.getAttempts());
+            meterRegistry.counter("bank.transaction.stuck", "type", transaction.getTransactionType().name())
+                    .increment();
         } else if (transaction.isPending()) {
             log.warn("Transaction {} still PENDING after attempt {}: {}", transaction.getTransactionCode(),
                     transaction.getAttempts(), result.reason());

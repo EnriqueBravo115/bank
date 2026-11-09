@@ -8,13 +8,14 @@ It integrates authentication, API gateway, service discovery, and resilience pat
 
 ## Tech Stack
 - **Language and build**: Java 17, Maven.
-- **Framework**: Spring Boot 3.5.8, Spring Web, Spring Validation, Spring Boot Actuator, Spring DevTools, Lombok, ModelMapper.
+- **Framework**: Spring Boot 3.5.16, Spring Web, Spring Validation, Spring Boot Actuator, Spring DevTools, Lombok, ModelMapper.
 - **Microservices**: Spring Cloud, Eureka Server, Spring Cloud Config Server, OpenFeign, Resilience4j.
 - **Persistence**: PostgreSQL 15, Spring Data JPA, Flyway.
 - **Messaging**: Apache Kafka 4.2, Spring Kafka, Kafka UI.
 - **Security**: Spring Security, OAuth2, JWT, Keycloak 26, Keycloak Admin Client.
 - **API Gateway**: Kong 3.6, decK.
 - **Email**: Mailpit.
+- **Monitoring**: Micrometer, Prometheus 3, Grafana 11.
 - **Testing**: JUnit 5, Spring Boot Test, Spring Security Test, Spring Kafka Test, Testcontainers.
 - **Infrastructure and deployment**: Docker, Docker Compose, Kubernetes, Kustomize, kind.
 
@@ -98,3 +99,19 @@ account-service UserConsumer ──► createAccount (ignored if the user alread
 - Admins list `FAILED` events (`GET /user/outbox/failed`) and put them back in the queue
   (`POST /user/outbox/{id}/retry`).
 - A daily job deletes `SENT` events older than 7 days.
+
+## Monitoring
+Every service exposes Micrometer metrics at `/actuator/prometheus`. Prometheus finds the instances
+through Eureka (new replicas are scraped without changing its configuration) and Grafana shows them
+in the provisioned **Bank services** dashboard: instances up, requests per second, 4xx/5xx, p95
+latency, busiest endpoints, answers of account-service to transaction-service (`PENDING` = no
+answer), transactions stuck `PENDING`, Kafka listener calls, heap, CPU, database connections and GC.
+
+| Component  | docker-compose          | kind                    |
+|------------|-------------------------|-------------------------|
+| Grafana    | http://localhost:3000 (admin / admin) | same          |
+| Prometheus | http://localhost:9091   | same                    |
+
+`/actuator/prometheus` requires the `METRICS` (or `ADMIN`) realm role: Prometheus requests a
+client-credentials token from Keycloak with the `prometheus` client. The configuration lives in
+`k8s/monitoring/` and docker-compose mounts it from there.

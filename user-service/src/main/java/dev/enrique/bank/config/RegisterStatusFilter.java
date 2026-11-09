@@ -37,6 +37,14 @@ public class RegisterStatusFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
+    // Actuator endpoints are not customer features: SecurityConfig alone decides who reads them
+    // (service accounts such as Prometheus' have no registration_status).
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return path.startsWith("/actuator/");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,

@@ -20,3 +20,10 @@ eureka:
     register-with-eureka: true
   instance:
     prefer-ip-address: true
+
+# Metrics for Prometheus; the other endpoints stay hidden (config-server has no security)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

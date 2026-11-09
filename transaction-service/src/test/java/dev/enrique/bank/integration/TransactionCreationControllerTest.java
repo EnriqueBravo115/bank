@@ -64,6 +64,7 @@ import dev.enrique.bank.model.Transaction;
 import dev.enrique.bank.settlement.TransactionSettlement;
 import dev.enrique.bank.util.FeignErrors;
 import dev.enrique.bank.util.PostgresContainerConfig;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * account-service is replaced by a mock of {@link AccountClient}: these tests check which accounts
@@ -90,6 +91,8 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     private TransactionRepository transactionRepository;
     @Autowired
     private TransactionSettlement settlement;
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @MockitoBean
     private AccountClient accountClient;
@@ -110,6 +113,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     @Test
     void shouldResolveAccountsAndRegisterCompletedTransfer() throws Exception {
         when(accountClient.processTransfer(anyString(), any())).thenReturn(COMPLETED);
+        double completedAttempts = attempts("TRANSFER", "COMPLETED");
 
         transfer(SOURCE_CLABE, TARGET_CLABE, "250.00", customer())
                 .andExpect(status().isOk())
@@ -132,6 +136,8 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         assertThat(saved.getCounterpartyOwnerId()).isEqualTo(OTHER_USER);
         assertThat(saved.getTransactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
         assertThat(saved.getNextAttemptAt()).isNull();
+        // Shown in Grafana ("Answers of account-service")
+        assertThat(attempts("TRANSFER", "COMPLETED")).isEqualTo(completedAttempts + 1);
     }
 
     @Test
@@ -328,6 +334,7 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         settlement.retryPending(LocalDateTime.now().plusHours(1));
 
         Transaction stuck = singleSavedTransaction();
+        assertThat(meterRegistry.counter("bank.transaction.stuck", "type", "TRANSFER").count()).isPositive();
         assertThat(stuck.getTransactionStatus()).isEqualTo(TransactionStatus.PENDING);
         assertThat(stuck.getNextAttemptAt()).isNull();
         assertThat(stuck.getReason()).contains("after " + TransactionSettlement.MAX_ATTEMPTS + " attempts");
@@ -581,6 +588,10 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
     private ResultActions transfer(String source, String target, String amount, RequestPostProcessor auth)
             throws Exception {
         return post(TRANSACTION_CREATE + "/transfer", transferRequest(source, target, amount), auth);
+    }
+
+    private double attempts(String type, String status) {
+        return meterRegistry.counter("bank.transaction.attempts", "type", type, "status", status).count();
     }
 
     private ResultActions lifecycle(String code, String action, RequestPostProcessor auth) throws Exception {

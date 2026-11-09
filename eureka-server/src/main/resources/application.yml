@@ -9,3 +9,10 @@ eureka:
     register-with-eureka: false
   instance:
     hostname: ${EUREKA_HOST:localhost}
+
+# Metrics for Prometheus; the other endpoints stay hidden (Eureka has no security)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

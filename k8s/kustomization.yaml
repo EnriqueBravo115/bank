@@ -19,6 +19,8 @@ resources:
   - services/user-service.yaml
   - services/transaction-service.yaml
   - services/account-service.yaml
+  - monitoring/prometheus.yaml
+  - monitoring/grafana.yaml
 
 configMapGenerator:
   - name: keycloak-realm
@@ -27,6 +29,18 @@ configMapGenerator:
   - name: kong-declarative-config
     files:
       - kong/kong.yml
+  - name: prometheus-config
+    files:
+      - monitoring/prometheus.yml
+  - name: grafana-datasources
+    files:
+      - monitoring/grafana/datasources.yml
+  - name: grafana-dashboard-provider
+    files:
+      - monitoring/grafana/dashboards.yml
+  - name: grafana-dashboards
+    files:
+      - monitoring/grafana/dashboards/bank-services.json
 
 secretGenerator:
   - name: postgres-credentials

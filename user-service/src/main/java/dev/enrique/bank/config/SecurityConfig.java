@@ -34,6 +34,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // Prometheus scrapes with a client-credentials token of the "prometheus" client
+                        .requestMatchers("/actuator/prometheus").hasAnyRole("ADMIN", "METRICS")
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, REGISTER).permitAll()
                         .requestMatchers("/error").permitAll()

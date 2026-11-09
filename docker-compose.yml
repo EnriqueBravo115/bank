@@ -214,6 +214,36 @@ services:
       kong:
         condition: service_healthy
 
+  # Metrics: scrapes /actuator/prometheus of every service (k8s/monitoring/prometheus.yml).
+  # UI at http://localhost:9091 (9090 is Keycloak)
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prometheus
+    restart: on-failure
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./k8s/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  # Dashboards at http://localhost:3000 (admin / admin): datasource and "Bank services" dashboard
+  # are provisioned from k8s/monitoring/grafana
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    restart: on-failure
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/bank-services.json
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./k8s/monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./k8s/monitoring/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./k8s/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
   eureka-server:
     container_name: eureka_server
     build:

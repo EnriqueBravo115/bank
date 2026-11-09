@@ -29,6 +29,10 @@
       {
         "name": "SERVICE",
         "description": "Service-to-service calls (client credentials): only transaction-service moves money in account-service"
+      },
+      {
+        "name": "METRICS",
+        "description": "Reads /actuator/prometheus of the services (Prometheus service account)"
       }
     ]
   },
@@ -87,6 +91,18 @@
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "prometheus",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "prometheus-secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     }
   ],
   "users": [
@@ -103,6 +119,12 @@
       "enabled": true,
       "serviceAccountClientId": "transaction-service",
       "realmRoles": ["SERVICE"]
+    },
+    {
+      "username": "service-account-prometheus",
+      "enabled": true,
+      "serviceAccountClientId": "prometheus",
+      "realmRoles": ["METRICS"]
     },
     {
       "username": "admin-user",

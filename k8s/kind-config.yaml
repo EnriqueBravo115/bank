@@ -15,3 +15,7 @@ nodes:
         hostPort: 8083
       - containerPort: 30025 # mailpit inbox
         hostPort: 8025
+      - containerPort: 30300 # grafana
+        hostPort: 3000
+      - containerPort: 30091 # prometheus
+        hostPort: 9091

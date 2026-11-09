@@ -9,7 +9,7 @@ Deployment of the architecture on a local [kind](https://kind.sigs.k8s.io/) clus
 
 ## Deployment
 
-Host ports 8000, 9090, 8761 and 8083 must be free
+Host ports 8000, 9090, 8761, 8083, 8025, 3000 and 9091 must be free
 (stop `docker compose` first: `docker compose down`).
 
 ```bash
@@ -35,6 +35,8 @@ kubectl apply -k k8s
 | Eureka       | http://localhost:8761     |
 | Kafka UI     | http://localhost:8083     |
 | Mailpit      | http://localhost:8025     |
+| Grafana      | http://localhost:3000 (admin / admin) |
+| Prometheus   | http://localhost:9091     |
 
 The microservices, the databases and Kafka are only reachable inside the cluster;
 external traffic comes in through Kong.
@@ -61,6 +63,7 @@ k8s/
 ├── mailpit/               # fake SMTP server for Keycloak's verification emails
 ├── keycloak/              # Keycloak + realm-export.json (ConfigMap)
 ├── kong/                  # DB-less Kong + kong.yml (ConfigMap)
+├── monitoring/            # Prometheus + Grafana (datasource and dashboard provisioned from ConfigMaps)
 └── services/              # eureka, config-server and the microservices
 ```
 
@@ -75,8 +78,10 @@ k8s/
   because a pod's hostname does not resolve through DNS inside the cluster.
 - **`enableServiceLinks: false`** on every pod: keeps Kubernetes from injecting variables such as
   `KAFKA_UI_PORT=tcp://...`, which Kafka, Kong and Spring would read as configuration.
-- `keycloak/realm-export.json` and `kong/kong.yml` are the only copy of those files:
+- `keycloak/realm-export.json`, `kong/kong.yml` and `monitoring/` are the only copy of those files:
   `docker-compose.yml` also mounts them from `k8s/`.
+- **Host ports of Grafana and Prometheus** (3000, 9091) come from `kind-config.yaml`: a cluster created
+  before they were added has to be recreated (`kind delete cluster --name bank` and the steps above).
 
 ## Cleanup
 
