@@ -1,32 +1,38 @@
 @baseUrl = http://localhost:8000/api/v1/transaction/query
 @token = Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5Vl83VkhIb2NIRk1iQmtZTGpmc2s4dWlCY2hmX2lBX1hCX2xWdnJuZXE0In0.eyJleHAiOjE3NzM3NzA3NjMsImlhdCI6MTc3Mzc3MDQ2MywianRpIjoiZmFiZmNjMjItMTdlNi00MzZhLTg0ZTAtMDA1YjFjYmIxMGI4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo5MDkwL3JlYWxtcy9iYW5rIiwic3ViIjoiNDUxNWVhMzctOTQ3ZC00Zjk3LThiMTgtMzFlMDJhNjI2NDQ1IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoia29uZyIsInNpZCI6ImU1YTkwYjE3LWZiYTMtNDlmZi05N2U2LTA4ZjMzM2I3YWNlZSIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiQURNSU4iXX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicmVnaXN0cmF0aW9uX3N0YXR1cyI6IkNPTVBMRVRFIiwibmFtZSI6IkFkbWluIFVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbi11c2VyIiwiZ2l2ZW5fbmFtZSI6IkFkbWluIiwiZmFtaWx5X25hbWUiOiJVc2VyIiwiZW1haWwiOiJhZG1pbkBiYW5rLmNvbSJ9.mWDGWfis2GC6ox0MpD2jFhq07bPImp4ckVSBbhKO78WgRgiXQt2_QP4DY6_mMQMRWk39QlQVTB4cFcGaD5mni-dqM4_hmJUR-M-fUMwlq3wzsT_wLy4Ax-Bsyv-k6Mld841UZ2VJOHyr89Mg4j8bbVqZHBWjCKJhACS0Whx27DFWZCC8qmGAXyGrRPHiOYH3O5_DvVdtiDllJhk_PH4AwDYesOloL4xasd6enfKA1exdc-RK_fS3iOQCKUftnUhHsWJMI_koBS9p_tFUubQ0VIC4uPwye2m5R1iOUdbj4qSihrKO6M7475zBkQ_ope6kgKyoProDQ7ZSSwYwUQRjBQ
 
+### Transaction history - account number COMPLETED(ADMIN-CUSTOMER_BASIC)
+### sourceIdentifierType defaults to ACCOUNT; every query returns the transactions made with the
+### account number or the CLABE
+GET {{baseUrl}}/history?sourceIdentifier=ACC-1001&status=COMPLETED
+Authorization: {{token}}
+
 ### Transaction history - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/history?sourceIdentifier=646180110400000001&status=COMPLETED
+GET {{baseUrl}}/history?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED
 Authorization: {{token}}
 
 ### All transactions paginated - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/all?sourceIdentifier=646180110400000001&status=COMPLETED&page=0&size=10
+GET {{baseUrl}}/all?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED&page=0&size=10
 Authorization: {{token}}
 
 ### Transactions by year - CLABE 2024 COMPLETED(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/status-year?sourceIdentifier=646180110400000001&status=COMPLETED&year=2024
+GET {{baseUrl}}/status-year?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED&year=2024
 Authorization: {{token}}
 
-### By sources - ADMIN only(ADMIN)
-GET {{baseUrl}}/by-sources?sourceIdentifiers=646180110400000001,4111111111111111,646180110400000003
+### By accounts - ADMIN only(ADMIN)
+GET {{baseUrl}}/by-accounts?accountNumbers=ACC-1001,ACC-2002
 Authorization: {{token}}
 
 ### Max transaction - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/max?sourceIdentifier=646180110400000001&status=COMPLETED
+GET {{baseUrl}}/max?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED
 Authorization: {{token}}
 
 ### Date range - CLABE COMPLETED january 2024(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/date-range?sourceIdentifier=646180110400000001&status=COMPLETED&startDate=2024-01-01T00:00:00&endDate=2024-01-31T23:59:59
+GET {{baseUrl}}/date-range?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED&startDate=2024-01-01T00:00:00&endDate=2024-01-31T23:59:59
 Authorization: {{token}}
 
 ### Amount range - CLABE COMPLETED between 500-2000(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/amount-range?sourceIdentifier=646180110400000001&status=COMPLETED&minAmount=500.00&maxAmount=2000.00
+GET {{baseUrl}}/amount-range?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED&minAmount=500.00&maxAmount=2000.00
 Authorization: {{token}}
 
 ### Transaction by code - TXN-2024-001(ADMIN-CUSTOMER_BASIC)
@@ -34,9 +40,9 @@ GET {{baseUrl}}/TXN-2024-001
 Authorization: {{token}}
 
 ### By identifier type - CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/identifier-type?sourceIdentifier=646180110400000001&status=COMPLETED&identifierType=CLABE
+GET {{baseUrl}}/identifier-type?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED&identifierType=CLABE
 Authorization: {{token}}
 
 ### By keyword - "renta" CLABE COMPLETED(ADMIN-CUSTOMER_BASIC)
-GET {{baseUrl}}/keyword?sourceIdentifier=646180110400000001&status=COMPLETED&keyword=renta
+GET {{baseUrl}}/keyword?sourceIdentifier=646180110400000001&sourceIdentifierType=CLABE&status=COMPLETED&keyword=renta
 Authorization: {{token}}

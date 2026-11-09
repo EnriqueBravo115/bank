@@ -8,6 +8,7 @@ import static dev.enrique.bank.commons.enums.TransactionType.SERVICE;
 import static dev.enrique.bank.commons.enums.TransactionType.TRANSFER;
 import static dev.enrique.bank.util.JwtTestUtils.admin;
 import static dev.enrique.bank.util.JwtTestUtils.customer;
+import static dev.enrique.bank.util.TransactionFixtures.ACCOUNT;
 import static dev.enrique.bank.util.TransactionFixtures.CLABE;
 import static dev.enrique.bank.util.TransactionFixtures.transaction;
 import static org.hamcrest.Matchers.hasSize;
@@ -58,7 +59,7 @@ class TransactionAnalyticsControllerTest extends PostgresContainerConfig {
 
     private static MockHttpServletRequestBuilder completed(String path) {
         return get(TRANSACTION_ANALYTICS + path)
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED");
     }
 

@@ -27,102 +27,102 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             """;
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionResponse> findAllBySourceIdentifierAndStatus(String ownerId, String sourceIdentifier, TransactionStatus status);
+    List<TransactionResponse> findAllByAccountNumberAndStatus(String ownerId, String accountNumber, TransactionStatus status);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             AND t.transactionType = :type
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionResponse> findAllBySourceIdentifierStatusAndType(
-            String ownerId, String sourceIdentifier, TransactionStatus status, TransactionType type);
+    List<TransactionResponse> findAllByAccountNumberStatusAndType(
+            String ownerId, String accountNumber, TransactionStatus status, TransactionType type);
 
     @Query(value = SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             ORDER BY t.transactionDate DESC
             """,
             countQuery = """
             SELECT COUNT(t) FROM Transaction t
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             """)
-    Page<TransactionResponse> findPageBySourceIdentifierAndStatus(
-            String ownerId, String sourceIdentifier, TransactionStatus status, Pageable pageable);
+    Page<TransactionResponse> findPageByAccountNumberAndStatus(
+            String ownerId, String accountNumber, TransactionStatus status, Pageable pageable);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = 'COMPLETED'
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionResponse> findAllCompletedBySourceIdentifier(String ownerId, String sourceIdentifier);
+    List<TransactionResponse> findAllCompletedByAccountNumber(String ownerId, String accountNumber);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier IN :sourceIdentifiers
+            WHERE t.accountNumber IN :accountNumbers
             AND t.transactionStatus = 'COMPLETED'
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionResponse> findAllCompletedBySourceIdentifiersIn(List<String> sourceIdentifiers);
+    List<TransactionResponse> findAllCompletedByAccountNumberIn(List<String> accountNumbers);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND YEAR(t.transactionDate) = :year
             AND t.transactionStatus = :status
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionResponse> findAllBySourceIdentifierAndYear(
-            String ownerId, String sourceIdentifier, Integer year, TransactionStatus status);
+    List<TransactionResponse> findAllByAccountNumberAndYear(
+            String ownerId, String accountNumber, Integer year, TransactionStatus status);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             AND t.transactionDate BETWEEN :startDate AND :endDate
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionResponse> findAllBySourceIdentifierAndDateRangeAndStatus(
-            String ownerId, String sourceIdentifier, TransactionStatus status, LocalDateTime startDate, LocalDateTime endDate);
+    List<TransactionResponse> findAllByAccountNumberAndDateRangeAndStatus(
+            String ownerId, String accountNumber, TransactionStatus status, LocalDateTime startDate, LocalDateTime endDate);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             AND t.amount BETWEEN :minAmount AND :maxAmount
             ORDER BY t.transactionDate DESC
             """)
     List<TransactionResponse> findAllByAmountRangeAndStatus(
-            String ownerId, String sourceIdentifier, TransactionStatus status, BigDecimal minAmount, BigDecimal maxAmount);
+            String ownerId, String accountNumber, TransactionStatus status, BigDecimal minAmount, BigDecimal maxAmount);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.identifierType = :identifierType
             AND t.transactionStatus = :status
             ORDER BY t.transactionDate DESC
             """)
     List<TransactionResponse> findAllByIdentifierTypeAndStatus(
-            String ownerId, String sourceIdentifier, IdentifierType identifierType, TransactionStatus status);
+            String ownerId, String accountNumber, IdentifierType identifierType, TransactionStatus status);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             AND (LOWER(t.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(t.reason) LIKE LOWER(CONCAT('%', :keyword, '%')))
             ORDER BY t.transactionDate DESC
             """)
-    List<TransactionResponse> searchByKeyword(String ownerId, String sourceIdentifier, TransactionStatus status, String keyword);
+    List<TransactionResponse> searchByKeyword(String ownerId, String accountNumber, TransactionStatus status, String keyword);
 
     @Query(SELECT_RESPONSE + """
             WHERE t.transactionCode = :transactionCode
@@ -147,11 +147,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> lockPending(LocalDateTime now, int limit);
 
     @Query(SELECT_RESPONSE + """
-            WHERE t.sourceIdentifier = :sourceIdentifier
+            WHERE t.accountNumber = :accountNumber
             AND (:ownerId IS NULL OR t.ownerId = :ownerId)
             AND t.transactionStatus = :status
             ORDER BY t.amount DESC
             LIMIT 1
             """)
-    Optional<TransactionResponse> findMaxBySourceIdentifierAndStatus(String ownerId, String sourceIdentifier, TransactionStatus status);
+    Optional<TransactionResponse> findMaxByAccountNumberAndStatus(String ownerId, String accountNumber, TransactionStatus status);
 }

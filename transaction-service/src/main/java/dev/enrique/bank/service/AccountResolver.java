@@ -38,6 +38,15 @@ public class AccountResolver {
         }
     }
 
+    /**
+     * The account number behind an identifier, to query transactions: they are stored by account
+     * number whatever identifier was used to create them. An account number needs no call to
+     * account-service; ownership is left to the queries (CurrentCaller.ownerScope).
+     */
+    public String accountNumberOf(String identifier, IdentifierType type) {
+        return type == IdentifierType.ACCOUNT ? identifier : resolve(identifier, type).accountNumber();
+    }
+
     /** The source account of a movement: it must belong to the caller unless they are an admin. */
     public AccountResponse resolveOwned(String identifier, IdentifierType type) {
         AccountResponse account = resolve(identifier, type);

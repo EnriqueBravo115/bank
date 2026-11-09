@@ -1,6 +1,7 @@
 package dev.enrique.bank.integration;
 
 import static dev.enrique.bank.util.JwtTestUtils.OTHER_USER;
+import static dev.enrique.bank.util.JwtTestUtils.OWNER;
 import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_QUERY;
 import static dev.enrique.bank.commons.enums.TransactionStatus.COMPLETED;
 import static dev.enrique.bank.commons.enums.TransactionStatus.FAILED;
@@ -11,10 +12,14 @@ import static dev.enrique.bank.util.JwtTestUtils.admin;
 import static dev.enrique.bank.util.JwtTestUtils.customer;
 import static dev.enrique.bank.util.JwtTestUtils.tokenWithRole;
 import static dev.enrique.bank.util.TransactionFixtures.CARD;
+import static dev.enrique.bank.util.TransactionFixtures.CARD_ACCOUNT;
+import static dev.enrique.bank.util.TransactionFixtures.ACCOUNT;
 import static dev.enrique.bank.util.TransactionFixtures.CLABE;
 import static dev.enrique.bank.util.TransactionFixtures.transaction;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,9 +32,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import dev.enrique.bank.client.AccountClient;
+import dev.enrique.bank.commons.dto.response.AccountResponse;
 import dev.enrique.bank.dao.TransactionRepository;
+import dev.enrique.bank.util.FeignErrors;
 import dev.enrique.bank.util.PostgresContainerConfig;
 
 @SpringBootTest
@@ -39,6 +48,8 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     private MockMvc mockMvc;
     @Autowired
     private TransactionRepository transactionRepository;
+    @MockitoBean
+    private AccountClient accountClient;
 
     @BeforeEach
     void setUp() {
@@ -59,7 +70,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void history_withoutToken_returns401() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED"))
                 .andExpect(status().isUnauthorized());
     }
@@ -67,7 +78,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void history_withIncompleteRegistration_returns403() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .with(tokenWithRole("CUSTOMER_BASIC", "PROFILE")))
                 .andExpect(status().isForbidden())
@@ -79,7 +90,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void history_returnsTransactionsOfStatusNewestFirst() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .with(customer()))
                 .andExpect(status().isOk())
@@ -90,7 +101,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$[1].transactionType").value("TRANSFER"));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "FAILED")
                 .with(customer()))
                 .andExpect(status().isOk())
@@ -101,7 +112,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void all_paginatesTransactions() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/all")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("page", "0")
                 .param("size", "1")
@@ -120,13 +131,13 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void all_rejectsInvalidPageParams() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/all")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("size", "101")
                 .with(customer()))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(get(TRANSACTION_QUERY + "/all")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("page", "-1")
                 .with(customer()))
@@ -136,7 +147,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void statusYear_filtersByYearAndStatus() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/status-year")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("year", "2024")
                 .with(customer()))
@@ -145,7 +156,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
 
         // The only 2023 transaction is FAILED
         mockMvc.perform(get(TRANSACTION_QUERY + "/status-year")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("year", "2023")
                 .with(customer()))
@@ -154,18 +165,18 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void bySources_asAdmin_returnsCompletedTransactionsOfAllSources() throws Exception {
-        mockMvc.perform(get(TRANSACTION_QUERY + "/by-sources")
-                .param("sourceIdentifiers", CLABE, CARD)
+    void byAccounts_asAdmin_returnsCompletedTransactionsOfAllAccounts() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/by-accounts")
+                .param("accountNumbers", ACCOUNT, CARD_ACCOUNT)
                 .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)));
     }
 
     @Test
-    void bySources_asCustomer_returns403() throws Exception {
-        mockMvc.perform(get(TRANSACTION_QUERY + "/by-sources")
-                .param("sourceIdentifiers", CLABE)
+    void byAccounts_asCustomer_returns403() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/by-accounts")
+                .param("accountNumbers", ACCOUNT)
                 .with(customer()))
                 .andExpect(status().isForbidden());
     }
@@ -173,7 +184,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void max_returnsHighestAmountOfStatus() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/max")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .with(customer()))
                 .andExpect(status().isOk())
@@ -181,7 +192,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$.transactionCode").value("TXN-001"));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/max")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "FAILED")
                 .with(customer()))
                 .andExpect(status().isOk())
@@ -203,7 +214,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void dateRange_filtersByDate() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/date-range")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("startDate", "2024-01-01T00:00:00")
                 .param("endDate", "2024-01-31T23:59:59")
@@ -215,7 +226,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
 
         // The FAILED transfer of June 2023 is in range but has another status
         mockMvc.perform(get(TRANSACTION_QUERY + "/date-range")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("startDate", "2023-01-01T00:00:00")
                 .param("endDate", "2023-12-31T23:59:59")
@@ -224,7 +235,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$", hasSize(0)));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/date-range")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("startDate", "2024-02-01T00:00:00")
                 .param("endDate", "2024-02-29T23:59:59")
@@ -236,7 +247,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void amountRange_filtersByAmountAndStatus() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/amount-range")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("minAmount", "100.00")
                 .param("maxAmount", "2000.00")
@@ -246,7 +257,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
 
         // The 50.00 transfer is FAILED
         mockMvc.perform(get(TRANSACTION_QUERY + "/amount-range")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("minAmount", "1.00")
                 .param("maxAmount", "100.00")
@@ -277,7 +288,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void identifierType_filtersByType() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/identifier-type")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("identifierType", "CLABE")
                 .with(customer()))
@@ -286,7 +297,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$[*].transactionCode", containsInAnyOrder("TXN-001", "TXN-002")));
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/identifier-type")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("identifierType", "CARD")
                 .with(customer()))
@@ -297,7 +308,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
     @Test
     void keyword_searchesDescriptionIgnoringCase() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/keyword")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .param("keyword", "RENTA")
                 .with(customer()))
@@ -306,12 +317,108 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$[0].description").value("Pago de renta enero"));
     }
 
+    // ---- source identifier: account number or CLABE ----
+
+    @Test
+    void history_byAccountNumber_includesTransactionsCreatedWithAccountOrClabe() throws Exception {
+        transactionRepository.save(transaction("TXN-005", ACCOUNT, TRANSFER, COMPLETED, "80.00",
+                "Transferencia con numero de cuenta", LocalDateTime.of(2024, 4, 1, 10, 0)));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", ACCOUNT)
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].transactionCode", containsInAnyOrder("TXN-005", "TXN-002", "TXN-001")));
+        verifyNoInteractions(accountClient);
+    }
+
+    @Test
+    void history_byClabe_resolvesTheAccountFirst() throws Exception {
+        transactionRepository.save(transaction("TXN-005", ACCOUNT, TRANSFER, COMPLETED, "80.00",
+                "Transferencia con numero de cuenta", LocalDateTime.of(2024, 4, 1, 10, 0)));
+        when(accountClient.getByClabe(CLABE)).thenReturn(new AccountResponse(OWNER, ACCOUNT, CLABE, "OPEN"));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifierType", "CLABE")
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].transactionCode", containsInAnyOrder("TXN-005", "TXN-002", "TXN-001")));
+    }
+
+    @Test
+    void identifierType_byClabe_filtersByTheIdentifierTheyWereCreatedWith() throws Exception {
+        transactionRepository.save(transaction("TXN-005", ACCOUNT, TRANSFER, COMPLETED, "80.00",
+                "Transferencia con numero de cuenta", LocalDateTime.of(2024, 4, 1, 10, 0)));
+        when(accountClient.getByClabe(CLABE)).thenReturn(new AccountResponse(OWNER, ACCOUNT, CLABE, "OPEN"));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/identifier-type")
+                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifierType", "CLABE")
+                .param("status", "COMPLETED")
+                .param("identifierType", "ACCOUNT")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].transactionCode").value("TXN-005"));
+    }
+
+    @Test
+    void history_byUnknownClabe_returns404() throws Exception {
+        when(accountClient.getByClabe("000000000000000000")).thenThrow(FeignErrors.status(404, ""));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", "000000000000000000")
+                .param("sourceIdentifierType", "CLABE")
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Account not found with CLABE: 000000000000000000"));
+    }
+
+    @Test
+    void history_byClabe_whenAccountServiceIsDown_returns503() throws Exception {
+        when(accountClient.getByClabe(CLABE)).thenThrow(FeignErrors.status(503, ""));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifierType", "CLABE")
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void history_byCard_returns400() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", CARD)
+                .param("sourceIdentifierType", "CARD")
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void history_byClabeOfAnotherUser_returnsNothing() throws Exception {
+        when(accountClient.getByClabe(CLABE)).thenReturn(new AccountResponse(OWNER, ACCOUNT, CLABE, "OPEN"));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifierType", "CLABE")
+                .param("status", "COMPLETED")
+                .with(customer(OTHER_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
     // ---- owner scope ----
 
     @Test
     void customer_onlySeesOwnTransactions_adminSeesAll() throws Exception {
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .with(customer(OTHER_USER)))
                 .andExpect(status().isOk())
@@ -320,7 +427,7 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(get(TRANSACTION_QUERY + "/history")
-                .param("sourceIdentifier", CLABE)
+                .param("sourceIdentifier", ACCOUNT)
                 .param("status", "COMPLETED")
                 .with(admin()))
                 .andExpect(status().isOk())

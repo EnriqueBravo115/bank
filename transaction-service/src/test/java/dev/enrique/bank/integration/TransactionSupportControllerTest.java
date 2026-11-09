@@ -8,6 +8,7 @@ import static dev.enrique.bank.commons.enums.TransactionStatus.FAILED;
 import static dev.enrique.bank.commons.enums.TransactionType.SERVICE;
 import static dev.enrique.bank.commons.enums.TransactionType.TRANSFER;
 import static dev.enrique.bank.util.JwtTestUtils.customer;
+import static dev.enrique.bank.util.TransactionFixtures.ACCOUNT;
 import static dev.enrique.bank.util.TransactionFixtures.CLABE;
 import static dev.enrique.bank.util.TransactionFixtures.transaction;
 import static org.hamcrest.Matchers.allOf;
@@ -54,7 +55,7 @@ class TransactionSupportControllerTest extends PostgresContainerConfig {
 
     @Test
     void uniqueDescriptions_returnsUniqueWordsOfCompletedTransactions() throws Exception {
-        mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", CLABE)
+        mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", ACCOUNT)
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", containsInAnyOrder("Pago", "de", "renta", "enero", "luz")));
@@ -62,7 +63,7 @@ class TransactionSupportControllerTest extends PostgresContainerConfig {
 
     @Test
     void allDescriptions_joinsDescriptionsOfCompletedTransactions() throws Exception {
-        mockMvc.perform(get(TRANSACTION_SUPPORT + "/all-descriptions/{accountNumber}", CLABE)
+        mockMvc.perform(get(TRANSACTION_SUPPORT + "/all-descriptions/{accountNumber}", ACCOUNT)
                 .with(customer()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
@@ -73,13 +74,13 @@ class TransactionSupportControllerTest extends PostgresContainerConfig {
 
     @Test
     void uniqueDescriptions_withoutToken_returns401() throws Exception {
-        mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", CLABE))
+        mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", ACCOUNT))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void customer_onlySeesDescriptionsOfOwnTransactions() throws Exception {
-        mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", CLABE)
+        mockMvc.perform(get(TRANSACTION_SUPPORT + "/unique-descriptions/{accountNumber}", ACCOUNT)
                 .with(customer(OTHER_USER)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));

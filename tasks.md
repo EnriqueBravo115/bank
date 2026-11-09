@@ -82,8 +82,11 @@
 
 ### Funcionalidad
 
-- [ ] **Las consultas filtran por el identificador con que se creó la transacción**
-  - `sourceIdentifier` guarda lo que mandó el cliente (cuenta o CLABE): consultar por número de cuenta no muestra las transferencias hechas con la CLABE. Ya se guarda `account_number`; las consultas podrían filtrar por él (resolviendo la CLABE a cuenta).
+- [x] **Las consultas filtran por el identificador con que se creó la transacción**
+  - Consultas, analítica y soporte filtran por `account_number`, no por `sourceIdentifier`: una cuenta ve sus transacciones hechas con el número de cuenta o con la CLABE.
+  - Parámetro opcional `sourceIdentifierType` (`ACCOUNT` por defecto, sin llamar a account-service). Con `CLABE`, `AccountResolver.accountNumberOf` la resuelve a su cuenta (`404` si no existe, `503` si account-service no responde); `CARD` es `400`.
+  - `/query/by-sources?sourceIdentifiers=` pasa a `/query/by-accounts?accountNumbers=`.
+  - `V5` rellena `account_number` de las filas anteriores a `V4` creadas con número de cuenta (las creadas con CLABE quedan en `NULL`) y cambia los índices a `account_number`.
 
 - [x] **Endpoint de retiro**
   - `POST /api/v1/transaction/create/withdrawal`, con validación (`@Positive`, `@NotBlank`, `@NotNull`) igual que compra y pago de servicio.

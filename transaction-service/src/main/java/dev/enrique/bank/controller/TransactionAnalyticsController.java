@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.enrique.bank.commons.dto.response.TransactionResponse;
 import dev.enrique.bank.commons.dto.response.TransactionSummaryResponse;
+import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 import dev.enrique.bank.commons.enums.TransactionType;
+import dev.enrique.bank.service.AccountResolver;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;
 
@@ -26,81 +28,97 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TransactionAnalyticsController {
     private final TransactionAnalyticsService transactionAnalyticsService;
+    private final AccountResolver accountResolver;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/group-by-type")
     public ResponseEntity<Map<TransactionType, List<TransactionResponse>>> groupTransactionsByType(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.groupTransactionsByType(sourceIdentifier, status));
+        return ResponseEntity.ok(transactionAnalyticsService.groupTransactionsByType(
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status));
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/sum-by-type")
     public ResponseEntity<Map<TransactionType, BigDecimal>> sumTransactionsByType(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(sourceIdentifier, status));
+        return ResponseEntity.ok(transactionAnalyticsService.sumTransactionsByType(
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/partition-by-amount")
     public ResponseEntity<Map<Boolean, List<TransactionResponse>>> partitionTransactionsByAmount(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status,
             @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(
-                transactionAnalyticsService.partitionTransactionsByAmount(sourceIdentifier, status, amount));
+        return ResponseEntity.ok(transactionAnalyticsService.partitionTransactionsByAmount(
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status, amount));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/type-summary")
     public ResponseEntity<Map<TransactionType, TransactionSummaryResponse>> getTransactionTypeSummary(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.getTransactionTypeSummary(sourceIdentifier, status));
+        return ResponseEntity.ok(transactionAnalyticsService.getTransactionTypeSummary(
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status));
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/total-amount")
     public ResponseEntity<BigDecimal> getTotalTransactionAmount(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status,
             @RequestParam TransactionType type) {
         return ResponseEntity.ok(transactionAnalyticsService.calculateTotalAmountByStatusAndType(
-                sourceIdentifier, status, type));
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status, type));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/average-days")
     public ResponseEntity<Double> getAverageDaysBetweenTransactions(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {
         return ResponseEntity.ok(transactionAnalyticsService.getAverageDaysBetweenTransactions(
-                sourceIdentifier, status));
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/max-by-type")
     public ResponseEntity<Map<TransactionType, TransactionResponse>> getMaxByTransactionType(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.getMaxTransactionByType(sourceIdentifier, status));
+        return ResponseEntity.ok(transactionAnalyticsService.getMaxTransactionByType(
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status));
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/count-by-month")
     public ResponseEntity<Map<Month, Long>> countTransactionsByMonth(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.countTransactionsByMonth(sourceIdentifier, status));
+        return ResponseEntity.ok(transactionAnalyticsService.countTransactionsByMonth(
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status));
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/average-amount")
     public ResponseEntity<Map<TransactionType, BigDecimal>> getAverageAmountByType(
             @RequestParam String sourceIdentifier,
+            @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {
-        return ResponseEntity.ok(transactionAnalyticsService.getAverageAmountByType(sourceIdentifier, status));
+        return ResponseEntity.ok(transactionAnalyticsService.getAverageAmountByType(
+                accountResolver.accountNumberOf(sourceIdentifier, sourceIdentifierType), status));
     }
 }

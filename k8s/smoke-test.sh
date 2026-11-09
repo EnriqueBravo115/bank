@@ -44,8 +44,8 @@ check "user get-active" 200 \
   -H "Authorization: Bearer $TOKEN" "$KONG_URL/api/v1/user/get-active"
 check "account get-by-email (no account yet)" 404 \
   -H "Authorization: Bearer $TOKEN" "$KONG_URL/api/v1/account/get-by-email/ana.martinez92@gmail.com"
-check "transaction by-sources" 200 \
-  -H "Authorization: Bearer $TOKEN" "$KONG_URL/api/v1/transaction/query/by-sources?sourceIdentifiers=646180110400000001"
+check "transaction by-accounts" 200 \
+  -H "Authorization: Bearer $TOKEN" "$KONG_URL/api/v1/transaction/query/by-accounts?accountNumbers=ACC-1001"
 check "user get-active without token" 401 "$KONG_URL/api/v1/user/get-active"
 
 if [ "$failed" -ne 0 ]; then

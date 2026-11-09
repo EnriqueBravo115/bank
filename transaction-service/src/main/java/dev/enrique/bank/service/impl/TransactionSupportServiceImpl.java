@@ -35,7 +35,7 @@ public class TransactionSupportServiceImpl implements TransactionSupportService 
     }
 
     private Stream<String> descriptions(String accountNumber) {
-        return transactionRepository.findAllCompletedBySourceIdentifier(currentCaller.ownerScope(), accountNumber).stream()
+        return transactionRepository.findAllCompletedByAccountNumber(currentCaller.ownerScope(), accountNumber).stream()
                 .map(TransactionResponse::description)
                 .filter(Objects::nonNull)
                 .filter(desc -> !desc.isBlank());

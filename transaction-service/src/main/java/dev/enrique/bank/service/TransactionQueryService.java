@@ -12,27 +12,27 @@ import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionStatus;
 
 public interface TransactionQueryService {
-    List<TransactionResponse> getTransactionHistory(String sourceIdentifier, TransactionStatus status);
+    List<TransactionResponse> getTransactionHistory(String accountNumber, TransactionStatus status);
 
-    Page<TransactionResponse> getAllTransactions(String sourceIdentifier, TransactionStatus status, Pageable pageable);
+    Page<TransactionResponse> getAllTransactions(String accountNumber, TransactionStatus status, Pageable pageable);
 
-    List<TransactionResponse> getTransactionsByYear(String sourceIdentifier, TransactionStatus status, Integer year);
+    List<TransactionResponse> getTransactionsByYear(String accountNumber, TransactionStatus status, Integer year);
 
-    List<TransactionResponse> getAllTransactionsBySourceIdentifiers(List<String> sourceIdentifiers);
+    List<TransactionResponse> getAllTransactionsByAccountNumbers(List<String> accountNumbers);
 
-    TransactionResponse getMaxTransaction(String sourceIdentifier, TransactionStatus status);
+    TransactionResponse getMaxTransaction(String accountNumber, TransactionStatus status);
 
-    List<TransactionResponse> getTransactionsInDateRange(String sourceIdentifier, TransactionStatus status,
+    List<TransactionResponse> getTransactionsInDateRange(String accountNumber, TransactionStatus status,
             LocalDateTime startDate, LocalDateTime endDate);
 
     TransactionResponse getTransactionByCode(String transactionCode);
 
-    List<TransactionResponse> getAllTransactionByAmountRangeAndStatus(String sourceIdentifier,
+    List<TransactionResponse> getAllTransactionByAmountRangeAndStatus(String accountNumber,
             TransactionStatus status, BigDecimal minAmount, BigDecimal maxAmount);
 
-    List<TransactionResponse> getAllByIdentifierTypeAndStatus(String sourceIdentifier,
+    List<TransactionResponse> getAllByIdentifierTypeAndStatus(String accountNumber,
             IdentifierType identifierType, TransactionStatus status);
 
-    List<TransactionResponse> getTransactionByKeyword(String sourceIdentifier, TransactionStatus status,
+    List<TransactionResponse> getTransactionByKeyword(String accountNumber, TransactionStatus status,
             String keyword);
 }

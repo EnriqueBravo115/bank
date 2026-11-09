@@ -30,7 +30,7 @@ import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;
 
-// Every report works on the transactions of one source identifier with one status; customers only
+// Every report works on the transactions of one account with one status; customers only
 // see their own (CurrentCaller.ownerScope).
 @Service
 @RequiredArgsConstructor
@@ -39,45 +39,45 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     private final CurrentCaller currentCaller;
 
     @Override
-    public Map<TransactionType, List<TransactionResponse>> groupTransactionsByType(String sourceIdentifier,
+    public Map<TransactionType, List<TransactionResponse>> groupTransactionsByType(String accountNumber,
             TransactionStatus status) {
-        return find(sourceIdentifier, status).stream()
+        return find(accountNumber, status).stream()
                 .collect(groupingBy(TransactionResponse::transactionType));
     }
 
     @Override
-    public Map<TransactionType, BigDecimal> sumTransactionsByType(String sourceIdentifier, TransactionStatus status) {
-        return find(sourceIdentifier, status).stream()
+    public Map<TransactionType, BigDecimal> sumTransactionsByType(String accountNumber, TransactionStatus status) {
+        return find(accountNumber, status).stream()
                 .collect(groupingBy(TransactionResponse::transactionType,
                         reducing(BigDecimal.ZERO, TransactionResponse::amount, BigDecimal::add)));
     }
 
     // true: amount greater than the threshold; false: less or equal
     @Override
-    public Map<Boolean, List<TransactionResponse>> partitionTransactionsByAmount(String sourceIdentifier,
+    public Map<Boolean, List<TransactionResponse>> partitionTransactionsByAmount(String accountNumber,
             TransactionStatus status, BigDecimal amount) {
-        return find(sourceIdentifier, status).stream()
+        return find(accountNumber, status).stream()
                 .collect(partitioningBy(t -> t.amount().compareTo(amount) > 0));
     }
 
     @Override
-    public Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String sourceIdentifier,
+    public Map<TransactionType, TransactionSummaryResponse> getTransactionTypeSummary(String accountNumber,
             TransactionStatus status) {
-        return find(sourceIdentifier, status).stream()
+        return find(accountNumber, status).stream()
                 .collect(groupingBy(TransactionResponse::transactionType,
                         collectingAndThen(toList(), list -> new TransactionSummaryResponse(
                                 list.size(), total(list)))));
     }
 
     @Override
-    public BigDecimal calculateTotalAmountByStatusAndType(String sourceIdentifier, TransactionStatus status,
+    public BigDecimal calculateTotalAmountByStatusAndType(String accountNumber, TransactionStatus status,
             TransactionType type) {
-        return total(transactionRepository.findAllBySourceIdentifierStatusAndType(currentCaller.ownerScope(), sourceIdentifier, status, type));
+        return total(transactionRepository.findAllByAccountNumberStatusAndType(currentCaller.ownerScope(), accountNumber, status, type));
     }
 
     @Override
-    public double getAverageDaysBetweenTransactions(String sourceIdentifier, TransactionStatus status) {
-        List<TransactionResponse> sorted = find(sourceIdentifier, status).stream()
+    public double getAverageDaysBetweenTransactions(String accountNumber, TransactionStatus status) {
+        List<TransactionResponse> sorted = find(accountNumber, status).stream()
                 .sorted(comparing(TransactionResponse::transactionDate))
                 .toList();
 
@@ -90,29 +90,29 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     }
 
     @Override
-    public Map<TransactionType, TransactionResponse> getMaxTransactionByType(String sourceIdentifier,
+    public Map<TransactionType, TransactionResponse> getMaxTransactionByType(String accountNumber,
             TransactionStatus status) {
-        return find(sourceIdentifier, status).stream()
+        return find(accountNumber, status).stream()
                 .collect(toMap(TransactionResponse::transactionType, Function.identity(),
                         BinaryOperator.maxBy(comparing(TransactionResponse::amount))));
     }
 
     @Override
-    public Map<Month, Long> countTransactionsByMonth(String sourceIdentifier, TransactionStatus status) {
-        return find(sourceIdentifier, status).stream()
+    public Map<Month, Long> countTransactionsByMonth(String accountNumber, TransactionStatus status) {
+        return find(accountNumber, status).stream()
                 .collect(groupingBy(t -> t.transactionDate().getMonth(), counting()));
     }
 
     @Override
-    public Map<TransactionType, BigDecimal> getAverageAmountByType(String sourceIdentifier, TransactionStatus status) {
-        return find(sourceIdentifier, status).stream()
+    public Map<TransactionType, BigDecimal> getAverageAmountByType(String accountNumber, TransactionStatus status) {
+        return find(accountNumber, status).stream()
                 .collect(groupingBy(TransactionResponse::transactionType,
                         collectingAndThen(toList(), list -> total(list)
                                 .divide(BigDecimal.valueOf(list.size()), RoundingMode.HALF_UP))));
     }
 
-    private List<TransactionResponse> find(String sourceIdentifier, TransactionStatus status) {
-        return transactionRepository.findAllBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status);
+    private List<TransactionResponse> find(String accountNumber, TransactionStatus status) {
+        return transactionRepository.findAllByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status);
     }
 
     private static BigDecimal total(List<TransactionResponse> transactions) {

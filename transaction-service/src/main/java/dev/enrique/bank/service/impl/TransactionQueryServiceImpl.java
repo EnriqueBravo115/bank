@@ -24,39 +24,39 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     private final CurrentCaller currentCaller;
 
     @Override
-    public List<TransactionResponse> getTransactionHistory(String sourceIdentifier, TransactionStatus status) {
-        return transactionRepository.findAllBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status);
+    public List<TransactionResponse> getTransactionHistory(String accountNumber, TransactionStatus status) {
+        return transactionRepository.findAllByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status);
     }
 
     @Override
-    public Page<TransactionResponse> getAllTransactions(String sourceIdentifier, TransactionStatus status,
+    public Page<TransactionResponse> getAllTransactions(String accountNumber, TransactionStatus status,
             Pageable pageable) {
-        return transactionRepository.findPageBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status, pageable);
+        return transactionRepository.findPageByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status, pageable);
     }
 
     @Override
-    public List<TransactionResponse> getTransactionsByYear(String sourceIdentifier, TransactionStatus status,
+    public List<TransactionResponse> getTransactionsByYear(String accountNumber, TransactionStatus status,
             Integer year) {
-        return transactionRepository.findAllBySourceIdentifierAndYear(currentCaller.ownerScope(), sourceIdentifier, year, status);
+        return transactionRepository.findAllByAccountNumberAndYear(currentCaller.ownerScope(), accountNumber, year, status);
     }
 
     @Override
-    public List<TransactionResponse> getAllTransactionsBySourceIdentifiers(List<String> sourceIdentifiers) {
-        return transactionRepository.findAllCompletedBySourceIdentifiersIn(sourceIdentifiers);
+    public List<TransactionResponse> getAllTransactionsByAccountNumbers(List<String> accountNumbers) {
+        return transactionRepository.findAllCompletedByAccountNumberIn(accountNumbers);
     }
 
     @Override
-    public TransactionResponse getMaxTransaction(String sourceIdentifier, TransactionStatus status) {
-        return transactionRepository.findMaxBySourceIdentifierAndStatus(currentCaller.ownerScope(), sourceIdentifier, status)
+    public TransactionResponse getMaxTransaction(String accountNumber, TransactionStatus status) {
+        return transactionRepository.findMaxByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status)
                 .orElseThrow(() -> new TransactionNotFoundException(
-                        "No " + status + " transactions found for: " + sourceIdentifier));
+                        "No " + status + " transactions found for: " + accountNumber));
     }
 
     @Override
-    public List<TransactionResponse> getTransactionsInDateRange(String sourceIdentifier, TransactionStatus status,
+    public List<TransactionResponse> getTransactionsInDateRange(String accountNumber, TransactionStatus status,
             LocalDateTime startDate, LocalDateTime endDate) {
-        return transactionRepository.findAllBySourceIdentifierAndDateRangeAndStatus(currentCaller.ownerScope(), 
-                sourceIdentifier, status, startDate, endDate);
+        return transactionRepository.findAllByAccountNumberAndDateRangeAndStatus(currentCaller.ownerScope(), 
+                accountNumber, status, startDate, endDate);
     }
 
     @Override
@@ -67,20 +67,20 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     }
 
     @Override
-    public List<TransactionResponse> getAllTransactionByAmountRangeAndStatus(String sourceIdentifier,
+    public List<TransactionResponse> getAllTransactionByAmountRangeAndStatus(String accountNumber,
             TransactionStatus status, BigDecimal minAmount, BigDecimal maxAmount) {
-        return transactionRepository.findAllByAmountRangeAndStatus(currentCaller.ownerScope(), sourceIdentifier, status, minAmount, maxAmount);
+        return transactionRepository.findAllByAmountRangeAndStatus(currentCaller.ownerScope(), accountNumber, status, minAmount, maxAmount);
     }
 
     @Override
-    public List<TransactionResponse> getAllByIdentifierTypeAndStatus(String sourceIdentifier,
+    public List<TransactionResponse> getAllByIdentifierTypeAndStatus(String accountNumber,
             IdentifierType identifierType, TransactionStatus status) {
-        return transactionRepository.findAllByIdentifierTypeAndStatus(currentCaller.ownerScope(), sourceIdentifier, identifierType, status);
+        return transactionRepository.findAllByIdentifierTypeAndStatus(currentCaller.ownerScope(), accountNumber, identifierType, status);
     }
 
     @Override
-    public List<TransactionResponse> getTransactionByKeyword(String sourceIdentifier, TransactionStatus status,
+    public List<TransactionResponse> getTransactionByKeyword(String accountNumber, TransactionStatus status,
             String keyword) {
-        return transactionRepository.searchByKeyword(currentCaller.ownerScope(), sourceIdentifier, status, keyword);
+        return transactionRepository.searchByKeyword(currentCaller.ownerScope(), accountNumber, status, keyword);
     }
 }
