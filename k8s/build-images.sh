@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 for svc in "${SERVICES[@]}"; do
   echo "==> Building bank/$svc:$TAG"
-  docker build -t "bank/$svc:$TAG" -f "$ROOT/$svc/Dockerfile" "$ROOT"
+  docker build -t "bank/$svc:$TAG" "$ROOT/$svc"
 done
 
 for svc in "${SERVICES[@]}"; do

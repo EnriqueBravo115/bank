@@ -183,6 +183,9 @@ services:
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       KONG_PLUGINS: bundled
+      # Re-resolve the services every 5s: a recreated container gets a new IP, and with Docker's
+      # default TTL (600s) Kong would keep sending requests to the old one (502).
+      KONG_DNS_VALID_TTL: 5
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -214,8 +217,7 @@ services:
   eureka-server:
     container_name: eureka_server
     build:
-      context: .
-      dockerfile: eureka-server/Dockerfile
+      context: ./eureka-server
     environment:
       EUREKA_HOST: eureka-server
     restart: on-failure
@@ -230,8 +232,7 @@ services:
   config-server:
     container_name: config_server
     build:
-      context: .
-      dockerfile: config-server/Dockerfile
+      context: ./config-server
     environment:
       EUREKA_HOST: eureka-server
     restart: on-failure
@@ -249,8 +250,7 @@ services:
   user-service:
     container_name: user_service
     build:
-      context: .
-      dockerfile: user-service/Dockerfile
+      context: ./user-service
     environment:
       EUREKA_HOST: eureka-server
       DATASOURCE_HOST: user-db
@@ -276,8 +276,7 @@ services:
   transaction-service:
     container_name: transaction_service
     build:
-      context: .
-      dockerfile: transaction-service/Dockerfile
+      context: ./transaction-service
     environment:
       EUREKA_HOST: eureka-server
       DATASOURCE_HOST: transaction-db
@@ -302,8 +301,7 @@ services:
   account-service:
     container_name: account_service
     build:
-      context: .
-      dockerfile: account-service/Dockerfile
+      context: ./account-service
     environment:
       EUREKA_HOST: eureka-server
       DATASOURCE_HOST: account-db

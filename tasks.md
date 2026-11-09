@@ -288,20 +288,17 @@
 
 ## Build / Docker
 
-- [ ] **(Optional) Change each service's `context` in `docker-compose.yml` to its own folder**
+- [x] **(Optional) Change each service's `context` in `docker-compose.yml` to its own folder**
   - Now that each service is independent, it can be `context: ./account-service`.
   - In that case, the Dockerfile would have to copy `pom.xml` and `src` without the service prefix.
+  - Done: `context: ./<service>` in `docker-compose.yml`, the Dockerfiles copy `pom.xml` and `src`, a `.dockerignore` per service replaces the root one and `k8s/build-images.sh` builds from each folder. The context sent to Docker went down to about 250 kB per service.
 
-- [ ] **Kong caches the IP of the services**
+- [x] **Kong caches the IP of the services**
   - If a single service is recreated or restarted (`docker compose up -d <service>`, `docker stop/start`), its IP changes and Kong answers `502` until it is restarted (`docker compose restart kong`). Option: a low `KONG_DNS_VALID_TTL` on the `kong` service.
+  - Done: `KONG_DNS_VALID_TTL: 5`. Checked by recreating `account-service` with a new IP: `502` before, `200` after. Not needed in k8s, where each Service keeps its ClusterIP.
 
-- [ ] **CI/CD pipeline (GitHub Actions)**
-  - A workflow was built and removed for now. Proposed design:
-    - `test`: `mvn verify` per service with JDK 17 and `actions/setup-java` (`cache: maven`).
-    - `image`: build with BuildKit layer cache (`type=gha`, `mode=max`), Trivy scan and push to GHCR on `main`.
-    - `e2e`: kind cluster + `kubectl apply -k k8s` + `k8s/smoke-test.sh`.
-  - The `/root/.m2` cache mount in the Dockerfiles does not persist on ephemeral runners: if a service's `src` changes, its image downloads the dependencies again.
-  - When building it: Trivy first in report-only mode and then blocking; build only the services that changed (`dorny/paths-filter`).
+- [ ] **Vulnerable dependencies (Trivy)**
+  - Trivy reports 12 CRITICAL and 37 HIGH findings with a fix in account-service's image (e.g. `tomcat-embed-core` 10.1.49, `jackson-databind`, `bcprov-jdk18on` 1.80, `kafka-clients` 3.9.1) and 2 HIGH in the base image. Upgrade Spring Boot / Spring Cloud (and override the remaining versions) (`docker run aquasec/trivy:0.58.1 image <image>` shows the findings).
 
 ## Maven
 

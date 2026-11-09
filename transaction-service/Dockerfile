@@ -2,8 +2,8 @@ FROM maven:3.9.5-eclipse-temurin-17 AS build
 
 WORKDIR /build
 
-COPY transaction-service/pom.xml .
-COPY transaction-service/src src
+COPY pom.xml .
+COPY src src
 
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B clean package -DskipTests
