@@ -2,6 +2,7 @@ package dev.enrique.bank.service;
 
 import dev.enrique.bank.broker.event.CreateAccountEvent;
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
+import dev.enrique.bank.commons.dto.response.BalanceResponse;
 
 public interface AccountService {
     public void createAccount(CreateAccountEvent createAccountEvent, String authId);
@@ -17,4 +18,8 @@ public interface AccountService {
     public AccountDetailedResponse findByEmail(String email);
 
     public AccountDetailedResponse findByUserId(String userId);
+
+    public BalanceResponse balanceOf(String accountNumber);
+
+    public BalanceResponse balanceOfUser(String userId);
 }

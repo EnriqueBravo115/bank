@@ -36,13 +36,13 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
             SELECT new dev.enrique.bank.commons.dto.response.UserFullNameResponse(
                 p.id, p.names, p.firstSurname, p.secondSurname)
             FROM UserProfile p
-            WHERE LOWER(CONCAT(p.names, ' ', p.firstSurname, ' ', p.secondSurname))
+            WHERE LOWER(CONCAT(p.names, ' ', p.firstSurname, ' ', COALESCE(p.secondSurname, '')))
                 LIKE LOWER(CONCAT('%', :name, '%'))
             ORDER BY p.id
             """,
             countQuery = """
             SELECT COUNT(p) FROM UserProfile p
-            WHERE LOWER(CONCAT(p.names, ' ', p.firstSurname, ' ', p.secondSurname))
+            WHERE LOWER(CONCAT(p.names, ' ', p.firstSurname, ' ', COALESCE(p.secondSurname, '')))
                 LIKE LOWER(CONCAT('%', :name, '%'))
             """)
     Page<UserFullNameResponse> searchByName(String name, Pageable pageable);

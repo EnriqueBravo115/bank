@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
+import dev.enrique.bank.commons.dto.response.BalanceResponse;
 import dev.enrique.bank.service.AccountService;
 import dev.enrique.bank.service.CardService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,18 @@ public class AccountController {
     @GetMapping("/me")
     public ResponseEntity<AccountDetailedResponse> getMyAccount(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(accountService.findByUserId(jwt.getSubject()));
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER_BASIC')")
+    @GetMapping("/me/balance")
+    public ResponseEntity<BalanceResponse> getMyBalance(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(accountService.balanceOfUser(jwt.getSubject()));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/balance/{accountNumber}")
+    public ResponseEntity<BalanceResponse> getBalance(@PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.balanceOf(accountNumber));
     }
 
     // Lookups of any account: admins, and transaction-service to resolve identifiers and owners.

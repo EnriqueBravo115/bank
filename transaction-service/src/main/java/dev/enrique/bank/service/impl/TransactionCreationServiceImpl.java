@@ -55,6 +55,8 @@ public class TransactionCreationServiceImpl implements TransactionCreationServic
 
         Transaction transaction = transaction(TransactionType.TRANSFER, source, request.sourceIdentifier(),
                 request.sourceIdentifierType(), request.amount(), request.description(), request.currency());
+        transaction.setCounterpartyAccountNumber(target.accountNumber());
+        transaction.setCounterpartyOwnerId(target.userId());
         TransferTransaction transfer = TransferTransaction.builder()
                 .targetIdentifier(request.targetIdentifier())
                 .targetIdentifierType(request.targetIdentifierType())

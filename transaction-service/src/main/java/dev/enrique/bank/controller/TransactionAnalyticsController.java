@@ -3,7 +3,7 @@ package dev.enrique.bank.controller;
 import static dev.enrique.bank.commons.constants.PathConstants.TRANSACTION_ANALYTICS;
 
 import java.math.BigDecimal;
-import java.time.Month;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 
@@ -104,7 +104,7 @@ public class TransactionAnalyticsController {
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('CUSTOMER_BASIC')")
     @GetMapping("/count-by-month")
-    public ResponseEntity<Map<Month, Long>> countTransactionsByMonth(
+    public ResponseEntity<Map<YearMonth, Long>> countTransactionsByMonth(
             @RequestParam String sourceIdentifier,
             @RequestParam(defaultValue = "ACCOUNT") IdentifierType sourceIdentifierType,
             @RequestParam TransactionStatus status) {

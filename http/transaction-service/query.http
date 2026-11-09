@@ -1,6 +1,7 @@
 # sourceIdentifier is an account number unless sourceIdentifierType says CLABE or CARD; either way it
 # returns the account's transactions, whether they were created with the number, the CLABE or the card.
-# A customer only sees their own; an ADMIN sees anyone's.
+# A customer only sees their own; an ADMIN sees anyone's. The account's transactions include the COMPLETED
+# transfers it received: "direction" is DEBIT (money out) or CREDIT (deposits and money received).
 @baseUrl = http://localhost:8000/api/v1/transaction/query
 @customerToken = PASTE_TOKEN_FROM_auth.http
 @adminToken = PASTE_TOKEN_FROM_auth.http
@@ -38,10 +39,12 @@ GET {{baseUrl}}/max?sourceIdentifier={{accountNumber}}&status=COMPLETED
 Authorization: Bearer {{customerToken}}
 
 ### Date range (ADMIN, CUSTOMER_BASIC)
+# 400 if startDate is after endDate
 GET {{baseUrl}}/date-range?sourceIdentifier={{accountNumber}}&status=COMPLETED&startDate=2026-01-01T00:00:00&endDate=2026-12-31T23:59:59
 Authorization: Bearer {{customerToken}}
 
 ### Amount range (ADMIN, CUSTOMER_BASIC)
+# 400 if minAmount is greater than maxAmount
 GET {{baseUrl}}/amount-range?sourceIdentifier={{accountNumber}}&status=COMPLETED&minAmount=500.00&maxAmount=2000.00
 Authorization: Bearer {{customerToken}}
 
@@ -53,6 +56,6 @@ Authorization: Bearer {{customerToken}}
 GET {{baseUrl}}/identifier-type?sourceIdentifier={{accountNumber}}&status=COMPLETED&identifierType=CLABE
 Authorization: Bearer {{customerToken}}
 
-### By keyword in the description or reason (ADMIN, CUSTOMER_BASIC)
+### By keyword in the description or reason; % and _ are matched literally (ADMIN, CUSTOMER_BASIC)
 GET {{baseUrl}}/keyword?sourceIdentifier={{accountNumber}}&status=COMPLETED&keyword=rent
 Authorization: Bearer {{customerToken}}

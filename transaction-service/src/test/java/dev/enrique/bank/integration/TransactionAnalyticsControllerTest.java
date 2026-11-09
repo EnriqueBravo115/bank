@@ -10,6 +10,7 @@ import static dev.enrique.bank.util.JwtTestUtils.admin;
 import static dev.enrique.bank.util.JwtTestUtils.customer;
 import static dev.enrique.bank.util.TransactionFixtures.ACCOUNT;
 import static dev.enrique.bank.util.TransactionFixtures.CLABE;
+import static dev.enrique.bank.util.TransactionFixtures.incomingTransfer;
 import static dev.enrique.bank.util.TransactionFixtures.transaction;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -33,7 +34,8 @@ import dev.enrique.bank.util.PostgresContainerConfig;
 
 /**
  * COMPLETED: two transfers (1500.00 and 500.00, January 2024, 10 days apart) and one service payment
- * (300.00, February 2024, 10 days later). A FAILED transfer must never be counted.
+ * (300.00, February 2024, 10 days later). A FAILED transfer must never be counted. Analytics only use
+ * the account's own operations: transfers it received are left out.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -133,11 +135,28 @@ class TransactionAnalyticsControllerTest extends PostgresContainerConfig {
     }
 
     @Test
-    void countByMonth_returnsCountPerMonth() throws Exception {
+    void countByMonth_keepsTheSameMonthOfDifferentYearsApart() throws Exception {
+        transactionRepository.save(transaction("TXN-005", CLABE, SERVICE, COMPLETED, "80.00", "Water",
+                LocalDateTime.of(2025, 1, 10, 9, 0)));
+
         mockMvc.perform(completed("/count-by-month").with(customer()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.JANUARY").value(2))
-                .andExpect(jsonPath("$.FEBRUARY").value(1));
+                .andExpect(jsonPath("$['2024-01']").value(2))
+                .andExpect(jsonPath("$['2024-02']").value(1))
+                .andExpect(jsonPath("$['2025-01']").value(1));
+    }
+
+    @Test
+    void transfersReceived_areNotAddedToTheAccountsOwnTotals() throws Exception {
+        transactionRepository.save(incomingTransfer("TXN-IN", COMPLETED, "700.00", "Money from a friend",
+                LocalDateTime.of(2024, 1, 20, 9, 0)));
+
+        mockMvc.perform(completed("/sum-by-type").with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.TRANSFER").value(2000.00));
+        mockMvc.perform(completed("/total-amount").param("type", "TRANSFER").with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(content().string("2000.00"));
     }
 
     @Test

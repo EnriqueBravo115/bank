@@ -11,3 +11,11 @@ Authorization: Bearer {{customerToken}}
 ### Reverse, COMPLETED only: returns the money; 409 if the target account no longer has it (ADMIN)
 POST {{baseUrl}}/{{transactionCode}}/reverse
 Authorization: Bearer {{adminToken}}
+
+### PENDING transactions that ran out of automatic attempts (account-service never answered) (ADMIN)
+GET {{baseUrl}}/stuck
+Authorization: Bearer {{adminToken}}
+
+### Try a stuck transaction again; with no answer it gets a new round of attempts. 409 if it is not stuck (ADMIN)
+POST {{baseUrl}}/{{transactionCode}}/retry
+Authorization: Bearer {{adminToken}}

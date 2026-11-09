@@ -1,9 +1,12 @@
 package dev.enrique.bank.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import dev.enrique.bank.commons.enums.RegisterStatus;
 import dev.enrique.bank.commons.enums.UserRole;
@@ -53,14 +56,12 @@ public class RegisterServiceImpl implements RegisterService {
     @Override
     @Transactional
     public UserRegisterResponse register(UserRegisterRequest request) {
-        // Checked before Keycloak so a duplicate never creates (and then has to delete)
-        // a Keycloak user.
-        // A concurrent duplicate still hits the DB unique constraint and is compensated
-        // below.
+        // Checked before Keycloak so a duplicate never creates (and then has to delete) a Keycloak user.
+        // A concurrent duplicate still hits the DB unique constraint and is compensated below.
         if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new DuplicateUserDataException("email");
         }
-        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+        if (userRepository.existsByPhoneCodeAndPhoneNumber(request.getPhoneCode(), request.getPhoneNumber())) {
             throw new DuplicateUserDataException("phone number");
         }
 
@@ -75,22 +76,26 @@ public class RegisterServiceImpl implements RegisterService {
         String keycloakId = keycloakUserService.createUser(request);
         user.setKeycloakId(keycloakId);
 
-        try {
-            userRepository.saveAndFlush(user);
-            keycloakUserService.updateRegistrationStatus(keycloakId, RegisterStatus.REGISTER.name());
-        } catch (RuntimeException ex) {
-            // Compensate: avoid an orphan Keycloak user that would block re-registration
-            // with the same email.
-            keycloakUserService.deleteUser(keycloakId);
-            throw ex;
-        }
+        // Any failure from here on, the commit included, deletes the Keycloak user: an orphan would block
+        // registering again with the same email.
+        RollbackCompensation.onRollback("delete Keycloak user " + keycloakId,
+                () -> keycloakUserService.deleteUser(keycloakId));
+        userRepository.saveAndFlush(user);
+        keycloakUserService.updateRegistrationStatus(keycloakId, RegisterStatus.REGISTER.name());
 
+        // Only once the user exists: a rolled back registration never gets a verification email.
         // Best effort: if the email cannot be sent now, the user can ask for it again.
-        try {
-            keycloakUserService.sendVerificationEmail(keycloakId);
-        } catch (EmailDeliveryException ex) {
-            log.warn("Verification email for user {} could not be sent: {}", keycloakId, ex.getCause().toString());
-        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    keycloakUserService.sendVerificationEmail(keycloakId);
+                } catch (EmailDeliveryException ex) {
+                    log.warn("Verification email for user {} could not be sent: {}", keycloakId,
+                            ex.getCause().toString());
+                }
+            }
+        });
 
         return basicMapper.convertToResponse(user, UserRegisterResponse.class);
     }
@@ -121,8 +126,15 @@ public class RegisterServiceImpl implements RegisterService {
         // back and can be retried.
         userRepository.saveAndFlush(user);
 
-        keycloakUserService.updateUser(user.getKeycloakId(), request);
-        keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.PROFILE.name());
+        // The DB rollback does not reach Keycloak: put back the name and step the user had.
+        String userKeycloakId = user.getKeycloakId();
+        RollbackCompensation.onRollback("undo profile of user " + userKeycloakId, () -> {
+            keycloakUserService.updateName(userKeycloakId, KeycloakUserServiceImpl.PENDING_NAME,
+                    KeycloakUserServiceImpl.PENDING_NAME);
+            keycloakUserService.updateRegistrationStatus(userKeycloakId, RegisterStatus.REGISTER.name());
+        });
+        keycloakUserService.updateUser(userKeycloakId, request);
+        keycloakUserService.updateRegistrationStatus(userKeycloakId, RegisterStatus.PROFILE.name());
     }
 
     @Override
@@ -167,8 +179,8 @@ public class RegisterServiceImpl implements RegisterService {
         // committed.
         eventOutbox.enqueue(Topics.ACCOUNT_REQUESTED, user.getKeycloakId(), CreateAccountEvent.builder()
                 .email(user.getEmail())
-                .accountType(AccountType.SAVING)
-                .currency(Currency.MX)
+                .accountType(Objects.requireNonNullElse(request.getAccountType(), AccountType.SAVING))
+                .currency(Objects.requireNonNullElse(request.getCurrency(), Currency.MX))
                 .build());
 
         // Hit the DB constraints before touching Keycloak; if Keycloak fails,
@@ -208,7 +220,10 @@ public class RegisterServiceImpl implements RegisterService {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.saveAndFlush(user);
 
-        keycloakUserService.updateRegistrationStatus(user.getKeycloakId(), RegisterStatus.COMPLETE.name());
+        String userKeycloakId = user.getKeycloakId();
+        RollbackCompensation.onRollback("undo financial step of user " + userKeycloakId,
+                () -> keycloakUserService.updateRegistrationStatus(userKeycloakId, RegisterStatus.KYC.name()));
+        keycloakUserService.updateRegistrationStatus(userKeycloakId, RegisterStatus.COMPLETE.name());
     }
 
     @Override

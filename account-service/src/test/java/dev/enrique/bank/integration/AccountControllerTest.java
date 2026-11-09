@@ -1,5 +1,11 @@
 package dev.enrique.bank.integration;
 
+import static dev.enrique.bank.commons.constants.Headers.IDEMPOTENCY_KEY;
+import static dev.enrique.bank.commons.constants.PathConstants.MOVEMENT;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
+import org.springframework.http.MediaType;
+
 import static dev.enrique.bank.commons.constants.PathConstants.ACCOUNT;
 import static dev.enrique.bank.util.JwtTestUtils.admin;
 import static dev.enrique.bank.util.JwtTestUtils.customer;
@@ -87,6 +93,44 @@ class AccountControllerTest extends PostgresContainerConfig {
         mockMvc.perform(get(ACCOUNT + "/get-by-email/{e}", "user-1@test.com").with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountNumber").value(ACCOUNT_NUMBER));
+    }
+
+    @Test
+    void lookupByEmail_ignoresCase() throws Exception {
+        mockMvc.perform(get(ACCOUNT + "/get-by-email/{e}", "USER-1@Test.COM").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accountNumber").value(ACCOUNT_NUMBER));
+    }
+
+    @Test
+    void myBalance_isTheLatestBalanceOfMyAccount() throws Exception {
+        mockMvc.perform(get(ACCOUNT + "/me/balance").with(customer("user-1")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accountNumber").value(ACCOUNT_NUMBER))
+                .andExpect(jsonPath("$.balance").value(500.00))
+                .andExpect(jsonPath("$.currency").value("MX"))
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+
+        // A movement appends a new balance row: the answer follows it
+        mockMvc.perform(post(MOVEMENT + "/service").with(service())
+                .header(IDEMPOTENCY_KEY, "txn-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"currency\":\"MX\",\"accountNumber\":\"" + ACCOUNT_NUMBER + "\",\"amount\":120.50}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get(ACCOUNT + "/me/balance").with(customer("user-1")))
+                .andExpect(jsonPath("$.balance").value(379.50));
+
+        mockMvc.perform(get(ACCOUNT + "/me/balance").with(customer("user-9"))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void balanceOfAnyAccount_isForAdminsOnly() throws Exception {
+        mockMvc.perform(get(ACCOUNT + "/balance/{n}", ACCOUNT_NUMBER).with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(500.00));
+        mockMvc.perform(get(ACCOUNT + "/balance/{n}", ACCOUNT_NUMBER).with(customer("user-1")))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get(ACCOUNT + "/balance/{n}", "ACC-404").with(admin())).andExpect(status().isNotFound());
     }
 
     @Test

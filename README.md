@@ -40,10 +40,13 @@ and, once the KYC step succeeds, asks `account-service` (through Kafka) to open 
 
 After step 1 the user logs in, and the remaining steps act on the JWT owner (`/me`).
 During registration the user can also resend the verification email
-(`POST /user/register/me/verify-email`) and fix a mistyped email (`PUT /user/register/me/email`).
+(`POST /user/register/me/verify-email`) and fix a mistyped email (`PUT /user/me/email`, the same
+endpoint customers use later). Emails are stored in lowercase. At KYC the customer may choose the
+account type and currency (`SAVING` in `MX` by default); the second surname is optional.
 
 #### Account Management
-- **Contact changes** (customer): `PUT /user/me/email` and `PUT /user/me/phone`. A new email is
+- **Contact changes** (customer): `PUT /user/me/email` and `PUT /user/me/phone` (a phone number is
+  unique together with its country code). A new email is
   also the Keycloak username, has to be verified again and is propagated to `account-service`.
 - **Customer tier** (admin): `PUT /user/{userId}/role` switches between `CUSTOMER_BASIC`,
   `CUSTOMER_PREMIUM` and `CUSTOMER_BUSINESS`. `CUSTOMER_BASIC` is always kept in Keycloak and the
@@ -61,6 +64,9 @@ During registration the user can also resend the verification email
 Endpoints are protected with Keycloak JWTs and realm roles (`CUSTOMER_*`, `ADMIN`). On each
 request a filter also rejects blocked users (`403`), even if their token has not expired yet,
 and, outside the registration steps, users whose registration has not reached `KYC`.
+Only user-service checks the database: account-service and transaction-service accept a blocked
+user's token until it expires (5 minutes). This is an accepted risk: blocking also freezes the
+account, so no money moves, but read-only queries keep working meanwhile.
 
 #### Consistency between Postgres and Keycloak
 Each operation runs in a single database transaction. The DB changes are flushed **before** calling

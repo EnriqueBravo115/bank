@@ -9,6 +9,7 @@ import static dev.enrique.bank.util.JwtTestUtils.customer;
 import static dev.enrique.bank.util.JwtTestUtils.tokenWithRole;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -126,6 +127,9 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         assertThat(saved.getIdentifierType()).isEqualTo(IdentifierType.CLABE);
         assertThat(saved.getAccountNumber()).isEqualTo(SOURCE_ACCOUNT);
         assertThat(saved.getOwnerId()).isEqualTo(OWNER);
+        // The receiver can find it too
+        assertThat(saved.getCounterpartyAccountNumber()).isEqualTo(TARGET_ACCOUNT);
+        assertThat(saved.getCounterpartyOwnerId()).isEqualTo(OTHER_USER);
         assertThat(saved.getTransactionStatus()).isEqualTo(TransactionStatus.COMPLETED);
         assertThat(saved.getNextAttemptAt()).isNull();
     }
@@ -311,6 +315,58 @@ class TransactionCreationControllerTest extends PostgresContainerConfig {
         Transaction pending = singleSavedTransaction();
         assertThat(pending.getAttempts()).isEqualTo(2);
         assertThat(pending.getNextAttemptAt()).isAfterOrEqualTo(first.plusSeconds(10));
+    }
+
+    @Test
+    void shouldStopRetryingAfterTheLastAttemptAndLetAnAdminRetryIt() throws Exception {
+        when(accountClient.processTransfer(anyString(), any())).thenReturn(UNKNOWN);
+        transfer(SOURCE_CLABE, TARGET_CLABE, "250.00", customer()).andExpect(status().isOk());
+        Transaction pending = singleSavedTransaction();
+        pending.setAttempts(TransactionSettlement.MAX_ATTEMPTS - 1);
+        transactionRepository.save(pending);
+
+        settlement.retryPending(LocalDateTime.now().plusHours(1));
+
+        Transaction stuck = singleSavedTransaction();
+        assertThat(stuck.getTransactionStatus()).isEqualTo(TransactionStatus.PENDING);
+        assertThat(stuck.getNextAttemptAt()).isNull();
+        assertThat(stuck.getReason()).contains("after " + TransactionSettlement.MAX_ATTEMPTS + " attempts");
+        // No more automatic attempts
+        assertThat(settlement.retryPending(LocalDateTime.now().plusDays(1))).isZero();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(TRANSACTION + "/stuck").with(customer())).andExpect(status().isForbidden());
+        mockMvc.perform(MockMvcRequestBuilders.get(TRANSACTION + "/stuck").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].transactionCode").value(stuck.getTransactionCode()))
+                .andExpect(jsonPath("$[0].transactionStatus").value("PENDING"));
+
+        when(accountClient.processTransfer(anyString(), any())).thenReturn(COMPLETED);
+        lifecycle(stuck.getTransactionCode(), "/retry", customer()).andExpect(status().isForbidden());
+        lifecycle(stuck.getTransactionCode(), "/retry", admin())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionStatus").value("COMPLETED"));
+
+        mockMvc.perform(MockMvcRequestBuilders.get(TRANSACTION + "/stuck").with(admin())).andExpect(jsonPath("$", hasSize(0)));
+        // Only stuck transactions can be retried by hand
+        lifecycle(stuck.getTransactionCode(), "/retry", admin()).andExpect(status().isConflict());
+    }
+
+    @Test
+    void stuckTransactionRetriedWithoutAnswer_getsANewRoundOfAttempts() throws Exception {
+        when(accountClient.processTransfer(anyString(), any())).thenReturn(UNKNOWN);
+        transfer(SOURCE_CLABE, TARGET_CLABE, "250.00", customer()).andExpect(status().isOk());
+        Transaction pending = singleSavedTransaction();
+        pending.setAttempts(TransactionSettlement.MAX_ATTEMPTS);
+        pending.stopRetrying("stuck");
+        transactionRepository.save(pending);
+
+        lifecycle(pending.getTransactionCode(), "/retry", admin())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionStatus").value("PENDING"));
+
+        Transaction retried = singleSavedTransaction();
+        assertThat(retried.getAttempts()).isOne();
+        assertThat(retried.getNextAttemptAt()).isNotNull();
     }
 
     @Test

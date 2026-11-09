@@ -36,7 +36,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
                 a.id, a.userId, a.email, a.clabe, a.accountNumber,
                 a.accountType, a.accountStatus, a.currency, a.creationDate)
             FROM Account a
-            WHERE a.email = :email
+            WHERE LOWER(a.email) = LOWER(:email)
             """)
     Optional<AccountDetailedResponse> findByEmail(String email);
 

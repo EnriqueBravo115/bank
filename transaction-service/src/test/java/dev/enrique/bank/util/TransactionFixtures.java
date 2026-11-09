@@ -17,6 +17,8 @@ public final class TransactionFixtures {
     public static final String CARD = "4111111111111111";
     // A card is linked to an account of its own in these fixtures
     public static final String CARD_ACCOUNT = "ACC-2002";
+    // Account of OTHER_USER that sends transfers to ACCOUNT
+    public static final String SENDER_ACCOUNT = "ACC-3003";
 
     private TransactionFixtures() {
     }
@@ -42,6 +44,18 @@ public final class TransactionFixtures {
                 .transactionType(type)
                 .transactionStatus(status)
                 .build();
+    }
+
+    /** A transfer from OTHER_USER's SENDER_ACCOUNT to ACCOUNT (owned by OWNER). */
+    public static Transaction incomingTransfer(String code, TransactionStatus status, String amount,
+            String description, LocalDateTime date) {
+        Transaction transfer = transaction(JwtTestUtils.OTHER_USER, code, SENDER_ACCOUNT, TransactionType.TRANSFER,
+                status, amount, description, date);
+        transfer.setAccountNumber(SENDER_ACCOUNT);
+        transfer.setIdentifierType(IdentifierType.ACCOUNT);
+        transfer.setCounterpartyAccountNumber(ACCOUNT);
+        transfer.setCounterpartyOwnerId(JwtTestUtils.OWNER);
+        return transfer;
     }
 
     private static IdentifierType identifierType(String source) {

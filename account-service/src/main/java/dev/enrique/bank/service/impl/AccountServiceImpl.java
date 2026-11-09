@@ -6,15 +6,19 @@ import org.springframework.stereotype.Service;
 
 import dev.enrique.bank.broker.event.CreateAccountEvent;
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
+import dev.enrique.bank.commons.dto.response.BalanceResponse;
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.BalanceType;
+import dev.enrique.bank.commons.exception.AccountBalanceNotFoundException;
 import dev.enrique.bank.commons.exception.AccountNotFoundException;
 import dev.enrique.bank.commons.util.AccountNumberGenerator;
 import dev.enrique.bank.commons.util.ClabeGenerator;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
+import dev.enrique.bank.dao.PendingUserUpdateRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
+import dev.enrique.bank.model.PendingUserUpdate;
 import dev.enrique.bank.service.AccountService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountBalanceRepository accountBalanceRepository;
     private final ClabeGenerator clabeGenerator;
     private final AccountNumberGenerator accountNumberGenerator;
+    private final PendingUserUpdateRepository pendingUserUpdateRepository;
 
     @Override
     @Transactional
@@ -46,6 +51,17 @@ public class AccountServiceImpl implements AccountService {
         account.setClabe(generateUniqueClabe());
         account.setAccountNumber(generateUniqueAccountNumber());
         account.setAccountStatus(AccountStatus.OPEN);
+        // Changes of the user consumed before this event (other topics) are newer than it.
+        pendingUserUpdateRepository.findById(authId).ifPresent(update -> {
+            if (Boolean.FALSE.equals(update.getActive())) {
+                account.setAccountStatus(AccountStatus.FROZEN);
+            }
+            if (update.getEmail() != null) {
+                account.setEmail(update.getEmail());
+            }
+            pendingUserUpdateRepository.delete(update);
+            log.info("Applied changes of user {} received before the account was opened", authId);
+        });
 
         accountRepository.save(account);
 
@@ -85,6 +101,27 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("userId", userId));
     }
 
+    @Override
+    public BalanceResponse balanceOf(String accountNumber) {
+        Account account = accountRepository.findEntityByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+        return balance(account);
+    }
+
+    @Override
+    public BalanceResponse balanceOfUser(String userId) {
+        Account account = accountRepository.findEntityByUserId(userId)
+                .orElseThrow(() -> new AccountNotFoundException("userId", userId));
+        return balance(account);
+    }
+
+    private BalanceResponse balance(Account account) {
+        AccountBalance latest = accountBalanceRepository.findLatestByAccountNumber(account.getAccountNumber())
+                .orElseThrow(() -> new AccountBalanceNotFoundException(account.getAccountNumber()));
+        return new BalanceResponse(account.getAccountNumber(), latest.getBalance(), account.getCurrency(),
+                latest.getCreationDate());
+    }
+
     // Blocking a user freezes the account; unblocking only reopens an account that was frozen,
     // never one that was closed or marked inactive for other reasons. Repeated events are no-ops.
     @Override
@@ -96,7 +133,12 @@ public class AccountServiceImpl implements AccountService {
             } else if (userActive && account.getAccountStatus() == AccountStatus.FROZEN) {
                 account.setAccountStatus(AccountStatus.OPEN);
             }
-        }, () -> log.info("No account for user {}, ignoring status change", userId));
+        }, () -> {
+            log.info("No account for user {} yet, keeping status change for when it is opened", userId);
+            PendingUserUpdate update = pending(userId);
+            update.setActive(userActive);
+            pendingUserUpdateRepository.save(update);
+        });
     }
 
     @Override
@@ -104,7 +146,16 @@ public class AccountServiceImpl implements AccountService {
     public void updateEmailByUserId(String userId, String newEmail) {
         accountRepository.findEntityByUserId(userId).ifPresentOrElse(
                 account -> account.setEmail(newEmail),
-                () -> log.info("No account for user {}, ignoring email change", userId));
+                () -> {
+                    log.info("No account for user {} yet, keeping email change for when it is opened", userId);
+                    PendingUserUpdate update = pending(userId);
+                    update.setEmail(newEmail);
+                    pendingUserUpdateRepository.save(update);
+                });
+    }
+
+    private PendingUserUpdate pending(String userId) {
+        return pendingUserUpdateRepository.findById(userId).orElseGet(() -> new PendingUserUpdate(userId));
     }
 
     private String generateUniqueAccountNumber() {

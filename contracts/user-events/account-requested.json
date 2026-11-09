@@ -1,0 +1,9 @@
+{
+  "topic": "user-service.account-requested",
+  "type": "dev.enrique.bank.broker.event.CreateAccountEvent",
+  "payload": {
+    "email": "ana@test.com",
+    "accountType": "SAVING",
+    "currency": "MX"
+  }
+}

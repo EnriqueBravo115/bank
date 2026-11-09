@@ -49,6 +49,8 @@ class UserQueryControllerTest extends PostgresContainerConfig {
 
     @Autowired
     private MockMvc mockMvc;
+    @Autowired
+    private UserProfileRepository userProfileRepository;
 
     private static Long savedUserId;
 
@@ -62,12 +64,12 @@ class UserQueryControllerTest extends PostgresContainerConfig {
     }
 
     private static RequestPostProcessor customer(String keycloakId) {
-        return jwt().jwt(j -> j.subject(keycloakId))
+        return jwt().jwt(j -> j.subject(keycloakId).claim("registration_status", "COMPLETE"))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER_BASIC"));
     }
 
     private static RequestPostProcessor admin() {
-        return jwt().jwt(j -> j.subject("admin-keycloak-id"))
+        return jwt().jwt(j -> j.subject("admin-keycloak-id").claim("registration_status", "COMPLETE"))
                 .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 
@@ -113,10 +115,28 @@ class UserQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(jsonPath("$.message").value("User not found with keycloakId: unknown-keycloak-id"));
     }
 
+    // The production SecurityConfig and RegisterStatusFilter are the ones under test.
     @Test
-    void getMe_withoutToken_isRejected() throws Exception {
+    void getMe_withoutToken_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/user/me"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getMe_withRegistrationInProgress_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/user/me")
+                .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID).claim("registration_status", "PROFILE"))
+                        .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER_BASIC"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Registration incomplete"))
+                .andExpect(jsonPath("$.status").value("PROFILE"));
+    }
+
+    @Test
+    void actuatorBeyondHealth_isForAdminsOnly() throws Exception {
+        mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());
+        mockMvc.perform(get("/actuator/metrics")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/actuator/metrics").with(customer())).andExpect(status().isForbidden());
     }
 
     // ---- admin endpoints ----
@@ -140,6 +160,13 @@ class UserQueryControllerTest extends PostgresContainerConfig {
         mockMvc.perform(get("/api/v1/user/get-by-id/{id}", savedUserId).with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(EMAIL));
+    }
+
+    @Test
+    void getUserByEmail_ignoresCase() throws Exception {
+        mockMvc.perform(get("/api/v1/user/get-by-email/{email}", EMAIL.toUpperCase()).with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(savedUserId));
     }
 
     @Test
@@ -193,6 +220,23 @@ class UserQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(savedUserId))
                 .andExpect(jsonPath("$.page.totalElements").value(1));
+    }
+
+    @Test
+    void searchByName_findsProfilesWithoutSecondSurname() throws Exception {
+        // The data is shared by the whole class: put the surname back afterwards
+        UserProfile profile = userProfileRepository.findAll().get(0);
+        profile.setSecondSurname(null);
+        userProfileRepository.save(profile);
+        try {
+            mockMvc.perform(get("/api/v1/user/profile/search/{name}", "ana martinez").with(admin()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].id").value(savedUserId))
+                    .andExpect(jsonPath("$.content[0].secondSurname").doesNotExist());
+        } finally {
+            profile.setSecondSurname("Lopez");
+            userProfileRepository.save(profile);
+        }
     }
 
     @Test

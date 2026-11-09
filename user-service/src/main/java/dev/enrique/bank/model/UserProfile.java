@@ -35,7 +35,8 @@ public class UserProfile {
     @Column(name = "first_surname", nullable = false)
     private String firstSurname;
 
-    @Column(name = "second_surname", nullable = false)
+    // Optional: not everybody has one
+    @Column(name = "second_surname")
     private String secondSurname;
 
     @Column(name = "birthday")

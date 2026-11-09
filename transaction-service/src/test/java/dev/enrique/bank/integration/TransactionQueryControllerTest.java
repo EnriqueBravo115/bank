@@ -15,6 +15,8 @@ import static dev.enrique.bank.util.TransactionFixtures.CARD;
 import static dev.enrique.bank.util.TransactionFixtures.CARD_ACCOUNT;
 import static dev.enrique.bank.util.TransactionFixtures.ACCOUNT;
 import static dev.enrique.bank.util.TransactionFixtures.CLABE;
+import static dev.enrique.bank.util.TransactionFixtures.SENDER_ACCOUNT;
+import static dev.enrique.bank.util.TransactionFixtures.incomingTransfer;
 import static dev.enrique.bank.util.TransactionFixtures.transaction;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
@@ -315,6 +317,113 @@ class TransactionQueryControllerTest extends PostgresContainerConfig {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].description").value("January rent payment"));
+    }
+
+    @Test
+    void keyword_matchesPercentAndUnderscoreLiterally() throws Exception {
+        transactionRepository.save(transaction("TXN-005", CLABE, TRANSFER, COMPLETED, "10.00", "100% refund_1",
+                LocalDateTime.of(2024, 5, 1, 10, 0)));
+
+        for (String keyword : List.of("%", "_")) {
+            mockMvc.perform(get(TRANSACTION_QUERY + "/keyword")
+                    .param("sourceIdentifier", ACCOUNT)
+                    .param("status", "COMPLETED")
+                    .param("keyword", keyword)
+                    .with(customer()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].transactionCode").value("TXN-005"));
+        }
+    }
+
+    @Test
+    void invertedRanges_return400() throws Exception {
+        mockMvc.perform(get(TRANSACTION_QUERY + "/date-range")
+                .param("sourceIdentifier", ACCOUNT)
+                .param("status", "COMPLETED")
+                .param("startDate", "2024-12-31T00:00:00")
+                .param("endDate", "2024-01-01T00:00:00")
+                .with(customer()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("startDate must not be after endDate"));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/amount-range")
+                .param("sourceIdentifier", ACCOUNT)
+                .param("status", "COMPLETED")
+                .param("minAmount", "500")
+                .param("maxAmount", "100")
+                .with(customer()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("minAmount must not be greater than maxAmount"));
+    }
+
+    // ---- transfers received ----
+
+    @Test
+    void history_includesCompletedTransfersReceived_asCredit() throws Exception {
+        transactionRepository.saveAll(List.of(
+                incomingTransfer("TXN-IN", COMPLETED, "700.00", "Money from a friend",
+                        LocalDateTime.of(2024, 4, 1, 10, 0)),
+                incomingTransfer("TXN-IN-FAILED", FAILED, "900.00", "Rejected money from a friend",
+                        LocalDateTime.of(2024, 4, 2, 10, 0))));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", ACCOUNT)
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].transactionCode",
+                        containsInAnyOrder("TXN-IN", "TXN-002", "TXN-001")))
+                .andExpect(jsonPath("$[0].transactionCode").value("TXN-IN"))
+                .andExpect(jsonPath("$[0].direction").value("CREDIT"))
+                .andExpect(jsonPath("$[1].direction").value("DEBIT"));
+
+        // A transfer that never arrived is not the receiver's business
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", ACCOUNT)
+                .param("status", "FAILED")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].transactionCode", containsInAnyOrder("TXN-003")));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/keyword")
+                .param("sourceIdentifier", ACCOUNT)
+                .param("status", "COMPLETED")
+                .param("keyword", "friend")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].transactionCode", containsInAnyOrder("TXN-IN")));
+    }
+
+    @Test
+    void transferReceived_isDebitForTheSenderAndCreditForTheReceiver() throws Exception {
+        transactionRepository.save(incomingTransfer("TXN-IN", COMPLETED, "700.00", "Money from a friend",
+                LocalDateTime.of(2024, 4, 1, 10, 0)));
+
+        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-IN").with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.direction").value("CREDIT"));
+        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-IN").with(customer(OTHER_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.direction").value("DEBIT"));
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", SENDER_ACCOUNT)
+                .param("status", "COMPLETED")
+                .with(customer(OTHER_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].transactionCode", containsInAnyOrder("TXN-IN")))
+                .andExpect(jsonPath("$[0].direction").value("DEBIT"));
+
+        // Neither side: nothing to see
+        mockMvc.perform(get(TRANSACTION_QUERY + "/{transactionCode}", "TXN-IN").with(customer("user-3")))
+                .andExpect(status().isNotFound());
+        // The receiver cannot read the sender's account through it
+        mockMvc.perform(get(TRANSACTION_QUERY + "/history")
+                .param("sourceIdentifier", SENDER_ACCOUNT)
+                .param("status", "COMPLETED")
+                .with(customer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 
     // ---- source identifier: account number or CLABE ----

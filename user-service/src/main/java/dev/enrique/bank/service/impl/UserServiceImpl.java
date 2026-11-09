@@ -156,7 +156,8 @@ public class UserServiceImpl implements UserService {
     public UserDetailedResponse updatePhone(String keycloakId, String phoneCode, String phoneNumber) {
         User user = findByKeycloakId(keycloakId);
 
-        if (!phoneNumber.equals(user.getPhoneNumber()) && userRepository.existsByPhoneNumber(phoneNumber)) {
+        boolean samePhone = phoneCode.equals(user.getPhoneCode()) && phoneNumber.equals(user.getPhoneNumber());
+        if (!samePhone && userRepository.existsByPhoneCodeAndPhoneNumber(phoneCode, phoneNumber)) {
             throw new DuplicateUserDataException("phone number");
         }
 

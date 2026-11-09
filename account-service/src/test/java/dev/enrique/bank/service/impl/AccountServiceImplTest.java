@@ -24,8 +24,10 @@ import dev.enrique.bank.commons.util.AccountNumberGenerator;
 import dev.enrique.bank.commons.util.ClabeGenerator;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
+import dev.enrique.bank.dao.PendingUserUpdateRepository;
 import dev.enrique.bank.model.Account;
 import dev.enrique.bank.model.AccountBalance;
+import dev.enrique.bank.model.PendingUserUpdate;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceImplTest {
@@ -39,6 +41,8 @@ class AccountServiceImplTest {
     private ClabeGenerator clabeGenerator;
     @Mock
     private AccountNumberGenerator accountNumberGenerator;
+    @Mock
+    private PendingUserUpdateRepository pendingUserUpdateRepository;
     @InjectMocks
     private AccountServiceImpl accountService;
 
@@ -110,13 +114,17 @@ class AccountServiceImplTest {
     }
 
     @Test
-    void shouldIgnoreStatusChangeWhenUserHasNoAccount() {
+    void shouldKeepStatusChangeForWhenTheAccountIsOpened() {
         when(accountRepository.findEntityByUserId(USER_ID)).thenReturn(Optional.empty());
+        when(pendingUserUpdateRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         accountService.updateStatusByUserId(USER_ID, false);
 
+        ArgumentCaptor<PendingUserUpdate> pending = ArgumentCaptor.forClass(PendingUserUpdate.class);
+        verify(pendingUserUpdateRepository).save(pending.capture());
+        assertThat(pending.getValue().getUserId()).isEqualTo(USER_ID);
+        assertThat(pending.getValue().getActive()).isFalse();
         verify(accountRepository, never()).save(any());
-        verify(accountBalanceRepository, never()).save(any());
     }
 
     @Test

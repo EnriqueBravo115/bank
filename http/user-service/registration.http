@@ -21,8 +21,9 @@ Content-Type: application/json
 POST {{baseUrl}}/me/verify-email
 Authorization: Bearer {{registerToken}}
 
-### Fix a mistyped email (before KYC); a new verification is sent and you log in with the new email
-PUT {{baseUrl}}/me/email
+### Fix a mistyped email (before KYC); a new verification is sent and you log in with the new email.
+### Same endpoint as in user.http: it accepts registrations in progress
+PUT http://localhost:8000/api/v1/user/me/email
 Authorization: Bearer {{registerToken}}
 Content-Type: application/json
 
@@ -30,7 +31,7 @@ Content-Type: application/json
   "email": "ana.martinez92@gmail.com"
 }
 
-### STEP 3 - Profile (birthday as dd/MM/yyyy)
+### STEP 3 - Profile (birthday as dd/MM/yyyy); secondSurname is optional
 PUT {{baseUrl}}/me/profile
 Authorization: Bearer {{registerToken}}
 Content-Type: application/json
@@ -45,7 +46,9 @@ Content-Type: application/json
 }
 
 ### STEP 4 - KYC: CURP and RFC must match each other and the name and birthday.
-### Assigns CUSTOMER_BASIC and requests the account from account-service (Kafka)
+### Assigns CUSTOMER_BASIC and requests the account from account-service (Kafka).
+### documentType is required; accountType (CHECKING, SAVING, STUDENT, FOREIGN) and currency (MX, US, EU)
+### are optional, SAVING in MX by default
 PUT {{baseUrl}}/me/kyc
 Authorization: Bearer {{registerToken}}
 Content-Type: application/json
@@ -53,7 +56,9 @@ Content-Type: application/json
 {
   "curp": "MALA920615MSLRPN09",
   "rfc": "MALA920615AB3",
-  "documentType": "NATIONAL_ID_CARD"
+  "documentType": "NATIONAL_ID_CARD",
+  "accountType": "SAVING",
+  "currency": "MX"
 }
 
 ### STEP 5 (optional) - Financial information

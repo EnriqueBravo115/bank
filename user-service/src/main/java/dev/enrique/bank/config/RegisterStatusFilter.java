@@ -1,6 +1,8 @@
 package dev.enrique.bank.config;
 
+import static dev.enrique.bank.commons.constants.PathConstants.ME_EMAIL;
 import static dev.enrique.bank.commons.constants.PathConstants.REGISTER;
+import static dev.enrique.bank.commons.constants.PathConstants.USER;
 
 import java.io.IOException;
 import java.util.Set;
@@ -22,7 +24,9 @@ import lombok.RequiredArgsConstructor;
  * Runs after JWT authentication:
  * <ul>
  * <li>Rejects blocked users on every endpoint. Their access token stays valid until it expires,
- * so the token alone is not enough; the DB is checked on each request.</li>
+ * so the token alone is not enough; the DB is checked on each request. Only user-service does this:
+ * account-service and transaction-service accept the token until it expires (5 minutes). Accepted
+ * because the account is FROZEN at the same time, so no money can move, only queries.</li>
  * <li>Outside the registration steps, requires the registration to have reached KYC.</li>
  * </ul>
  */
@@ -69,9 +73,10 @@ public class RegisterStatusFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    // The registration steps, and the email change (a mistyped email blocks the KYC step).
     private static boolean isRegistrationPath(HttpServletRequest request) {
         String path = request.getRequestURI().substring(request.getContextPath().length());
-        return path.equals(REGISTER) || path.startsWith(REGISTER + "/");
+        return path.equals(REGISTER) || path.startsWith(REGISTER + "/") || path.equals(USER + ME_EMAIL);
     }
 
     private static void sendForbiddenResponse(HttpServletResponse response, String body) throws IOException {

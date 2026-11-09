@@ -1,5 +1,6 @@
 package dev.enrique.bank.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.enrique.bank.broker.Topics;
 import dev.enrique.bank.broker.producer.UserEventProducer;
@@ -7,7 +8,9 @@ import dev.enrique.bank.commons.dto.request.UserFinancialInfoRequest;
 import dev.enrique.bank.commons.dto.request.UserKycDataRequest;
 import dev.enrique.bank.commons.dto.request.UserProfileRequest;
 import dev.enrique.bank.commons.dto.request.UserRegisterRequest;
+import dev.enrique.bank.commons.enums.AccountType;
 import dev.enrique.bank.commons.enums.Country;
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.DocumentType;
 import dev.enrique.bank.commons.enums.Gender;
 import dev.enrique.bank.commons.enums.IncomeSource;
@@ -54,6 +57,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -162,7 +167,11 @@ public class RegisterControllerTest extends FullContainerConfig {
             assertThat(event.getStatus()).isEqualTo(OutboxStatus.PENDING);
             assertThat(event.getTopic()).isEqualTo(Topics.ACCOUNT_REQUESTED);
             assertThat(event.getAggregateId()).isEqualTo(user.getKeycloakId());
-            assertThat(objectMapper.readTree(event.getPayload()).get("email").asText()).isEqualTo(EMAIL);
+            JsonNode payload = objectMapper.readTree(event.getPayload());
+            assertThat(payload.get("email").asText()).isEqualTo(EMAIL);
+            // Nothing chosen: a savings account in pesos
+            assertThat(payload.get("accountType").asText()).isEqualTo("SAVING");
+            assertThat(payload.get("currency").asText()).isEqualTo("MX");
         });
         verifyNoInteractions(userEventProducer);
         assertThat(user.getRole()).isEqualTo(UserRole.CUSTOMER_BASIC);
@@ -195,6 +204,80 @@ public class RegisterControllerTest extends FullContainerConfig {
         reset(keycloakUserService);
         stepUpdateKyc(token);
         assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.KYC);
+    }
+
+    @Test
+    void shouldOpenTheAccountTypeAndCurrencyChosenAtKyc() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token);
+        UserKycDataRequest request = buildKycRequest();
+        request.setAccountType(AccountType.CHECKING);
+        request.setCurrency(Currency.US);
+
+        kycRequest(token, request).andExpect(status().isNoContent());
+
+        assertThat(outboxEventRepository.findAll()).singleElement().satisfies(event -> {
+            JsonNode payload = objectMapper.readTree(event.getPayload());
+            assertThat(payload.get("accountType").asText()).isEqualTo("CHECKING");
+            assertThat(payload.get("currency").asText()).isEqualTo("US");
+        });
+    }
+
+    @Test
+    void shouldRejectKycWithoutDocumentType() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token);
+        UserKycDataRequest request = buildKycRequest();
+        request.setDocumentType(null);
+
+        kycRequest(token, request).andExpect(status().isBadRequest());
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.PROFILE);
+    }
+
+    @Test
+    void shouldUndoKeycloakNameAndStepWhenProfileFailsAfterUpdatingKeycloak() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        String keycloakId = userOf(EMAIL).getKeycloakId();
+        // Keycloak is updated and then the transaction fails (as a failed commit would)
+        failAfterCalling(keycloakId, RegisterStatus.PROFILE);
+
+        assertThatThrownBy(() -> stepUpdateProfile(token)).hasRootCauseMessage("commit failed");
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.REGISTER);
+        UserRepresentation keycloakUser = keycloakUser(EMAIL);
+        assertThat(keycloakUser.getFirstName()).isEqualTo("PENDING");
+        assertThat(keycloakUser.getLastName()).isEqualTo("PENDING");
+        assertThat(keycloakUser.getAttributes().get("registration_status"))
+                .containsExactly(RegisterStatus.REGISTER.name());
+    }
+
+    @Test
+    void shouldUndoKeycloakStepWhenFinancialInfoFailsAfterUpdatingKeycloak() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+        stepUpdateProfile(token);
+        stepUpdateKyc(token);
+        failAfterCalling(userOf(EMAIL).getKeycloakId(), RegisterStatus.COMPLETE);
+
+        assertThatThrownBy(() -> stepUpdateFinancial(token)).hasRootCauseMessage("commit failed");
+
+        assertThat(registerStatusOf(EMAIL)).isEqualTo(RegisterStatus.KYC);
+        assertThat(keycloakUser(EMAIL).getAttributes().get("registration_status"))
+                .containsExactly(RegisterStatus.KYC.name());
+    }
+
+    @Test
+    void shouldRegisterProfileWithoutSecondSurname() throws Exception {
+        String token = registerAndLogin(EMAIL, PHONE);
+
+        profileRequest(token, """
+                {"names":"John","firstSurname":"Doe","gender":"MALE",
+                 "birthday":"01/01/1990","countryOfBirth":"US"}""")
+                .andExpect(status().isNoContent());
+
+        assertThat(userProfileRepository.findAll()).singleElement()
+                .satisfies(profile -> assertThat(profile.getSecondSurname()).isNull());
+        assertThat(keycloakUser(EMAIL).getLastName()).isEqualTo("Doe");
     }
 
     @Test
@@ -265,6 +348,29 @@ public class RegisterControllerTest extends FullContainerConfig {
     }
 
     @Test
+    void shouldAcceptTheSameNumberWithAnotherCountryCode() throws Exception {
+        stepRegister(EMAIL, PHONE);
+        UserRegisterRequest request = buildRegisterRequest(OTHER_EMAIL, PHONE);
+        request.setPhoneCode("+1");
+
+        mockMvc.perform(post("/api/v1/user/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        assertThat(userRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldStoreTheEmailInLowercase() throws Exception {
+        registerRequest("Mixed.Case@Test.COM", PHONE)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("mixed.case@test.com"));
+
+        assertThat(userOf("mixed.case@test.com").getEmail()).isEqualTo("mixed.case@test.com");
+    }
+
+    @Test
     void shouldRejectEmailThatOnlyExistsInKeycloak() throws Exception {
         // e.g. an admin created from the Keycloak console, with no row in user_db
         keycloakUserService.createUser(buildRegisterRequest(EMAIL, PHONE));
@@ -279,7 +385,7 @@ public class RegisterControllerTest extends FullContainerConfig {
     @Test
     void shouldRollbackKeycloakUserWhenDatabaseRejectsRegistration() throws Exception {
         // Simulates a concurrent duplicate that passes the pre-checks and fails on the unique constraint.
-        doThrow(new DataIntegrityViolationException("users_phone_number_key"))
+        doThrow(new DataIntegrityViolationException("users_phone_code_number_key"))
                 .when(userRepository).saveAndFlush(any());
 
         registerRequest(EMAIL, PHONE).andExpect(status().isConflict());
@@ -345,6 +451,20 @@ public class RegisterControllerTest extends FullContainerConfig {
 
         assertThat(mailbox.countTo(EMAIL)).isEqualTo(1);
         assertThat(keycloakUser(EMAIL).isEmailVerified()).isFalse();
+    }
+
+    @Test
+    void shouldNotSendVerificationEmailWhenRegistrationRollsBack() throws Exception {
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new IllegalStateException("commit failed");
+        }).when(keycloakUserService).updateRegistrationStatus(any(), eq(RegisterStatus.REGISTER.name()));
+
+        assertThatThrownBy(() -> registerRequest(EMAIL, PHONE)).hasRootCauseMessage("commit failed");
+
+        assertThat(keycloak.realm(realm).users().searchByEmail(EMAIL, true)).isEmpty();
+        assertThat(userRepository.count()).isZero();
+        assertThat(mailbox.countTo(EMAIL)).isZero();
     }
 
     @Test
@@ -527,6 +647,14 @@ public class RegisterControllerTest extends FullContainerConfig {
                 .satisfies(profile -> assertThat(profile.getBirthday()).isEqualTo(LocalDate.of(2000, 2, 29)));
     }
 
+    // The real Keycloak call goes through and then the step fails, leaving Keycloak ahead of the database.
+    private void failAfterCalling(String keycloakId, RegisterStatus status) {
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new IllegalStateException("commit failed");
+        }).when(keycloakUserService).updateRegistrationStatus(keycloakId, status.name());
+    }
+
     private ResultActions registerRequest(String email, String phone) throws Exception {
         return mockMvc.perform(post("/api/v1/user/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -538,7 +666,7 @@ public class RegisterControllerTest extends FullContainerConfig {
     }
 
     private ResultActions emailRequest(String token, String email) throws Exception {
-        return mockMvc.perform(put("/api/v1/user/register/me/email")
+        return mockMvc.perform(put("/api/v1/user/me/email")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\": \"" + email + "\"}"));

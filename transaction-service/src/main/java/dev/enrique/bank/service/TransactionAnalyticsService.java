@@ -1,7 +1,7 @@
 package dev.enrique.bank.service;
 
 import java.math.BigDecimal;
-import java.time.Month;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +30,7 @@ public interface TransactionAnalyticsService {
     Map<TransactionType, TransactionResponse> getMaxTransactionByType(String accountNumber,
             TransactionStatus status);
 
-    Map<Month, Long> countTransactionsByMonth(String accountNumber, TransactionStatus status);
+    Map<YearMonth, Long> countTransactionsByMonth(String accountNumber, TransactionStatus status);
 
     Map<TransactionType, BigDecimal> getAverageAmountByType(String accountNumber, TransactionStatus status);
 }

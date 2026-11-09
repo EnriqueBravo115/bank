@@ -24,7 +24,7 @@ public class UserProfileRequest {
     @NotBlank
     private String firstSurname;
 
-    @NotBlank
+    // Optional (people with a single surname); blank is stored as null
     private String secondSurname;
 
     @NotNull
@@ -38,4 +38,8 @@ public class UserProfileRequest {
 
     @NotNull
     private Country countryOfBirth;
+
+    public void setSecondSurname(String secondSurname) {
+        this.secondSurname = secondSurname == null || secondSurname.isBlank() ? null : secondSurname.trim();
+    }
 }

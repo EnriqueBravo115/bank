@@ -28,6 +28,7 @@ import dev.enrique.bank.commons.exception.AccountNotFoundException;
 import dev.enrique.bank.commons.exception.AccountNotOperableException;
 import dev.enrique.bank.commons.exception.InsufficientFundsException;
 import dev.enrique.bank.commons.exception.CurrencyMismatchException;
+import dev.enrique.bank.commons.exception.IdempotencyKeyReusedException;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
 import dev.enrique.bank.dao.MovementRepository;
@@ -192,6 +193,9 @@ public class MovementServiceImpl implements MovementService {
             Consumer<Map<String, Account>> apply) {
         Optional<Movement> previous = movementRepository.findByIdempotencyKey(idempotencyKey);
         if (previous.isPresent()) {
+            if (!sameMovement(previous.get(), claim)) {
+                throw new IdempotencyKeyReusedException(idempotencyKey);
+            }
             log.info("Movement {} already processed, returning its result", idempotencyKey);
             return resultOf(previous.get());
         }
@@ -202,6 +206,21 @@ public class MovementServiceImpl implements MovementService {
         movementRepository.saveAndFlush(claim);
         apply.accept(lock(claim.getSourceAccountNumber(), claim.getTargetAccountNumber()));
         return new MovementResultResponse(TransactionStatus.COMPLETED, APPLIED);
+    }
+
+    /**
+     * A repeated request must be the same movement. A key cancelled before being applied (reverse)
+     * stored no data: any movement with that key gets the CANCELLED answer.
+     */
+    private static boolean sameMovement(Movement stored, Movement request) {
+        if (stored.getMovementType() == null) {
+            return true;
+        }
+        return stored.getMovementType() == request.getMovementType()
+                && Objects.equals(stored.getSourceAccountNumber(), request.getSourceAccountNumber())
+                && Objects.equals(stored.getTargetAccountNumber(), request.getTargetAccountNumber())
+                && stored.getAmount().compareTo(request.getAmount()) == 0
+                && stored.totalDebit().compareTo(request.totalDebit()) == 0;
     }
 
     /**

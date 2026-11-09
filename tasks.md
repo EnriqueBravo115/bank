@@ -72,6 +72,36 @@
   - `MovementControllerTest`, `AccountControllerTest`, `CardControllerTest`, `LimitControllerTest` (real PostgreSQL with Testcontainers) and unit tests of the services and generators.
   - `UserConsumerTest`: the user-service events through an embedded broker (KRaft; ZooKeeper took 2 min resolving the host name) with the production JSON serialization and `auth-user-id` header: account opening (once, with its opening balance), freeze/reopen and email change.
 
+### Review findings
+
+- [x] **Customers cannot see their balance**
+  - No endpoint returns the balance: `GET /api/v1/account/me` (`AccountDetailedResponse`) has no balance field, and `account_balance` is only read internally. A customer can move money but never knows how much they have.
+  - Add the current balance (latest `account_balance` row) to `/me`, or a `GET /me/balance`.
+  - Done: `GET /api/v1/account/me/balance` (CUSTOMER_BASIC) and `GET /api/v1/account/balance/{accountNumber}` (ADMIN) return `BalanceResponse` (account number, latest balance, currency, date).
+
+- [x] **A malformed Kafka message blocks the consumer forever**
+  - `value-deserializer` is `JsonDeserializer` directly (config-server `account-service.yml`), not wrapped in `ErrorHandlingDeserializer`. A message that cannot be deserialized fails in `poll()`, before any listener or error handler, so the container retries the same offset in a loop and every later event of that partition (account openings, freezes) is stuck.
+  - Wrap it in `ErrorHandlingDeserializer` (`spring.deserializer.value.delegate.class`).
+  - Done: `ErrorHandlingDeserializer` wraps `JsonDeserializer` (config-server and test `application.yml`); a record that cannot be read goes straight to `<topic>.DLT` without retries (`KafkaErrorHandlingConfig`).
+
+- [x] **A failed account opening is dropped silently**
+  - There is no error handler configured: Spring Kafka's default `DefaultErrorHandler` retries 10 times with no delay and then only logs and skips the record. If the database is down for a few seconds when `user-service.account-requested` arrives, the account is never created and the user stays at KYC without an account.
+  - Configure a `DefaultErrorHandler` with backoff and a dead-letter topic (`DeadLetterPublishingRecoverer`).
+  - Done: `KafkaErrorHandlingConfig`: `DefaultErrorHandler` with exponential backoff (1s up to 30s, for 5 minutes by default, `account.kafka.retry.*`) and then `DeadLetterPublishingRecoverer` to `<topic>.DLT`.
+
+- [x] **Events of different topics can be applied out of order**
+  - `UserConsumer` has one listener container per topic, so `user-status-changed` or `user-email-changed` can be consumed before the `account-requested` event of the same user. A user blocked right after KYC gets an `OPEN` account (the freeze finds no account and is ignored, then the account is created), and an email change made right after KYC is lost (the account is created with the old email from the event).
+  - Options: one topic per user aggregate (ordered by key), or have the account opening re-check the current state (e.g. user-service sends `active` and the email with each event, or account-service asks user-service).
+  - Done: A status or email change for a user without an account is kept in `pending_user_update` (`V10`) and applied when the account is opened (inactive → `FROZEN`, latest email), then deleted.
+
+- [x] **Email lookups are case-sensitive**
+  - `GET /get-by-email/{email}` matches the email exactly, while user-service stores it as typed: `Ana@Mail.com` is not found as `ana@mail.com`.
+  - Done: `findByEmail` compares with `LOWER()` on both sides.
+
+- [x] **The same Idempotency-Key with a different payload returns the old result**
+  - `once()` only looks at the key: a second request with the same key but another amount or account gets the first movement's result without any error. transaction-service always sends a new UUID, so it does not happen today, but a caller bug would be silent. Store a hash of the request and answer `409`/`422` when it differs.
+  - Done: `once()` compares the stored movement (type, accounts, amount, total debit) with the new one and answers `422` (`IdempotencyKeyReusedException`) when they differ.
+
 ## transaction-service
 
 ### Security and consistency (critical)
@@ -157,6 +187,31 @@
   - Removed the Mockito unit tests of the services (`TransactionQueryServiceTest` started a container it did not use) and `TransactionServiceTestHelper`.
   - New: `TransactionCreationControllerTest` (`@MockitoBean AccountClient`: what is sent to account-service and what is stored with COMPLETED/DECLINED, 400 validation, 401/403) and `AccountClientFallbackTest` (422 → DECLINED with the message, 404/401/5xx → FAILED); analytics `type-summary`, `average-days` and `partition-by-amount`.
 
+### Review findings
+
+- [x] **Incoming transfers are not visible to the receiving account**
+  - Every query, analytics and support endpoint filters by `account_number` (the source account) and `owner_id` (the owner of the source account). The target account of a transfer never sees the money it received: its owner cannot find the transaction in history, keyword search, totals or by its code. Only deposits (stored with the deposited account) show up as credits.
+  - Include transfers whose `transfer_transaction.target_account_number` is the account (and let its owner read them), with a direction (`DEBIT`/`CREDIT`) in `TransactionResponse` so totals do not add incoming and outgoing money together.
+  - Done: `V7`: `counterparty_account_number` and `counterparty_owner_id` (backfilled from `transfer_transaction`). Queries return what the account sent plus the COMPLETED transfers it received; `TransactionResponse.direction` is `DEBIT` or `CREDIT`. Analytics and support only use the account's own operations, so totals never mix money in and out.
+
+- [x] **`count-by-month` merges different years**
+  - `countTransactionsByMonth` groups by `Month` only: January 2025 and January 2026 are added together. Group by `YearMonth`.
+  - Done: Grouped by `YearMonth` (keys such as `2024-01`), sorted.
+
+- [x] **PENDING transactions are retried forever**
+  - `TransactionSettlement` caps the delay at 15 minutes but not the number of attempts: if account-service keeps failing (5xx), a transaction stays `PENDING` indefinitely and nobody is told. Add a maximum (or a deadline) after which it is flagged for an admin, like user-service's outbox `FAILED` state.
+  - Done: After `TransactionSettlement.MAX_ATTEMPTS` (20, about 3 hours) the transaction stays `PENDING` with no next attempt and a reason for the admin. `GET /api/v1/transaction/stuck` lists them and `POST /api/v1/transaction/{code}/retry` (ADMIN) tries again with a new round of attempts; it can still be cancelled.
+
+- [x] **Range queries accept inverted ranges and LIKE wildcards**
+  - `date-range` and `amount-range` do not check `start <= end` / `min <= max` (they just return nothing). `keyword` does not escape `%` and `_`, so `%` matches every transaction.
+  - Done: `400` when `startDate > endDate` or `minAmount > maxAmount`; `%`, `_` and `\` are escaped in `keyword` (`ESCAPE '\\'`).
+
+### Tests (review)
+
+- [x] **Query and analytics fixtures only have outgoing transactions of one year**
+  - `TransactionAnalyticsControllerTest` uses dates from 2024 only, so `count-by-month` merging years is not caught, and no test has a transfer seen from the receiving account. Add those cases when fixing the bugs above.
+  - Done: `TransactionFixtures.incomingTransfer`; tests for received transfers (history, keyword, by code from both sides, not readable by a third user, left out of analytics), `count-by-month` across 2024 and 2025, inverted ranges, literal wildcards and stuck PENDING transactions.
+
 ## user-service
 
 - [x] **Partial failure in Keycloak**
@@ -181,6 +236,55 @@
 
 - [ ] **(Optional) User closure / deregistration**
   - With its event to close the account in account-service.
+
+### Review findings
+
+- [x] **Hard-coded account type and currency**
+  - The KYC step always requests a `SAVING` account in `MX` (`RegisterServiceImpl.updateKycData`): the customer cannot choose, and `CHECKING`, `US` and `EU` are never used although account-service supports them.
+  - Done: `UserKycDataRequest.accountType` and `currency` are optional; `SAVING` in `MX` by default.
+
+- [x] **Email lookups are case-sensitive**
+  - Registration and email changes check duplicates with `IgnoreCase`, but `GET /user/get-by-email/{email}` (`UserRepository.getUserByEmail`) compares exactly, and the `UNIQUE` constraint on `users.email` is case-sensitive. Normalize emails to lowercase when they are stored.
+  - Done: Emails are stored lowercase (the requests normalize them, `V9` lowercases existing rows) and `getUserByEmail` compares with `LOWER(:email)`.
+
+- [x] **The phone number is unique without its country code**
+  - `existsByPhoneNumber` and the `UNIQUE` constraint ignore `phone_code`: `+1 5512345678` and `+52 5512345678` are different phones but the second one is rejected.
+  - Done: `V9`: `UNIQUE (phone_code, phone_number)` instead of `users_phone_number_key`; `existsByPhoneCodeAndPhoneNumber` on registration and phone changes.
+
+- [x] **Second surname is mandatory**
+  - `UserProfileRequest.secondSurname` is `@NotBlank` and `second_surname` is `NOT NULL`: people with a single surname (common among foreigners) cannot register. `searchByName` concatenates it too, so it would also need to handle `NULL`.
+  - Done: Optional in the request (blank is stored as null), nullable column (`V9`), `COALESCE` in `searchByName` and the Keycloak last name is only the first surname when there is no second one.
+
+- [x] **The KYC document type is optional**
+  - `UserKycDataRequest.documentType` has no `@NotNull` and the column is nullable: a KYC can be completed without saying which document was checked.
+  - Done: `@NotNull documentType` (`400`). The column stays nullable for older rows.
+
+- [x] **Keycloak is updated without compensation in the profile and financial steps**
+  - `updateProfile` and `updateFinancialInfo` update Keycloak (name, `registration_status`) before the commit, with no `RollbackCompensation`, unlike the KYC step and the role/active/email changes. If the commit fails, the token says `PROFILE`/`COMPLETE` while the database still has the previous step. A retry fixes it, but the two systems disagree meanwhile.
+  - `register` has the same gap at commit time: the Keycloak user is only deleted if the failure happens inside the `try`, and the verification email is sent before the commit.
+  - Done: `RollbackCompensation` in `updateProfile` (name back to `PENDING`, `registration_status` `REGISTER`) and `updateFinancialInfo` (`KYC`). `register` deletes the Keycloak user on any rollback, the commit included, and sends the verification email after the commit.
+
+- [x] **Two endpoints change the email**
+  - `PUT /api/v1/register/me/email` and `PUT /api/v1/user/me/email` call the same service method; the first one has no role check (any authenticated user, for registrations in progress). Keep one, or document why both exist.
+  - Done: Only `PUT /api/v1/user/me/email` remains, for any authenticated user; `RegisterStatusFilter` lets it through for registrations in progress.
+
+- [x] **Blocked users keep reading other services until their token expires**
+  - Only user-service checks `active` on each request (`RegisterStatusFilter`). account-service and transaction-service accept the blocked user's access token for up to its lifespan (5 minutes): the account is `FROZEN` so no money moves, but queries still work. Acceptable with short tokens; document it or add token introspection.
+  - Done: Accepted risk, documented in the README and `RegisterStatusFilter`: the account is `FROZEN`, so only queries work until the 5-minute token expires.
+
+### Tests (review)
+
+- [x] **The Keycloak tests run against a different realm**
+  - `user-service/src/test/resources/keycloak/realm-export.json` is a separate, older copy (no `SERVICE` role, no `transaction-service` client, no `admin-user`), while the README says `k8s/keycloak/realm-export.json` is the only copy. Tests can pass with a realm that is not the deployed one. Load `k8s/keycloak/realm-export.json` from the tests (e.g. `withCopyFileToContainer` from the repository path).
+  - Done: The test copy was removed; `pom.xml` adds `k8s/keycloak/realm-export.json` as a test resource, so the Keycloak container imports the deployed realm.
+
+- [x] **The production `SecurityConfig` is never tested**
+  - `SecurityConfig` is disabled in the test profiles: `TestKeycloakConfig` is a copy of it (and already differs: no `/actuator/**` rule for `ADMIN`), and `TestPostgresConfig` permits everything and disables `RegisterStatusFilter`. A change to the real security rules is not caught by any test. Use the real `SecurityConfig` with `spring-security-test`'s `jwt()`, as account-service and transaction-service do.
+  - Done: `@Profile` removed from `SecurityConfig`; `TestKeycloakConfig` and `TestPostgresConfig` deleted. Tests send `jwt()` with `registration_status`, and new tests check `401` without a token, `403` for registrations in progress and `/actuator/**` for admins only.
+
+- [x] **The published event format is not checked against the consumer**
+  - `EventOutboxTest` mocks `UserEventProducer`, and account-service's `UserConsumerTest` builds its own events. Nothing checks that what user-service sends (topic, `__TypeId__`, `auth-user-id`, JSON fields) is what account-service reads; renaming a field on one side would break account opening without failing a test. Add a test that sends through `UserEventProducer` to an embedded broker and deserializes with account-service's classes (or a shared contract).
+  - Done: Shared contract in `contracts/user-events/*.json`. `UserEventContractTest` (user-service) builds each event from its file, sends it through `UserEventProducer` to an embedded KRaft broker and compares topic, `__TypeId__`, `auth-user-id` and the JSON; account-service's `UserConsumerTest` consumes the same files.
 
 ## Build / Docker
 

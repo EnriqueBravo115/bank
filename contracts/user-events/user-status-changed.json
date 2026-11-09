@@ -1,0 +1,7 @@
+{
+  "topic": "user-service.user-status-changed",
+  "type": "dev.enrique.bank.broker.event.UserStatusChangedEvent",
+  "payload": {
+    "active": false
+  }
+}

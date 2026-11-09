@@ -11,10 +11,11 @@ import static java.util.stream.Collectors.toMap;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Month;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -30,8 +31,9 @@ import dev.enrique.bank.dao.TransactionRepository;
 import dev.enrique.bank.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;
 
-// Every report works on the transactions of one account with one status; customers only
-// see their own (CurrentCaller.ownerScope).
+// Every report works on the operations one account made (outgoing money and its deposits), with one
+// status: incoming transfers are left out so totals do not mix money in and out. Customers only see
+// their own (CurrentCaller.ownerScope).
 @Service
 @RequiredArgsConstructor
 public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsService {
@@ -72,7 +74,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     @Override
     public BigDecimal calculateTotalAmountByStatusAndType(String accountNumber, TransactionStatus status,
             TransactionType type) {
-        return total(transactionRepository.findAllByAccountNumberStatusAndType(currentCaller.ownerScope(), accountNumber, status, type));
+        return total(transactionRepository.findOwnByAccountNumberStatusAndType(currentCaller.ownerScope(), accountNumber, status, type));
     }
 
     @Override
@@ -98,9 +100,9 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     }
 
     @Override
-    public Map<Month, Long> countTransactionsByMonth(String accountNumber, TransactionStatus status) {
+    public Map<YearMonth, Long> countTransactionsByMonth(String accountNumber, TransactionStatus status) {
         return find(accountNumber, status).stream()
-                .collect(groupingBy(t -> t.transactionDate().getMonth(), counting()));
+                .collect(groupingBy(t -> YearMonth.from(t.transactionDate()), TreeMap::new, counting()));
     }
 
     @Override
@@ -112,7 +114,7 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     }
 
     private List<TransactionResponse> find(String accountNumber, TransactionStatus status) {
-        return transactionRepository.findAllByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status);
+        return transactionRepository.findOwnByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status);
     }
 
     private static BigDecimal total(List<TransactionResponse> transactions) {

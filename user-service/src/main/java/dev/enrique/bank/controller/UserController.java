@@ -1,5 +1,6 @@
 package dev.enrique.bank.controller;
 
+import static dev.enrique.bank.commons.constants.PathConstants.ME_EMAIL;
 import static dev.enrique.bank.commons.constants.PathConstants.USER;
 
 import org.springframework.data.domain.PageRequest;
@@ -77,8 +78,9 @@ public class UserController {
         return ResponseEntity.ok(userService.updateActive(userId, request.getActive()));
     }
 
-    @PreAuthorize("hasRole('CUSTOMER_BASIC')")
-    @PutMapping("/me/email")
+    // Any authenticated user, also with the registration in progress: a mistyped email has to be fixed
+    // before KYC, which requires it to be verified (RegisterStatusFilter lets this path through).
+    @PutMapping(ME_EMAIL)
     public ResponseEntity<UserDetailedResponse> updateEmail(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UserEmailUpdateRequest request) {

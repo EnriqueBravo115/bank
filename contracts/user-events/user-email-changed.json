@@ -1,0 +1,7 @@
+{
+  "topic": "user-service.user-email-changed",
+  "type": "dev.enrique.bank.broker.event.UserEmailChangedEvent",
+  "payload": {
+    "email": "changed@test.com"
+  }
+}

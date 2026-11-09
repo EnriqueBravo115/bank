@@ -54,6 +54,11 @@ public class GlobalExceptionHandler {
         return unprocessable(ex);
     }
 
+    @ExceptionHandler(IdempotencyKeyReusedException.class)
+    public ResponseEntity<ErrorResponse> handleIdempotencyKeyReused(IdempotencyKeyReusedException ex) {
+        return unprocessable(ex);
+    }
+
     @ExceptionHandler(CardDeclinedException.class)
     public ResponseEntity<ErrorResponse> handleCardDeclined(CardDeclinedException ex) {
         return unprocessable(ex);

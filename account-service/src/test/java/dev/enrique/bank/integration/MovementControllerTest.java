@@ -128,6 +128,23 @@ class MovementControllerTest extends PostgresContainerConfig {
     }
 
     @Test
+    void shouldRejectARepeatedKeyWithADifferentMovement() throws Exception {
+        transfer("txn-1", "100.00", service()).andExpect(status().isOk());
+
+        transfer("txn-1", "150.00", service())
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message")
+                        .value("Idempotency-Key txn-1 was already used for a different movement"));
+        mockMvc.perform(post(MOVEMENT + "/service").with(service())
+                .header(IDEMPOTENCY_KEY, "txn-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"currency\":\"MX\",\"accountNumber\":\"" + SOURCE + "\",\"amount\":100.00}"))
+                .andExpect(status().isUnprocessableEntity());
+
+        assertThat(fixtures.balanceOf(SOURCE)).isEqualByComparingTo("400.00");
+    }
+
+    @Test
     void shouldEvaluateRejectedMovementAgainOnRetry() throws Exception {
         transfer("txn-1", "900.00", service())
                 .andExpect(status().isUnprocessableEntity())

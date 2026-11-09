@@ -1,4 +1,5 @@
-# Overrides src/main/resources/application.yml in tests: no Config Server, no Eureka, no Kafka consumers.
+# Overrides src/main/resources/application.yml in tests: no Config Server, no Eureka, and the Kafka
+# consumers only start in UserConsumerTest (embedded broker).
 spring:
   application:
     name: account-service
@@ -16,6 +17,11 @@ spring:
     bootstrap-servers: localhost:0
     consumer:
       group-id: account-service-test
+      # Same deserialization as config-server's account-service.yml
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "*"
     listener:
       auto-startup: false
   security:

@@ -128,12 +128,12 @@ class OutboxControllerTest extends PostgresContainerConfig {
     }
 
     private static RequestPostProcessor admin() {
-        return jwt().jwt(j -> j.subject("admin-keycloak-id"))
+        return jwt().jwt(j -> j.subject("admin-keycloak-id").claim("registration_status", "COMPLETE"))
                 .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 
     private static RequestPostProcessor customer() {
-        return jwt().jwt(j -> j.subject("customer-keycloak-id"))
+        return jwt().jwt(j -> j.subject("customer-keycloak-id").claim("registration_status", "COMPLETE"))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER_BASIC"));
     }
 }

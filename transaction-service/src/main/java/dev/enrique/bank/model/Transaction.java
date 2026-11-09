@@ -44,6 +44,13 @@ public class Transaction {
     @Column(name = "account_number")
     private String accountNumber;
 
+    // Account that receives the money of a transfer, and its owner (they can read the transaction too)
+    @Column(name = "counterparty_account_number")
+    private String counterpartyAccountNumber;
+
+    @Column(name = "counterparty_owner_id")
+    private String counterpartyOwnerId;
+
     // Calls to account-service while the transaction was PENDING (answer unknown)
     @Column(name = "attempts", nullable = false)
     @Builder.Default
@@ -97,6 +104,16 @@ public class Transaction {
 
     public boolean isPending() {
         return transactionStatus == TransactionStatus.PENDING;
+    }
+
+    /** No more automatic attempts: an admin has to retry or cancel it (it stays PENDING). */
+    public boolean isStuck() {
+        return isPending() && nextAttemptAt == null;
+    }
+
+    public void stopRetrying(String reason) {
+        this.reason = reason;
+        this.nextAttemptAt = null;
     }
 
     /** Records the answer of account-service; a PENDING answer schedules another attempt. */

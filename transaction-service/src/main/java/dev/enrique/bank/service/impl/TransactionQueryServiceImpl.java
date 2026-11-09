@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import dev.enrique.bank.commons.dto.response.TransactionResponse;
 import dev.enrique.bank.commons.enums.IdentifierType;
 import dev.enrique.bank.commons.enums.TransactionStatus;
+import dev.enrique.bank.commons.exception.InvalidTransactionException;
 import dev.enrique.bank.commons.exception.TransactionNotFoundException;
 import dev.enrique.bank.config.CurrentCaller;
 import dev.enrique.bank.dao.TransactionRepository;
@@ -25,19 +26,19 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
 
     @Override
     public List<TransactionResponse> getTransactionHistory(String accountNumber, TransactionStatus status) {
-        return transactionRepository.findAllByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status);
+        return transactionRepository.findVisibleByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status);
     }
 
     @Override
     public Page<TransactionResponse> getAllTransactions(String accountNumber, TransactionStatus status,
             Pageable pageable) {
-        return transactionRepository.findPageByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status, pageable);
+        return transactionRepository.findVisiblePageByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status, pageable);
     }
 
     @Override
     public List<TransactionResponse> getTransactionsByYear(String accountNumber, TransactionStatus status,
             Integer year) {
-        return transactionRepository.findAllByAccountNumberAndYear(currentCaller.ownerScope(), accountNumber, year, status);
+        return transactionRepository.findVisibleByAccountNumberAndYear(currentCaller.ownerScope(), accountNumber, year, status);
     }
 
     @Override
@@ -47,7 +48,7 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
 
     @Override
     public TransactionResponse getMaxTransaction(String accountNumber, TransactionStatus status) {
-        return transactionRepository.findMaxByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status)
+        return transactionRepository.findVisibleMaxByAccountNumberAndStatus(currentCaller.ownerScope(), accountNumber, status)
                 .orElseThrow(() -> new TransactionNotFoundException(
                         "No " + status + " transactions found for: " + accountNumber));
     }
@@ -55,7 +56,10 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionResponse> getTransactionsInDateRange(String accountNumber, TransactionStatus status,
             LocalDateTime startDate, LocalDateTime endDate) {
-        return transactionRepository.findAllByAccountNumberAndDateRangeAndStatus(currentCaller.ownerScope(), 
+        if (startDate.isAfter(endDate)) {
+            throw new InvalidTransactionException("startDate must not be after endDate");
+        }
+        return transactionRepository.findVisibleByAccountNumberAndDateRangeAndStatus(currentCaller.ownerScope(),
                 accountNumber, status, startDate, endDate);
     }
 
@@ -69,18 +73,27 @@ public class TransactionQueryServiceImpl implements TransactionQueryService {
     @Override
     public List<TransactionResponse> getAllTransactionByAmountRangeAndStatus(String accountNumber,
             TransactionStatus status, BigDecimal minAmount, BigDecimal maxAmount) {
-        return transactionRepository.findAllByAmountRangeAndStatus(currentCaller.ownerScope(), accountNumber, status, minAmount, maxAmount);
+        if (minAmount.compareTo(maxAmount) > 0) {
+            throw new InvalidTransactionException("minAmount must not be greater than maxAmount");
+        }
+        return transactionRepository.findVisibleByAmountRangeAndStatus(currentCaller.ownerScope(), accountNumber, status, minAmount, maxAmount);
     }
 
     @Override
     public List<TransactionResponse> getAllByIdentifierTypeAndStatus(String accountNumber,
             IdentifierType identifierType, TransactionStatus status) {
-        return transactionRepository.findAllByIdentifierTypeAndStatus(currentCaller.ownerScope(), accountNumber, identifierType, status);
+        return transactionRepository.findOwnByIdentifierTypeAndStatus(currentCaller.ownerScope(), accountNumber, identifierType, status);
     }
 
     @Override
     public List<TransactionResponse> getTransactionByKeyword(String accountNumber, TransactionStatus status,
             String keyword) {
-        return transactionRepository.searchByKeyword(currentCaller.ownerScope(), accountNumber, status, keyword);
+        return transactionRepository.searchVisibleByKeyword(currentCaller.ownerScope(), accountNumber, status,
+                escapeLike(keyword));
+    }
+
+    // % and _ are searched literally (the query uses '\\' as ESCAPE character)
+    static String escapeLike(String keyword) {
+        return keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }

@@ -1,7 +1,10 @@
 package dev.enrique.bank.commons.dto.request;
 
+import dev.enrique.bank.commons.enums.AccountType;
+import dev.enrique.bank.commons.enums.Currency;
 import dev.enrique.bank.commons.enums.DocumentType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,5 +31,12 @@ public class UserKycDataRequest {
     @Pattern(regexp = RFC_PATTERN, message = "must be a valid RFC for an individual (13 characters, uppercase)")
     private String rfc;
 
+    // The identity document that was checked
+    @NotNull
     private DocumentType documentType;
+
+    // The account opened at this step; SAVING in MX when not given
+    private AccountType accountType;
+
+    private Currency currency;
 }

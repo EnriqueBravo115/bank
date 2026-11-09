@@ -32,6 +32,9 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
             UserRole.CUSTOMER_PREMIUM.name(),
             UserRole.CUSTOMER_BUSINESS.name());
 
+    // Name of a user until the profile step
+    public static final String PENDING_NAME = "PENDING";
+
     private final Keycloak keycloak;
     private final String realm;
 
@@ -46,8 +49,8 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
         UserRepresentation user = new UserRepresentation();
 
         user.setUsername(request.getEmail());
-        user.setFirstName("PENDING");
-        user.setLastName("PENDING");
+        user.setFirstName(PENDING_NAME);
+        user.setLastName(PENDING_NAME);
         user.setEmail(request.getEmail());
         // Verified through the email Keycloak sends after registration (see sendVerificationEmail).
         user.setEmailVerified(false);
@@ -79,9 +82,17 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 
     @Override
     public void updateUser(String keycloakId, UserProfileRequest request) {
+        String lastName = request.getSecondSurname() == null
+                ? request.getFirstSurname()
+                : request.getFirstSurname() + " " + request.getSecondSurname();
+        updateName(keycloakId, request.getNames(), lastName);
+    }
+
+    @Override
+    public void updateName(String keycloakId, String firstName, String lastName) {
         UserRepresentation user = new UserRepresentation();
-        user.setFirstName(request.getNames());
-        user.setLastName(request.getFirstSurname() + " " + request.getSecondSurname());
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
 
         keycloak.realm(realm)
                 .users()

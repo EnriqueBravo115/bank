@@ -47,7 +47,8 @@ Content-Type: application/json
   "active": true
 }
 
-### Change my email: it is also the login username; a verification email is sent to http://localhost:8025 (CUSTOMER_BASIC)
+### Change my email: it is also the login username; a verification email is sent to http://localhost:8025
+### (any logged-in user, also with the registration in progress). Stored in lowercase
 PUT {{baseUrl}}/me/email
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json

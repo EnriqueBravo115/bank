@@ -22,7 +22,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
             SELECT new dev.enrique.bank.commons.dto.response.UserPrincipalResponse(u.id, u.email)
             FROM User u
-            WHERE u.email = :email
+            WHERE u.email = LOWER(:email)
             """)
     Optional<UserPrincipalResponse> getUserByEmail(String email);
 
@@ -48,7 +48,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
-    boolean existsByPhoneNumber(String phoneNumber);
+    boolean existsByPhoneCodeAndPhoneNumber(String phoneCode, String phoneNumber);
 
     // Checked on every authenticated request by RegisterStatusFilter; keycloak_id is UNIQUE (indexed).
     boolean existsByKeycloakIdAndActiveFalse(String keycloakId);

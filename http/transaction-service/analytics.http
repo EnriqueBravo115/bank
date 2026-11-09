@@ -1,5 +1,6 @@
 # Same parameters as query.http: sourceIdentifier (an account number by default, or
-# sourceIdentifierType=CLABE|CARD) and status.
+# sourceIdentifierType=CLABE|CARD) and status. Only the operations the account made (and its deposits):
+# transfers it received are left out, so totals do not mix money in and out.
 @baseUrl = http://localhost:8000/api/v1/transaction/analytics
 @customerToken = PASTE_TOKEN_FROM_auth.http
 @adminToken = PASTE_TOKEN_FROM_auth.http
@@ -38,7 +39,7 @@ Authorization: Bearer {{adminToken}}
 GET {{baseUrl}}/max-by-type?sourceIdentifier={{accountNumber}}&status=COMPLETED
 Authorization: Bearer {{adminToken}}
 
-### Count by month (ADMIN, CUSTOMER_BASIC)
+### Count by month, keyed by year and month, e.g. "2026-01" (ADMIN, CUSTOMER_BASIC)
 GET {{baseUrl}}/count-by-month?sourceIdentifier={{accountNumber}}&status=COMPLETED
 Authorization: Bearer {{customerToken}}
 

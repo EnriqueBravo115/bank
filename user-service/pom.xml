@@ -80,6 +80,12 @@
 
         <dependency>
             <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
@@ -153,6 +159,19 @@
         </dependency>
     </dependencies>
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <!-- The realm docker-compose and k8s deploy (the only copy): Keycloak tests import it -->
+            <testResource>
+                <directory>../k8s/keycloak</directory>
+                <targetPath>keycloak</targetPath>
+                <includes>
+                    <include>realm-export.json</include>
+                </includes>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
