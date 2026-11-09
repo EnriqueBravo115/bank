@@ -297,8 +297,10 @@
   - If a single service is recreated or restarted (`docker compose up -d <service>`, `docker stop/start`), its IP changes and Kong answers `502` until it is restarted (`docker compose restart kong`). Option: a low `KONG_DNS_VALID_TTL` on the `kong` service.
   - Done: `KONG_DNS_VALID_TTL: 5`. Checked by recreating `account-service` with a new IP: `502` before, `200` after. Not needed in k8s, where each Service keeps its ClusterIP.
 
-- [ ] **Vulnerable dependencies (Trivy)**
+- [x] **Vulnerable dependencies (Trivy)**
   - Trivy reports 12 CRITICAL and 37 HIGH findings with a fix in account-service's image (e.g. `tomcat-embed-core` 10.1.49, `jackson-databind`, `bcprov-jdk18on` 1.80, `kafka-clients` 3.9.1) and 2 HIGH in the base image. Upgrade Spring Boot / Spring Cloud (and override the remaining versions) (`docker run aquasec/trivy:0.58.1 image <image>` shows the findings).
+  - Done: Spring Boot `3.5.16` and Spring Cloud `2025.0.3` (patch releases), plus overrides in each pom for what they do not ship yet: `tomcat.version` 10.1.61, `jackson-bom.version` 2.21.8, `httpclient5`/`httpcore5` 5.6.5/5.4.4, `postgresql.version` 42.7.14, `bcprov-jdk18on` 1.85, `snappy-java` 1.1.10.12 and `lz4-java` 1.11.4 (Kafka services), `freemarker` 2.3.35 and `guava` 33.8.0-jre (eureka-server). The runtime image runs `apt-get upgrade` (apt itself was vulnerable in `eclipse-temurin:17-jre`). 0 HIGH/CRITICAL findings in the 5 images with `.trivyignore`; tests and the running stack checked.
+  - Accepted (`.trivyignore`): two `spring-webmvc` 6.2.19 CVEs (XsltView, SSE with view fragments) only fixed in Spring Framework 7; no service uses those features. Remove the overrides and the ignores when migrating to Spring Boot 4.
 
 ## Maven
 

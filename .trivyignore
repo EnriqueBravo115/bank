@@ -1,0 +1,9 @@
+# Findings accepted after the Trivy review (tasks.md, "Vulnerable dependencies (Trivy)").
+# Scan with: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.trivyignore:/.trivyignore" \
+#   aquasec/trivy:0.58.1 image --ignorefile /.trivyignore --severity HIGH,CRITICAL --ignore-unfixed bank-<service>
+
+# spring-webmvc 6.2.19: only fixed in Spring Framework 7 (Spring Boot 4); there is no 6.2.x fix.
+# Not reachable here: no service renders XsltView or uses SSE with view fragments (SseEmitter/FragmentsRendering).
+# Remove both when migrating to Spring Boot 4.
+CVE-2026-47884
+CVE-2026-47890
