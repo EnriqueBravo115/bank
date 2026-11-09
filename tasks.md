@@ -48,28 +48,29 @@
   - The current balance is the latest row by `id`, not by `creation_date` (two rows could share a date); index `(account_id, id DESC)`.
   - `MovementControllerTest`: 10 concurrent debits of 100 over 500 → exactly 5 are applied (without the lock all 10 were), and concurrent opposite transfers do not deadlock.
 
-- [ ] **Poorly modeled balance types**
-  - Every movement is stored as `INTRADAY`, but `hasSufficientFundsIncludingHolds` looks for `AVAILABLE`/`ON_HOLD`; `checkHolds` is always `false`; "the latest by date" mixes types.
+- [x] **Poorly modeled balance types**
+  - `BalanceType` only has what is written: `OPENING` (0 when the account is opened) and `MOVEMENT` (after a movement or its reversal; it was `INTRADAY`). The current balance is the latest row of any type. There are no holds: `hasSufficientFundsIncludingHolds`, `getAvailableBalance` and the query by type were removed.
+  - `V9` renames the old rows and adds a `CHECK` on `balance_type`.
 
 - [x] **Movements without idempotency**
   - Every movement requires the `Idempotency-Key` header and is recorded in the `movement` table (`V5`, `UNIQUE` key): repeating the key returns the stored result without moving the money again; two concurrent requests with the same key → `409`. A rejection (`422`) is not stored, so a retry is evaluated again.
   - `POST /movement/{key}/reverse`: returns the money of a `COMPLETED` movement (`REVERSED`) or, if the key never arrived, blocks it (`CANCELLED`) so a late request is not applied.
 
-- [ ] **Account identifiers**
-  - `account_number = "ACC-" + millis` is not `UNIQUE` and can repeat.
-  - `ClabeGenerator` should compute the real check digit.
+- [x] **Account identifiers**
+  - `AccountNumberGenerator`: `"ACC-"` + 16 random digits (instead of `"ACC-" + millis`), checked to be free before saving; `V9` renames any repeated number and makes `account_number` `UNIQUE`.
+  - `ClabeGenerator` already computed the Banxico check digit (weights 3, 7, 1); `GeneratorsTest` checks it against real CLABEs. The 11 account digits are now random (`SecureRandom`) instead of the clock.
 
 ### Quality
 
-- [ ] **Dead code**
-  - `AccountServiceImpl.updateEmail(accountNumber, …)` (`// TODO`, unused; `updateEmailByUserId` already covers it).
-  - `FeignConfiguration` without any Feign client.
+- [x] **Dead code**
+  - Removed `AccountServiceImpl.updateEmail(accountNumber, …)` (with `AccountAlreadyExistsException` and `existsByEmail`, only used there), `FeignConfiguration` and the `spring-cloud-starter-openfeign` dependency (account-service has no Feign client).
 
 - [x] **Wrong error message in `get-by-email`**
   - Now `"Account not found with email: <email>"` (and `clabe`/`userId` in their lookups).
 
-- [ ] **Tests**
-  - Added `MovementControllerTest` and `AccountControllerTest` (real PostgreSQL with Testcontainers: security, validation, idempotency, reversal). The Kafka consumers are still missing.
+- [x] **Tests**
+  - `MovementControllerTest`, `AccountControllerTest`, `CardControllerTest`, `LimitControllerTest` (real PostgreSQL with Testcontainers) and unit tests of the services and generators.
+  - `UserConsumerTest`: the user-service events through an embedded broker (KRaft; ZooKeeper took 2 min resolving the host name) with the production JSON serialization and `auth-user-id` header: account opening (once, with its opening balance), freeze/reopen and email change.
 
 ## transaction-service
 

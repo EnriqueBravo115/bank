@@ -6,8 +6,6 @@ import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
 public interface AccountService {
     public void createAccount(CreateAccountEvent createAccountEvent, String authId);
 
-    public void updateEmail(String accountNumber, String newEmail);
-
     public void updateStatusByUserId(String userId, boolean userActive);
 
     public void updateEmailByUserId(String userId, String newEmail);

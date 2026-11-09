@@ -259,7 +259,7 @@ public class MovementServiceImpl implements MovementService {
         accountBalanceRepository.save(AccountBalance.builder()
                 .account(account)
                 .balance(latest.getBalance().add(delta))
-                .balanceType(BalanceType.INTRADAY)
+                .balanceType(BalanceType.MOVEMENT)
                 .build());
     }
 }

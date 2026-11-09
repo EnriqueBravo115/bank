@@ -69,7 +69,7 @@ public class AccountFixtures {
         accountBalanceRepository.save(AccountBalance.builder()
                 .account(account)
                 .balance(new BigDecimal(balance))
-                .balanceType(BalanceType.INTRADAY)
+                .balanceType(BalanceType.MOVEMENT)
                 .build());
         return account;
     }

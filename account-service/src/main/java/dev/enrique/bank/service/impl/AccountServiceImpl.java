@@ -8,8 +8,8 @@ import dev.enrique.bank.broker.event.CreateAccountEvent;
 import dev.enrique.bank.commons.dto.response.AccountDetailedResponse;
 import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.BalanceType;
-import dev.enrique.bank.commons.exception.AccountAlreadyExistsException;
 import dev.enrique.bank.commons.exception.AccountNotFoundException;
+import dev.enrique.bank.commons.util.AccountNumberGenerator;
 import dev.enrique.bank.commons.util.ClabeGenerator;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
@@ -27,6 +27,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final AccountBalanceRepository accountBalanceRepository;
     private final ClabeGenerator clabeGenerator;
+    private final AccountNumberGenerator accountNumberGenerator;
 
     @Override
     @Transactional
@@ -43,7 +44,7 @@ public class AccountServiceImpl implements AccountService {
         account.setAccountType(createAccountEvent.getAccountType());
         account.setCurrency(createAccountEvent.getCurrency());
         account.setClabe(generateUniqueClabe());
-        account.setAccountNumber("ACC-" + System.currentTimeMillis());
+        account.setAccountNumber(generateUniqueAccountNumber());
         account.setAccountStatus(AccountStatus.OPEN);
 
         accountRepository.save(account);
@@ -54,22 +55,6 @@ public class AccountServiceImpl implements AccountService {
                 .balance(BigDecimal.ZERO)
                 .balanceType(BalanceType.OPENING)
                 .build());
-    }
-
-    // TODO: integrate with kafka via user-service
-    @Override
-    @Transactional
-    public void updateEmail(String accountNumber, String newEmail) {
-        if (accountRepository.existsByEmail(newEmail)) {
-            throw new AccountAlreadyExistsException("email", newEmail);
-        }
-
-        Account account = accountRepository
-                .findEntityByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
-
-        account.setEmail(newEmail);
-        accountRepository.save(account);
     }
 
     @Override
@@ -120,6 +105,14 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.findEntityByUserId(userId).ifPresentOrElse(
                 account -> account.setEmail(newEmail),
                 () -> log.info("No account for user {}, ignoring email change", userId));
+    }
+
+    private String generateUniqueAccountNumber() {
+        String number;
+        do {
+            number = accountNumberGenerator.generate();
+        } while (accountRepository.existsByAccountNumber(number));
+        return number;
     }
 
     private String generateUniqueClabe() {

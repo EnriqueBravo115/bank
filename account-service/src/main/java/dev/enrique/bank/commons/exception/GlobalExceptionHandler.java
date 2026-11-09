@@ -39,15 +39,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
     }
 
-    @ExceptionHandler(AccountAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleAccountAlreadyExists(AccountAlreadyExistsException ex) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
-                LocalDateTime.now());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
-    }
-
     @ExceptionHandler(AccountNotOperableException.class)
     public ResponseEntity<ErrorResponse> handleAccountNotOperable(AccountNotOperableException ex) {
         return unprocessable(ex);

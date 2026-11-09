@@ -20,6 +20,7 @@ import dev.enrique.bank.commons.enums.AccountStatus;
 import dev.enrique.bank.commons.enums.AccountType;
 import dev.enrique.bank.commons.enums.BalanceType;
 import dev.enrique.bank.commons.enums.Currency;
+import dev.enrique.bank.commons.util.AccountNumberGenerator;
 import dev.enrique.bank.commons.util.ClabeGenerator;
 import dev.enrique.bank.dao.AccountBalanceRepository;
 import dev.enrique.bank.dao.AccountRepository;
@@ -36,6 +37,8 @@ class AccountServiceImplTest {
     private AccountBalanceRepository accountBalanceRepository;
     @Mock
     private ClabeGenerator clabeGenerator;
+    @Mock
+    private AccountNumberGenerator accountNumberGenerator;
     @InjectMocks
     private AccountServiceImpl accountService;
 
@@ -44,6 +47,9 @@ class AccountServiceImplTest {
         when(accountRepository.existsByUserId(USER_ID)).thenReturn(false);
         when(clabeGenerator.generate()).thenReturn("012345678901234567");
         when(accountRepository.existsByClabe("012345678901234567")).thenReturn(false);
+        // The first number is taken: another one is generated
+        when(accountNumberGenerator.generate()).thenReturn("ACC-1111111111111111", "ACC-2222222222222222");
+        when(accountRepository.existsByAccountNumber("ACC-1111111111111111")).thenReturn(true);
 
         accountService.createAccount(event(), USER_ID);
 
@@ -54,6 +60,7 @@ class AccountServiceImplTest {
         assertThat(saved.getValue().getAccountType()).isEqualTo(AccountType.SAVING);
         assertThat(saved.getValue().getCurrency()).isEqualTo(Currency.MX);
         assertThat(saved.getValue().getAccountStatus()).isEqualTo(AccountStatus.OPEN);
+        assertThat(saved.getValue().getAccountNumber()).isEqualTo("ACC-2222222222222222");
 
         ArgumentCaptor<AccountBalance> opening = ArgumentCaptor.forClass(AccountBalance.class);
         verify(accountBalanceRepository).save(opening.capture());
