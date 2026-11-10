@@ -1,0 +1,42 @@
+# Weekly update pull requests for the Maven dependencies, the Docker base images and the actions.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directories:
+      - /eureka-server
+      - /config-server
+      - /user-service
+      - /account-service
+      - /transaction-service
+    schedule:
+      interval: weekly
+    groups:
+      maven:
+        update-types: [minor, patch]
+    ignore:
+      # Spring Boot 4 is a migration of its own (tasks.md)
+      - dependency-name: org.springframework.boot:*
+        update-types: [version-update:semver-major]
+      - dependency-name: org.springframework.cloud:*
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: docker
+    directories:
+      - /eureka-server
+      - /config-server
+      - /user-service
+      - /account-service
+      - /transaction-service
+    schedule:
+      interval: weekly
+    groups:
+      docker:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

@@ -26,6 +26,19 @@ kubectl apply -k k8s
 ./k8s/smoke-test.sh
 ```
 
+## Tests on the cluster
+
+```bash
+pip install -r k8s/tests/requirements.txt
+python3 k8s/tests/e2e.py              # every endpoint through Kong (175 checks, a few minutes)
+python3 k8s/tests/faults.py           # failure paths (about 30 minutes)
+python3 k8s/tests/faults.py broker db # only some scenarios
+```
+
+`faults.py` deletes pods and scales Kafka, Keycloak, account-service and a database down (and back
+up): use a test cluster only. The kubectl context is `kind-bank` (`KUBE_CONTEXT` to change it).
+Both run in GitHub Actions (`.github/workflows/e2e.yml`).
+
 ## Access from the host
 
 | Component    | URL                       |
@@ -57,6 +70,7 @@ k8s/
 ├── kustomization.yaml     # entry point (kubectl apply -k k8s)
 ├── build-images.sh        # builds the images and loads them with kind load
 ├── smoke-test.sh          # waits for the pods and tests the services through Kong
+├── tests/                 # end-to-end and failure tests (Python)
 ├── namespace.yaml
 ├── databases/             # PostgreSQL (StatefulSet + PVC) per service and for Keycloak
 ├── kafka/                 # broker (KRaft, with a volume) and kafka-ui

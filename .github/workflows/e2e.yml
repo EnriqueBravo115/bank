@@ -1,0 +1,116 @@
+# Deploys the whole system on a kind cluster and runs the end-to-end tests through Kong
+# (k8s/tests/e2e.py). The failure tests (k8s/tests/faults.py) run nightly or when asked for.
+#
+# It deploys the images that CI published for the commit (sha-<commit>); when there are none (a
+# manual run on a branch) it builds them.
+name: E2E
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "0 7 * * *" # 01:00 in Mexico City
+  workflow_dispatch:
+    inputs:
+      faults:
+        description: Also run the failure tests (about 30 minutes more)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: E2E on kind
+    # After CI only when it passed on a push to main (not on a pull request)
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      RUN_FAULTS: ${{ github.event_name == 'schedule' || inputs.faults == true }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+
+      - name: Create the kind cluster
+        uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
+        with:
+          config: k8s/kind-config.yaml
+          cluster_name: bank
+
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The manifests use bank/<service>:1.0.0 (k8s/build-images.sh); the published image is tagged
+      # with that name and loaded into the cluster.
+      - name: Load the service images
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          for svc in eureka-server config-server user-service transaction-service account-service; do
+            image="ghcr.io/$owner/bank-$svc:sha-$SHA"
+            if docker pull "$image"; then
+              docker tag "$image" "bank/$svc:1.0.0"
+            else
+              echo "::warning::$image not found, building $svc"
+              docker build -t "bank/$svc:1.0.0" "$svc"
+            fi
+            kind load docker-image "bank/$svc:1.0.0" --name bank
+          done
+
+      - name: Deploy
+        run: kubectl apply -k k8s
+
+      - name: Smoke test
+        run: ./k8s/smoke-test.sh
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: k8s/tests/requirements.txt
+
+      - name: Install the test dependencies
+        run: pip install -r k8s/tests/requirements.txt
+
+      - name: End-to-end tests
+        run: python -u k8s/tests/e2e.py
+
+      - name: Failure tests
+        if: env.RUN_FAULTS == 'true'
+        run: python -u k8s/tests/faults.py
+
+      - name: Collect the cluster state
+        if: failure()
+        run: |
+          mkdir -p diagnostics
+          kubectl -n bank get all -o wide > diagnostics/resources.txt 2>&1 || true
+          kubectl -n bank get events --sort-by=.lastTimestamp > diagnostics/events.txt 2>&1 || true
+          kubectl -n bank describe pods > diagnostics/pods.txt 2>&1 || true
+          for pod in $(kubectl -n bank get pods -o name); do
+            name="${pod#pod/}"
+            kubectl -n bank logs "$pod" --all-containers > "diagnostics/$name.log" 2>&1 || true
+            kubectl -n bank logs "$pod" --all-containers --previous > "diagnostics/$name.previous.log" 2>/dev/null || true
+          done
+
+      - name: Upload the cluster state
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-diagnostics
+          path: diagnostics/

@@ -1,10 +1,22 @@
 ## Bank System
+[![CI](https://github.com/EnriqueBravo115/bank/actions/workflows/ci.yml/badge.svg)](https://github.com/EnriqueBravo115/bank/actions/workflows/ci.yml)
+[![E2E](https://github.com/EnriqueBravo115/bank/actions/workflows/e2e.yml/badge.svg)](https://github.com/EnriqueBravo115/bank/actions/workflows/e2e.yml)
+
 A microservices-based banking system built with Spring Boot and modern cloud-native technologies.
 The project simulates core banking operations such as account management, transactions, and user onboarding.
 
 It integrates authentication, API gateway, service discovery, and resilience patterns.
 
 ![Architecture](img/architecture.png)
+
+## Architecture
+- **Kong** is the single entry point (`/api/v1/user`, `/api/v1/account`, `/api/v1/transaction`);
+  every request carries a Keycloak JWT.
+- **user-service**, **account-service** and **transaction-service** each own a PostgreSQL database.
+- **Eureka** for service discovery and **Config Server** for the configuration (`config-server/.../config/`).
+- **Kafka** carries the user events (user-service → account-service); **OpenFeign** carries the money
+  movements (transaction-service → account-service, with a service token and a circuit breaker).
+- **Prometheus + Grafana** for metrics; **Mailpit** receives Keycloak's emails.
 
 ## Tech Stack
 - **Language and build**: Java 17, Maven.
@@ -99,6 +111,60 @@ account-service UserConsumer ──► createAccount (ignored if the user alread
 - Admins list `FAILED` events (`GET /user/outbox/failed`) and put them back in the queue
   (`POST /user/outbox/{id}/retry`).
 - A daily job deletes `SENT` events older than 7 days.
+
+### Account Service
+`account-service` owns accounts, balances, cards and limits.
+- **Accounts**: opened from the `account-requested` event (one per user); blocking the user freezes it
+  and an email change is applied too. Events that cannot be read go to the `<topic>.DLT` topic.
+- **Balances**: every movement writes a new balance row (`OPENING`, `MOVEMENT`); a movement is applied
+  or rejected at once. `GET /account/me`, `/me/balance`, and admin lookups by account number, CLABE,
+  card number or email.
+- **Cards**: `POST /card`, `GET /card/me`, block, unblock and cancel.
+- **Limits** per type (`TRANSFER`, `WITHDRAWAL`, `SERVICE`, `PURCHASE`) set by admins.
+- **Movements** (`/movement/*`, `SERVICE` role only): transfer, purchase, service payment, withdrawal
+  (with fee), deposit and reversal. The `Idempotency-Key` makes a repeated call return the same result.
+
+### Transaction Service
+`transaction-service` records the customer's transactions and settles them with `account-service`.
+
+```
+POST /transaction/create/transfer ──► save transaction PENDING
+                  └─ Feign → account-service /movement (Idempotency-Key = transaction code)
+                       ├─ answer   → COMPLETED / DECLINED / FAILED
+                       └─ no answer (timeout, down, circuit open) → stays PENDING
+Reconciler (every 5s) ──► retries PENDING with backoff (5s … 15 min)
+                  └─ after 20 attempts: "stuck" → admin retry or cancel
+```
+
+- Types: transfer, purchase, service payment, withdrawal and deposit (admin). Accounts can be given
+  by account number, CLABE or card number.
+- Lifecycle: cancel (`PENDING` only), reverse (`COMPLETED`, admin), list stuck and retry (admin).
+- Queries and analytics: history, filters by date, amount, keyword or identifier, sums, counts and
+  averages. A customer only sees transactions of their own accounts.
+
+## Resilience
+- Outbox (user-service) and reconciler (transaction-service): no event or movement is lost when Kafka
+  or account-service is down; both sides are idempotent.
+- Timeouts on every remote call (Kafka, Keycloak, account-service); an unavailable dependency answers
+  `503` instead of hanging.
+- Kubernetes probes use Spring Boot's liveness/readiness groups, so a database or Keycloak outage does
+  not restart the pods. Databases and Kafka keep their data in volumes.
+
+## CI/CD
+```
+PR / push ──► ci.yml ── per service: mvn verify ─► docker build ─► Trivy (HIGH/CRITICAL gate)
+                     └─ manifests: kustomize render, ShellCheck, Trivy config report
+push to main / v* tag ──► images pushed to GHCR: sha-<commit>, latest, <version>
+CI green on main ──► e2e.yml: kind cluster ─► kubectl apply -k ─► smoke test ─► k8s/tests/e2e.py
+nightly / manual ──► e2e.yml + failure tests (k8s/tests/faults.py)
+```
+- Pull requests only build the services they change; `CI result` is the check to require on `main`.
+- Images: `ghcr.io/enriquebravo115/bank-<service>`. Dependabot updates Maven, base images and actions weekly.
+
+## Running
+- **docker-compose**: `docker compose up -d --build` (Kong at http://localhost:8000).
+- **Kubernetes (kind)**: see [k8s/README.md](k8s/README.md).
+- Request examples in `http/`; pending work in [tasks.md](tasks.md).
 
 ## Monitoring
 Every service exposes Micrometer metrics at `/actuator/prometheus`. Prometheus finds the instances

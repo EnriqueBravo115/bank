@@ -1,0 +1,215 @@
+# Tests, image build, Trivy scan and, on main and on v* tags, publication of the images to GHCR.
+# On pull requests only the services that changed are built; on main all of them, so every commit of
+# main has the full set of images (sha-<commit>) that e2e.yml deploys.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A new push to a pull request cancels its previous run; runs on main always finish (they publish).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Same version and digest as the scan command documented in .trivyignore
+  TRIVY_IMAGE: aquasec/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7
+
+jobs:
+  changes:
+    name: Changed services
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      services: ${{ steps.pick.outputs.services }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            common: &common
+              - .github/workflows/ci.yml
+              - .trivyignore
+            eureka-server:
+              - *common
+              - eureka-server/**
+            config-server:
+              - *common
+              - config-server/**
+            user-service:
+              - *common
+              - user-service/**
+              - contracts/**
+            account-service:
+              - *common
+              - account-service/**
+              - contracts/**
+            transaction-service:
+              - *common
+              - transaction-service/**
+
+      - name: Pick the services to build
+        id: pick
+        env:
+          CHANGES: ${{ steps.filter.outputs.changes }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            services=$(echo "$CHANGES" | jq -c 'map(select(. != "common"))')
+          else
+            services='["eureka-server","config-server","user-service","account-service","transaction-service"]'
+          fi
+          echo "services=$services" | tee -a "$GITHUB_OUTPUT"
+
+  service:
+    name: ${{ matrix.service }}
+    needs: changes
+    if: needs.changes.outputs.services != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # push to GHCR (only on push events)
+      security-events: write # Trivy results in the Security tab
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # JDK 17, as the Docker images (with JDK 25 Lombok needs extra configuration, see tasks.md)
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: ${{ matrix.service }}/pom.xml
+
+      # Unit and integration tests; Testcontainers uses the runner's Docker
+      - name: Test
+        working-directory: ${{ matrix.service }}
+        run: mvn -B -ntp verify
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/surefire-reports/
+          if-no-files-found: ignore
+
+      - name: Image name
+        id: image
+        # GHCR names must be lowercase
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/bank-${{ matrix.service }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        id: meta
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=sha,prefix=sha-,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.service }}
+          load: true
+          push: false
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            bank-${{ matrix.service }}:scan
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      # Two runs share the vulnerability database through the trivy-cache volume: the SARIF report for
+      # the Security tab, then the gate that fails the job (accepted findings in .trivyignore).
+      - name: Trivy report (SARIF)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+            -v "$PWD:/work" -w /work "$TRIVY_IMAGE" image --ignorefile .trivyignore \
+            --severity HIGH,CRITICAL --ignore-unfixed --format sarif --output trivy.sarif \
+            bank-${{ matrix.service }}:scan
+
+      - name: Upload Trivy report
+        # Needs code scanning (public repository, or GitHub Advanced Security); never blocks the build
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-${{ matrix.service }}
+
+      - name: Trivy gate (HIGH and CRITICAL with a fix)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+            -v "$PWD:/work" -w /work "$TRIVY_IMAGE" image --ignorefile .trivyignore \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            bank-${{ matrix.service }}:scan
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        if: github.event_name == 'push'
+        run: docker push --all-tags ${{ steps.image.outputs.name }}
+
+  manifests:
+    name: Manifests and scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Render the Kustomize manifests
+        run: kubectl kustomize k8s > /dev/null
+
+      - name: ShellCheck
+        run: shellcheck k8s/*.sh
+
+      - name: Python syntax of the cluster tests
+        run: python3 -m py_compile k8s/tests/*.py
+
+      # Report only: the findings (e.g. containers running as root) are a task in tasks.md
+      - name: Trivy misconfiguration report
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work "$TRIVY_IMAGE" config \
+            --severity HIGH,CRITICAL --exit-code 0 k8s
+
+  # Single check to require in the branch protection of main: it fails if any job above failed, and
+  # passes when the service job was skipped because no service changed.
+  result:
+    name: CI result
+    needs: [changes, service, manifests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the jobs
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for r in $RESULTS; do
+            if [ "$r" != success ] && [ "$r" != skipped ]; then exit 1; fi
+          done

@@ -2,10 +2,59 @@
 
 Work left for later. Completed tasks were removed (see the git history of this file).
 
-## Security
+## CI/CD
 
-- [ ] **Gmail app password in the git history**
-  - It is no longer in the code, but it is still in the history: **it must be revoked** in the Google account.
+- [ ] **Continuous deployment with Argo CD**
+  - The cluster syncs from the repository; the pipeline only updates the image tag.
+  - The manifests still use `bank/<service>:1.0.0` (loaded with `kind load`); CI publishes
+    `ghcr.io/<owner>/bank-<service>:sha-<commit>`. An `images:` block in `k8s/kustomization.yaml` (or an
+    overlay) would point them to GHCR and let the pipeline change the tag with `kustomize edit set image`.
+
+- [ ] **Fix the Trivy misconfiguration findings in `k8s/`**
+  - CI only reports them (`Manifests and scripts` job); once fixed, make that step fail the build.
+
+## Infrastructure
+
+- [ ] **Terraform**
+  - Provision a managed cluster (EKS, GKE, AKS, or DigitalOcean / Civo, which are cheaper), or at least
+    the registry and the network.
+
+- [ ] **Helm or Kustomize overlays**
+  - The three microservice manifests are almost the same: a Helm chart for them, or `dev` / `prod`
+    overlays for per-environment settings (replicas, resources, image tags).
+
+## Observability
+
+- [ ] **Centralized logs**
+  - Loki + Promtail, with a logs panel in Grafana.
+
+- [ ] **Alerts**
+  - Alertmanager rules, e.g. transactions stuck `PENDING`, a pod restarting, an instance down.
+
+- [ ] **(Optional) Distributed tracing**
+  - OpenTelemetry + Tempo, to follow a request through Kong, transaction-service and account-service.
+
+## Network and security
+
+- [ ] **Ingress controller**
+  - Today Kong is exposed through host ports (`kind-config.yaml`).
+
+- [ ] **NetworkPolicies**
+  - Only the traffic each service needs, e.g. only transaction-service may call account-service's `/movement`.
+
+- [ ] **Non-root containers**
+  - `runAsNonRoot`, `readOnlyRootFilesystem` and dropped capabilities in the pods' `securityContext`.
+
+## Documentation
+
+- [ ] **Deployment and incidents in the README**
+  - A diagram of the deployment (the pipeline one is in the README).
+  - A "decisions and incidents" section: the failures found by the failure tests (Kafka without a
+    volume, liveness restarting pods on a database outage, missing timeouts towards Keycloak) and how
+    they were fixed.
+
+- [ ] **Demo**
+  - A live deployment or a short video of the pipeline and the Grafana dashboard.
 
 ## user-service
 
@@ -52,3 +101,4 @@ Work left for later. Completed tasks were removed (see the git history of this f
     (Eureka registry fetch every 30 s plus the LoadBalancer cache): new transactions get `503` meanwhile.
     Options: lower `eureka.client.registry-fetch-interval-seconds` and `spring.cloud.loadbalancer.cache.ttl`,
     or retry on another instance once there are two replicas.
+  - Also: a `HorizontalPodAutoscaler` and a `PodDisruptionBudget` per service (there are none today).
