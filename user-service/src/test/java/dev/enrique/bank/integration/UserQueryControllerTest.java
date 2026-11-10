@@ -320,6 +320,10 @@ class UserQueryControllerTest extends PostgresContainerConfig {
             userKycRepository.deleteAll();
             userProfileRepository.deleteAll();
             userRepository.deleteAll();
+            // The deletes wait for the flush, but the insert below runs at once (IDENTITY id): without
+            // this, a user left with the same email by another test class (e.g. RegisterControllerTest)
+            // is still there when it is inserted.
+            userRepository.flush();
 
             User user = new User();
             user.setEmail(EMAIL);

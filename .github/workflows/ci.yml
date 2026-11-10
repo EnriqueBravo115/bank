@@ -145,7 +145,7 @@ jobs:
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
             -v "$PWD:/work" -w /work "$TRIVY_IMAGE" image --ignorefile .trivyignore \
-            --severity HIGH,CRITICAL --ignore-unfixed --format sarif --output trivy.sarif \
+            --severity HIGH,CRITICAL --ignore-unfixed --timeout 15m --format sarif --output trivy.sarif \
             bank-${{ matrix.service }}:scan
 
       - name: Upload Trivy report
@@ -160,7 +160,7 @@ jobs:
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
             -v "$PWD:/work" -w /work "$TRIVY_IMAGE" image --ignorefile .trivyignore \
-            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            --severity HIGH,CRITICAL --ignore-unfixed --timeout 15m --exit-code 1 \
             bank-${{ matrix.service }}:scan
 
       - name: Log in to GHCR
