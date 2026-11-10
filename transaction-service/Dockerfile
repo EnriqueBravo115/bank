@@ -1,4 +1,4 @@
-FROM maven:3.9.5-eclipse-temurin-17 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 
 WORKDIR /build
 
@@ -8,7 +8,7 @@ COPY src src
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B clean package -DskipTests
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 # Security updates the base image does not have yet (e.g. apt itself)
 RUN apt-get update \
     && apt-get upgrade -y --no-install-recommends \
