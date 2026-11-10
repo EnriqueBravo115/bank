@@ -29,12 +29,35 @@ B_PHONE = "56" + str(int(time.time()))[-8:]
 
 sec("Infrastructure")
 for svc in ("user", "transaction", "account"):
+    # A pod just replaced gives a few seconds of 502 through Kong (single replica, see tasks.md)
+    poll(lambda: requests.get(f"{KONG}/{svc}/actuator/health", timeout=10).status_code == 200, timeout=120, every=3)
     call(f"{svc} health through Kong", "GET", f"/{svc}/actuator/health", check=lambda d: expect_eq(d.get("status"), "UP"))
 admin = token("admin-user", "admin123")
 record("admin token has ADMIN role", "ADMIN" in claims(admin)["realm_access"]["roles"])
-apps = requests.get(f"{EUREKA}/eureka/apps", headers={"Accept": "application/json"}, timeout=30).json()
-names = sorted(a["name"] for a in apps["applications"]["application"])
-record("Eureka has all services registered", names == ["ACCOUNT-SERVICE", "CONFIG-SERVER", "TRANSACTION-SERVICE", "USER-SERVICE"], str(names))
+
+# On a fresh deployment the services show up in Eureka, and in each client's cached copy of the registry,
+# up to about a minute after their pods are ready: wait for it before testing the calls between services.
+EXPECTED_APPS = ["ACCOUNT-SERVICE", "CONFIG-SERVER", "TRANSACTION-SERVICE", "USER-SERVICE"]
+
+
+def eureka_apps():
+    apps = requests.get(f"{EUREKA}/eureka/apps", headers={"Accept": "application/json"}, timeout=30).json()
+    return sorted(a["name"] for a in apps["applications"]["application"])
+
+
+names = poll(lambda: (n := eureka_apps()) == EXPECTED_APPS and n, timeout=180, every=5) or eureka_apps()
+record("Eureka has all services registered", names == EXPECTED_APPS, str(names))
+
+
+# An unknown CLABE is looked up in account-service: 404 once transaction-service can reach it, 503 before
+def unknown_clabe():
+    return requests.get(f"{KONG}/api/v1/transaction/query/history", headers={"Authorization": f"Bearer {admin}"},
+                        params={"sourceIdentifier": "000000000000000000", "sourceIdentifierType": "CLABE",
+                                "status": "COMPLETED"}, timeout=30)
+
+
+r = poll(lambda: (r := unknown_clabe()).status_code != 503 and r, timeout=180, every=5) or unknown_clabe()
+record("transaction-service reaches account-service through Eureka", r.status_code == 404, f"{r.status_code} {r.text[:200]}")
 call("no token -> 401", "GET", "/api/v1/user/get-active", expect=401)
 call("invalid token -> 401", "GET", "/api/v1/user/get-active", token="not-a-jwt", expect=401)
 

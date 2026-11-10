@@ -30,7 +30,7 @@ kubectl apply -k k8s
 
 ```bash
 pip install -r k8s/tests/requirements.txt
-python3 k8s/tests/e2e.py              # every endpoint through Kong (175 checks, a few minutes)
+python3 k8s/tests/e2e.py              # every endpoint through Kong (176 checks, a few minutes)
 python3 k8s/tests/faults.py           # failure paths (about 30 minutes)
 python3 k8s/tests/faults.py broker db # only some scenarios
 ```
