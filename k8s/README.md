@@ -59,7 +59,7 @@ k8s/
 ├── smoke-test.sh          # waits for the pods and tests the services through Kong
 ├── namespace.yaml
 ├── databases/             # PostgreSQL (StatefulSet + PVC) per service and for Keycloak
-├── kafka/                 # broker (KRaft) and kafka-ui
+├── kafka/                 # broker (KRaft, with a volume) and kafka-ui
 ├── mailpit/               # fake SMTP server for Keycloak's verification emails
 ├── keycloak/              # Keycloak + realm-export.json (ConfigMap)
 ├── kong/                  # DB-less Kong + kong.yml (ConfigMap)
@@ -76,10 +76,19 @@ k8s/
   that wait for its dependencies (config-server, database, Keycloak, Kafka).
 - **Eureka**: services register with the pod IP (`EUREKA_INSTANCE_PREFER_IP_ADDRESS`),
   because a pod's hostname does not resolve through DNS inside the cluster.
+- **Probes**: the microservices use Spring Boot's probe groups. Liveness
+  (`/actuator/health/liveness`) only says whether the application itself works, so a database, Kafka or
+  Keycloak outage does not get the pod restarted in a loop; readiness is `/actuator/health/readiness`.
+  `/actuator/health` (database included) is still what Kong and `smoke-test.sh` check.
 - **`enableServiceLinks: false`** on every pod: keeps Kubernetes from injecting variables such as
   `KAFKA_UI_PORT=tcp://...`, which Kafka, Kong and Spring would read as configuration.
 - `keycloak/realm-export.json`, `kong/kong.yml` and `monitoring/` are the only copy of those files:
   `docker-compose.yml` also mounts them from `k8s/`.
+- **Kafka keeps its data** in a volume (`volumeClaimTemplates`), like the databases. Without it a
+  restarted broker lost the topics, the consumer offsets and the state of the idempotent producers, and
+  events could be lost. A cluster created before the volume was added has to recreate the StatefulSet,
+  whose `volumeClaimTemplates` cannot be changed in place:
+  `kubectl delete statefulset broker -n bank && kubectl apply -k k8s`.
 - **Host ports of Grafana and Prometheus** (3000, 9091) come from `kind-config.yaml`: a cluster created
   before they were added has to be recreated (`kind delete cluster --name bank` and the steps above).
 

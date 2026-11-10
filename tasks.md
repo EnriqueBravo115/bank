@@ -40,10 +40,15 @@ Work left for later. Completed tasks were removed (see the git history of this f
   - The PostgreSQL and Keycloak admin credentials are `literals` in the `secretGenerator`.
   - For anything beyond local development: Sealed Secrets, External Secrets or SOPS.
 
-- [ ] **Ephemeral Kafka data**
-  - The broker has no volume (same as in docker-compose); topics are lost if the pod restarts.
+- [ ] **Ephemeral data in docker-compose**
+  - In k8s the broker and the databases have volumes. In `docker-compose.yml` no service has one: a recreated
+    container (`docker compose down`, `up --force-recreate`) starts empty, the Kafka broker included.
 
-- [ ] **Test cross-service flows in Kubernetes**
-  - transaction-service needs to reach Keycloak (`KEYCLOAK_HOST`) to request its service token.
-  - Verified: health, endpoints of the 3 services through Kong with a Keycloak token, Eureka registration and kafka-ui.
-  - Pending: the registration flow (user-service → Kafka → account-service) and Feign (transaction-service → account-service).
+- [ ] **Single replica of each service**
+  - Deleting or restarting a pod gives a few seconds of `502` through Kong (measured: about 3-11 s).
+  - For zero downtime: `replicas: 2`, a `preStop` sleep so the endpoint is removed before the shutdown, and
+    `server.shutdown: graceful`. With several replicas of user-service, see the outbox order task above.
+  - After account-service's pod is replaced, transaction-service keeps calling the old IP for about 35 s
+    (Eureka registry fetch every 30 s plus the LoadBalancer cache): new transactions get `503` meanwhile.
+    Options: lower `eureka.client.registry-fetch-interval-seconds` and `spring.cloud.loadbalancer.cache.ttl`,
+    or retry on another instance once there are two replicas.

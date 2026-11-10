@@ -43,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 public class EventOutbox {
     public static final int MAX_ATTEMPTS = 10;
     private static final int BATCH_SIZE = 50;
+    // Longer than the producer's delivery.timeout.ms (config-server, 9 s): the producer drops a record
+    // it could not deliver before this wait ends, so a failed send is not delivered later anyway.
     private static final long SEND_TIMEOUT_SECONDS = 10;
     static final Duration FIRST_RETRY_DELAY = Duration.ofSeconds(5);
     static final Duration MAX_RETRY_DELAY = Duration.ofMinutes(15);

@@ -19,10 +19,11 @@ import dev.enrique.bank.util.PostgresContainerConfig;
 
 /**
  * Prometheus scrapes /actuator/prometheus with a client-credentials token of the "prometheus" client:
- * realm role METRICS and no registration_status. The exposure comes from config-server, so it is set
- * here; the security rules are the production ones.
+ * realm role METRICS and no registration_status. The exposure and the probe groups come from
+ * config-server, so they are set here; the security rules are the production ones.
  */
-@SpringBootTest(properties = "management.endpoints.web.exposure.include=health,prometheus")
+@SpringBootTest(properties = {"management.endpoints.web.exposure.include=health,prometheus",
+        "management.endpoint.health.probes.enabled=true"})
 @AutoConfigureMockMvc
 @AutoConfigureObservability
 @ActiveProfiles("test-postgres")
@@ -50,5 +51,12 @@ class MetricsEndpointTest extends PostgresContainerConfig {
     void withoutToken_metricsAreRejected_butHealthStaysPublic() throws Exception {
         mockMvc.perform(get("/actuator/prometheus")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());
+    }
+
+    // The Kubernetes probes call them without a token.
+    @Test
+    void probeGroups_arePublic() throws Exception {
+        mockMvc.perform(get("/actuator/health/liveness")).andExpect(status().isOk());
+        mockMvc.perform(get("/actuator/health/readiness")).andExpect(status().isOk());
     }
 }

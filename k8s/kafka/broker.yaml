@@ -28,6 +28,8 @@ spec:
       # The apache/kafka image turns every KAFKA_* env var into a broker setting,
       # so service-link vars like KAFKA_UI_PORT=tcp://... must not be injected.
       enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000   # appuser of the apache/kafka image
       containers:
         - name: kafka
           image: apache/kafka:4.2.0
@@ -57,6 +59,12 @@ spec:
               value: "1"
             - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
               value: "1"
+            # Topics, consumer offsets and the state of the idempotent producers survive a restart.
+            # Without it a restarted broker lost them all, and user-service's producer could get an
+            # event acknowledged that was never written (InvalidProducerEpochException, then success).
+            # The image formats the directory on the first start and reuses it afterwards.
+            - name: KAFKA_LOG_DIRS
+              value: /var/lib/kafka/data
           readinessProbe:
             tcpSocket:
               port: 9092
@@ -67,3 +75,14 @@ spec:
               memory: 512Mi
             limits:
               memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/kafka/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

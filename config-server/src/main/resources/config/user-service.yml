@@ -29,6 +29,12 @@ spring:
       properties:
         # Fail fast when the broker is down: the outbox publisher retries on its next run.
         max.block.ms: 5000
+        # The producer gives up on a record before the outbox stops waiting for it (EventOutbox,
+        # 10 s): a send counted as failed is dropped from the producer's buffer instead of being
+        # delivered later, behind the outbox's back (e.g. an event already FAILED reaching Kafka).
+        # It must be >= linger.ms + request.timeout.ms.
+        request.timeout.ms: 4000
+        delivery.timeout.ms: 9000
     consumer:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       group-id: user-service-group
@@ -46,6 +52,12 @@ management:
     web:
       exposure:
         include: "*"
+  # /actuator/health/liveness and /readiness for the Kubernetes probes. Liveness does not include the
+  # database, Kafka or the circuit breaker: a dependency that is down must not get the pod restarted.
+  endpoint:
+    health:
+      probes:
+        enabled: true
   # Buckets for the latency percentiles of the Grafana dashboard (histogram_quantile)
   metrics:
     distribution:

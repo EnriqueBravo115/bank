@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import dev.enrique.bank.commons.dto.response.ErrorResponse;
+import jakarta.ws.rs.ProcessingException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
@@ -90,6 +93,18 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.SERVICE_UNAVAILABLE.value(),
                 ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+    }
+
+    // The Keycloak admin client could not reach Keycloak or got no answer in time (KeycloakConfig).
+    // It is a RuntimeException, so the transaction of user-service is rolled back.
+    @ExceptionHandler(ProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleKeycloakUnavailable(ProcessingException ex) {
+        log.warn("Keycloak is not available: {}", ex.toString());
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "Identity provider is not available, try again later",
                 LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }

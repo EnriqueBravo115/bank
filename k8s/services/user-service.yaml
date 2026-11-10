@@ -56,20 +56,22 @@ spec:
               value: "broker"
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
               value: "true"
+          # Probe groups of Spring Boot: liveness does not depend on the database, Kafka or Keycloak,
+          # so an outage of a dependency does not get the pod restarted over and over.
           startupProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/liveness
               port: 8080
             periodSeconds: 5
             failureThreshold: 60
           readinessProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/readiness
               port: 8080
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/liveness
               port: 8080
             periodSeconds: 20
             failureThreshold: 5

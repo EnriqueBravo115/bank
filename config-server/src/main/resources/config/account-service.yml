@@ -30,6 +30,10 @@ spring:
       # instead of failing in poll() forever. See KafkaErrorHandlingConfig.
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       group-id: account-service-group
+      # Without a committed offset (new group, or a topic created again, e.g. after the broker lost its
+      # data) read from the start. With "latest" an event published before the consumer joined the topic
+      # was skipped; the listeners tolerate repeated events (the outbox is at-least-once anyway).
+      auto-offset-reset: earliest
       properties:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: "*"
@@ -39,6 +43,12 @@ management:
     web:
       exposure:
         include: "*"
+  # /actuator/health/liveness and /readiness for the Kubernetes probes. Liveness does not include the
+  # database, Kafka or the circuit breaker: a dependency that is down must not get the pod restarted.
+  endpoint:
+    health:
+      probes:
+        enabled: true
   # Buckets for the latency percentiles of the Grafana dashboard (histogram_quantile)
   metrics:
     distribution:
