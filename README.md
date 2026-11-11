@@ -156,9 +156,11 @@ PR / push ──► ci.yml ── per service: mvn verify ─► docker build �
                      └─ manifests: kustomize render, ShellCheck, Trivy config report
 push to main / v* tag ──► images pushed to GHCR: sha-<commit>, latest, <version>
 CI green on main ──► e2e.yml: kind cluster ─► kubectl apply -k ─► smoke test ─► k8s/tests/e2e.py
+E2E green ──► promote: commit sha-<commit> to gitops/bank ──► Argo CD syncs the cluster
 nightly / manual ──► e2e.yml + failure tests (k8s/tests/faults.py)
 ```
 - Pull requests only build the services they change; `CI result` is the check to require on `main`.
+- Argo CD (installed from `gitops/argocd`) keeps the cluster in sync with `gitops/bank` on `main`.
 - Images: `ghcr.io/enriquebravo115/bank-<service>`. Dependabot updates Maven, base images and actions weekly.
 
 ## Running

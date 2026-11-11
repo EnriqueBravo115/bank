@@ -4,12 +4,6 @@ Work left for later. Completed tasks were removed (see the git history of this f
 
 ## CI/CD
 
-- [ ] **Continuous deployment with Argo CD**
-  - The cluster syncs from the repository; the pipeline only updates the image tag.
-  - The manifests still use `bank/<service>:1.0.0` (loaded with `kind load`); CI publishes
-    `ghcr.io/<owner>/bank-<service>:sha-<commit>`. An `images:` block in `k8s/kustomization.yaml` (or an
-    overlay) would point them to GHCR and let the pipeline change the tag with `kustomize edit set image`.
-
 - [ ] **Fix the Trivy misconfiguration findings in `k8s/`**
   - CI only reports them (`Manifests and scripts` job); once fixed, make that step fail the build.
 

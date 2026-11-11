@@ -3,6 +3,9 @@
 #
 # It deploys the images that CI published for the commit (sha-<commit>); when there are none (a
 # manual run on a branch) it builds them.
+#
+# When it passes after CI on main, the promote job points gitops/bank at those images and Argo CD
+# deploys them (gitops/argocd/application.yaml).
 name: E2E
 
 on:
@@ -43,6 +46,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.SHA }}
+          fetch-depth: 0
+
+      # A commit that only changes gitops/ (made by the promote job) has no images of its own; its code
+      # is the parent's, so the parent's images are used (nightly and manual runs on main).
+      - name: Pick the images
+        run: |
+          image_sha="$SHA"
+          while git diff --quiet "$image_sha^" "$image_sha" -- . ':!gitops'; do
+            image_sha=$(git rev-parse "$image_sha^")
+          done
+          echo "Images: sha-$image_sha"
+          echo "IMAGE_SHA=$image_sha" >> "$GITHUB_ENV"
 
       - name: Create the kind cluster
         uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
@@ -63,7 +78,7 @@ jobs:
         run: |
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           for svc in eureka-server config-server user-service transaction-service account-service; do
-            image="ghcr.io/$owner/bank-$svc:sha-$SHA"
+            image="ghcr.io/$owner/bank-$svc:sha-$IMAGE_SHA"
             if docker pull "$image"; then
               docker tag "$image" "bank/$svc:1.0.0"
             else
@@ -114,3 +129,47 @@ jobs:
         with:
           name: e2e-diagnostics
           path: diagnostics/
+
+  # Deployment: the commit passed CI and E2E, so gitops/bank (watched by Argo CD) moves to its images.
+  # Pushed with GITHUB_TOKEN, the commit does not start CI again.
+  promote:
+    name: Promote to gitops/bank
+    needs: e2e
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Update the image tags
+        run: |
+          file=gitops/bank/kustomization.yaml
+          current=$(grep -oE 'sha-[0-9a-f]{40}' "$file" | head -1)
+          current="${current#sha-}"
+          if [ "$current" = "$SHA" ]; then
+            echo "gitops/bank already uses sha-$SHA"
+            exit 0
+          fi
+          # A run of an older commit that finishes late must not roll the deployment back
+          if ! git merge-base --is-ancestor "$current" "$SHA"; then
+            echo "::notice::sha-$SHA is not newer than the deployed sha-$current, nothing to do"
+            exit 0
+          fi
+          sed -i -E "s/newTag: sha-[0-9a-f]{40}/newTag: sha-$SHA/" "$file"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(deploy): sha-${SHA::7} to gitops/bank" \
+            -m "Passed CI and E2E: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -- "$file"
+          for attempt in 1 2 3; do
+            git push origin HEAD:main && exit 0
+            echo "Push rejected (attempt $attempt), rebasing on main"
+            git pull --rebase origin main
+          done
+          exit 1

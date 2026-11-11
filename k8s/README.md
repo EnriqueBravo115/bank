@@ -53,8 +53,9 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.pas
 kubectl -n argocd port-forward svc/argocd-server 8081:443  # UI on https://localhost:8081 (user admin)
 ```
 
-- Argo CD polls the repository (about every 3 minutes) and applies what changed; deploying a new
-  version means changing the tags in `gitops/bank/kustomization.yaml` on `main`.
+- Argo CD polls the repository (about every 3 minutes) and applies what changed. When a commit of
+  `main` passes CI and E2E, the `promote` job of `e2e.yml` commits its tag (`sha-<commit>`) to
+  `gitops/bank/kustomization.yaml`. Rollback: `git revert` of that commit.
 - Once the Application exists, do not use `kubectl apply -k k8s` or `build-images.sh` on that cluster:
   Argo CD owns the resources and puts back what is in git.
 - `selfHeal` reverts manual changes, including the ones `k8s/tests/faults.py` makes. Before running it:
