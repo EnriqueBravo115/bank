@@ -10,16 +10,16 @@ resources:
 images:
   - name: bank/eureka-server
     newName: ghcr.io/enriquebravo115/bank-eureka-server
-    newTag: sha-e178c42ec59a26a62a5732a207acdc52a9e8b69a
+    newTag: sha-34aa2fd4bcf3bcabc077e5ea4685c656fab15f41
   - name: bank/config-server
     newName: ghcr.io/enriquebravo115/bank-config-server
-    newTag: sha-e178c42ec59a26a62a5732a207acdc52a9e8b69a
+    newTag: sha-34aa2fd4bcf3bcabc077e5ea4685c656fab15f41
   - name: bank/user-service
     newName: ghcr.io/enriquebravo115/bank-user-service
-    newTag: sha-e178c42ec59a26a62a5732a207acdc52a9e8b69a
+    newTag: sha-34aa2fd4bcf3bcabc077e5ea4685c656fab15f41
   - name: bank/account-service
     newName: ghcr.io/enriquebravo115/bank-account-service
-    newTag: sha-e178c42ec59a26a62a5732a207acdc52a9e8b69a
+    newTag: sha-34aa2fd4bcf3bcabc077e5ea4685c656fab15f41
   - name: bank/transaction-service
     newName: ghcr.io/enriquebravo115/bank-transaction-service
-    newTag: sha-e178c42ec59a26a62a5732a207acdc52a9e8b69a
+    newTag: sha-34aa2fd4bcf3bcabc077e5ea4685c656fab15f41
