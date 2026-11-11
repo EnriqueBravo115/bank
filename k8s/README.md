@@ -55,6 +55,8 @@ kubectl -n argocd port-forward svc/argocd-server 8081:443  # UI on https://local
 
 - Argo CD polls the repository (about every 3 minutes) and applies what changed; deploying a new
   version means changing the tags in `gitops/bank/kustomization.yaml` on `main`.
+- Once the Application exists, do not use `kubectl apply -k k8s` or `build-images.sh` on that cluster:
+  Argo CD owns the resources and puts back what is in git.
 - `selfHeal` reverts manual changes, including the ones `k8s/tests/faults.py` makes. Before running it:
   `kubectl -n argocd patch application bank --type merge -p '{"spec":{"syncPolicy":{"automated":{"selfHeal":false}}}}'`
   (and `true` afterwards).
