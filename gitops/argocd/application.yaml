@@ -1,0 +1,32 @@
+# Keeps the bank namespace in sync with gitops/bank on main. The repository is public, so no
+# credentials are needed; Argo CD polls it (about every 3 minutes), since no webhook can reach a local cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bank
+  namespace: argocd
+  finalizers:
+    # Deleting the Application also deletes the resources it deployed
+    - resources-finalizer.argocd.argoproj.io/foreground
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/EnriqueBravo115/bank.git
+    targetRevision: main
+    path: gitops/bank
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: bank
+  syncPolicy:
+    automated:
+      prune: true    # removes what is deleted from the repository
+      selfHeal: true # reverts manual changes (disable it before running k8s/tests/faults.py)
+    syncOptions:
+      # Large ConfigMaps (Keycloak realm, Grafana dashboard) exceed the last-applied annotation limit
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

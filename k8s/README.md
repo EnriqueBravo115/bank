@@ -39,6 +39,28 @@ python3 k8s/tests/faults.py broker db # only some scenarios
 up): use a test cluster only. The kubectl context is `kind-bank` (`KUBE_CONTEXT` to change it).
 Both run in GitHub Actions (`.github/workflows/e2e.yml`).
 
+## GitOps (Argo CD)
+
+Instead of `build-images.sh` + `kubectl apply`, Argo CD can deploy the cluster from `main`:
+`gitops/bank` is this base with the images published by CI to GHCR (`sha-<commit>`).
+
+```bash
+kubectl apply -k gitops/argocd --server-side            # installs Argo CD (pinned version)
+kubectl -n argocd rollout status deploy/argocd-server
+kubectl apply -f gitops/argocd/application.yaml         # Application "bank": syncs gitops/bank on main
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo
+kubectl -n argocd port-forward svc/argocd-server 8081:443  # UI on https://localhost:8081 (user admin)
+```
+
+- Argo CD polls the repository (about every 3 minutes) and applies what changed; deploying a new
+  version means changing the tags in `gitops/bank/kustomization.yaml` on `main`.
+- `selfHeal` reverts manual changes, including the ones `k8s/tests/faults.py` makes. Before running it:
+  `kubectl -n argocd patch application bank --type merge -p '{"spec":{"syncPolicy":{"automated":{"selfHeal":false}}}}'`
+  (and `true` afterwards).
+- Removing it: `kubectl delete -f gitops/argocd/application.yaml` also deletes everything in `bank`
+  (finalizer); `kubectl delete -k gitops/argocd` removes Argo CD.
+
 ## Access from the host
 
 | Component    | URL                       |

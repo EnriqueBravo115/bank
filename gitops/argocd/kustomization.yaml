@@ -1,0 +1,11 @@
+# Argo CD installation (non-HA, pinned version):
+#   kubectl apply -k gitops/argocd --server-side
+# The Application is applied separately, once the CRDs exist: kubectl apply -f gitops/argocd/application.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: argocd
+
+resources:
+  - namespace.yaml
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.7/manifests/install.yaml

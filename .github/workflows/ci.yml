@@ -185,6 +185,12 @@ jobs:
       - name: Render the Kustomize manifests
         run: kubectl kustomize k8s > /dev/null
 
+      # GHCR overlay deployed by Argo CD, and the Argo CD installation (downloads the pinned install.yaml)
+      - name: Render the GitOps manifests
+        run: |
+          kubectl kustomize gitops/bank > /dev/null
+          kubectl kustomize gitops/argocd > /dev/null
+
       - name: ShellCheck
         run: shellcheck k8s/*.sh
 
